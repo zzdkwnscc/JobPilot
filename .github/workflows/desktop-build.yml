@@ -1,0 +1,127 @@
+name: Desktop CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify Desktop Boundary
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> .codex-cargo-target/desktop-tauri
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Verify desktop version sync
+        run: pnpm run verify:desktop:version-sync
+
+      - name: Verify desktop migration gate
+        run: pnpm run verify:desktop:migration
+
+      - name: Observe web reference lint debt
+        if: always()
+        continue-on-error: true
+        run: pnpm run report:web:reference
+
+      - name: Verify desktop release readiness
+        run: pnpm run verify:desktop:release-readiness
+
+  package-smoke:
+    name: Packaged Desktop Smoke
+    if: github.event_name != 'pull_request'
+    needs: verify
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> .codex-cargo-target/desktop-tauri
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Verify desktop version sync
+        run: pnpm run verify:desktop:version-sync
+
+      - name: Ensure updater signing key
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            pnpm --prefix desktop exec tauri signer generate --ci --write-keys .tauri/updater.key --force
+          } else {
+            Write-Host "Using repository TAURI_SIGNING_PRIVATE_KEY secret."
+          }
+        shell: powershell
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+
+      - name: Build Tauri Desktop
+        run: pnpm run build:tauri
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Upload Desktop Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rolerover-desktop-windows-${{ github.sha }}
+          path: |
+            .codex-cargo-target/desktop-tauri/release/bundle/**/*.exe
+            .codex-cargo-target/desktop-tauri/release/bundle/**/*.exe.sig
+            .codex-cargo-target/desktop-tauri/release/bundle/**/*.msi
+            .codex-cargo-target/desktop-tauri/release/bundle/**/*.msi.sig
+            .codex-cargo-target/desktop-tauri/release/bundle/**/*.zip
+            .codex-cargo-target/desktop-tauri/release/bundle/**/*.zip.sig
+          if-no-files-found: error

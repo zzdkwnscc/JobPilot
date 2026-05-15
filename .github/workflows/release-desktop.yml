@@ -1,0 +1,158 @@
+name: Release Desktop
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Draft Desktop Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> .codex-cargo-target/desktop-tauri
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Verify desktop version sync
+        run: pnpm run verify:desktop:version-sync
+
+      - name: Verify release tag matches package version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $expectedTag = "v$version"
+          if ($expectedTag -ne "${{ github.ref_name }}") {
+            throw "Release tag ${{ github.ref_name }} does not match package.json version $version."
+          }
+
+      - name: Verify desktop migration gate
+        run: pnpm run verify:desktop:migration
+
+      - name: Observe web reference lint debt
+        if: always()
+        continue-on-error: true
+        run: pnpm run report:web:reference
+
+      - name: Verify desktop release readiness
+        run: pnpm run verify:desktop:release-readiness
+
+      - name: Validate updater signing key secret
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw "TAURI_SIGNING_PRIVATE_KEY secret is required for tagged desktop releases."
+          }
+
+      - name: Build Tauri Desktop
+        run: pnpm run build:tauri
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Build release updater manifest
+        run: pnpm run build:desktop:release-updater-manifest
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_UPDATER_MANIFEST_OUTPUT: desktop/.codex-temp/release-assets/latest.json
+
+      - name: Generate release notes
+        run: node scripts/generate-release-notes.mjs
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_NOTES_OUTPUT: desktop/.codex-temp/release-assets/RELEASE_NOTES.md
+
+      - name: Create or update draft GitHub release
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $repo = "${{ github.repository }}"
+          $notesPath = (Resolve-Path "desktop/.codex-temp/release-assets/RELEASE_NOTES.md").Path
+          $manifestPath = (Resolve-Path "desktop/.codex-temp/release-assets/latest.json").Path
+          $bundleRoot = (Resolve-Path ".codex-cargo-target/desktop-tauri/release/bundle").Path
+
+          $assets = Get-ChildItem -Path $bundleRoot -Recurse -File |
+            Where-Object { $_.Extension -in @('.exe', '.msi', '.zip', '.sig') } |
+            Select-Object -ExpandProperty FullName
+
+          $assets += $manifestPath
+
+          if ($assets.Count -eq 0) {
+            throw "No release assets were found under $bundleRoot."
+          }
+
+          & gh release view $tag --repo $repo *> $null
+          $releaseExists = $LASTEXITCODE -eq 0
+
+          if (-not $releaseExists) {
+            $createArgs = @(
+              "release", "create", $tag,
+              "--repo", $repo,
+              "--title", $tag,
+              "--draft",
+              "--notes-file", $notesPath
+            ) + $assets
+            & gh @createArgs
+            exit $LASTEXITCODE
+          }
+
+          $editArgs = @(
+            "release", "edit", $tag,
+            "--repo", $repo,
+            "--title", $tag,
+            "--draft",
+            "--notes-file", $notesPath
+          )
+          & gh @editArgs
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          $uploadArgs = @(
+            "release", "upload", $tag,
+            "--repo", $repo,
+            "--clobber"
+          ) + $assets
+          & gh @uploadArgs
+          exit $LASTEXITCODE
