@@ -101,7 +101,9 @@ export function ImportJsonDialog({
       await onImport?.(document);
       resetAndClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t("importError"));
+      const message = err instanceof Error ? err.message : t("importError");
+      console.error("[import-json-dialog] Import failed:", err);
+      setError(message);
     } finally {
       setIsImporting(false);
     }
@@ -261,9 +263,6 @@ export function ImportJsonDialog({
         <div className="dialog-body">
           <p className="text-sm text-zinc-500 mb-4">
             {t("importDescription")}
-            <span className="block mt-1 text-xs text-zinc-400">
-              Supports JSON, Markdown (.md), and PDF files
-            </span>
           </p>
 
           {/* Upload area */}

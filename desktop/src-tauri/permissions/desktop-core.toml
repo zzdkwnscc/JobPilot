@@ -35,4 +35,6 @@ commands.allow = [
   "write_template_validation_export",
   "write_export_file",
   "write_pdf_export",
+  "parse_markdown_resume",
+  "parse_pdf_resume",
 ]
