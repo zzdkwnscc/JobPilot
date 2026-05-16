@@ -2495,27 +2495,57 @@ pub struct FetchAiModelsResult {
     pub models: Vec<String>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FetchAiModelsInput {
+    pub provider: Option<String>,
+    pub base_url: Option<String>,
+    pub api_key: Option<String>,
+}
+
 pub async fn fetch_ai_models(
     workspace_root: &std::path::Path,
-    provider_override: Option<&str>,
+    input: FetchAiModelsInput,
 ) -> Result<FetchAiModelsResult, String> {
     let settings_document = settings::load_or_initialize_settings(workspace_root)?;
-    let provider = provider_override
+    let provider = input
+        .provider
+        .as_ref()
         .filter(|value| !value.trim().is_empty())
         .and_then(|value| normalize_supported_provider(value))
         .unwrap_or_else(|| settings_document.ai.default_provider.trim().to_string());
 
-    let configured = settings_document.ai.provider_configs.get(&provider);
-    let base_url = configured
-        .map(|value| value.base_url.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| default_base_url_for_provider(&provider).to_string());
+    // Use provided base_url or fall back to saved config
+    let base_url = input
+        .base_url
+        .as_ref()
+        .filter(|value| !value.trim().is_empty())
+        .map(|value| value.trim().to_string())
+        .unwrap_or_else(|| {
+            settings_document
+                .ai
+                .provider_configs
+                .get(&provider)
+                .map(|value| value.base_url.trim().to_string())
+                .filter(|value| !value.is_empty())
+                .unwrap_or_else(|| default_base_url_for_provider(&provider).to_string())
+        });
 
-    let api_key_secret_key = format!("provider.{provider}.api_key");
-    let api_key = settings::read_secret_value(workspace_root, &api_key_secret_key)?
-        .unwrap_or_default()
-        .trim()
-        .to_string();
+    // Use provided api_key or fall back to saved secret
+    let api_key = input
+        .api_key
+        .as_ref()
+        .filter(|value| !value.trim().is_empty())
+        .map(|value| value.trim().to_string())
+        .unwrap_or_else(|| {
+            let api_key_secret_key = format!("provider.{provider}.api_key");
+            settings::read_secret_value(workspace_root, &api_key_secret_key)
+                .ok()
+                .flatten()
+                .unwrap_or_default()
+                .trim()
+                .to_string()
+        });
 
     if api_key.is_empty() {
         return Ok(FetchAiModelsResult {

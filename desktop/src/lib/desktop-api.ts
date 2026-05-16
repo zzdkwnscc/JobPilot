@@ -1851,6 +1851,12 @@ export async function startInterviewTurnStream(
   });
 }
 
+export interface FetchAiModelsInput {
+  provider?: string;
+  baseUrl?: string;
+  apiKey?: string;
+}
+
 export interface FetchAiModelsResult {
   provider: string;
   models: string[];
@@ -1863,10 +1869,14 @@ export interface ConnectivityTestResult {
 }
 
 export async function fetchAiModels(
-  provider?: string,
+  input: FetchAiModelsInput,
 ): Promise<FetchAiModelsResult> {
   return invokeWithFallback("fetch_ai_models", { provider: "", models: [] }, {
-    provider: provider ?? null,
+    input: {
+      provider: input.provider ?? null,
+      baseUrl: input.baseUrl ?? null,
+      apiKey: input.apiKey ?? null,
+    },
   });
 }
 

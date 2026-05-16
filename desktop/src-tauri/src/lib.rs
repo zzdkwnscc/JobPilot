@@ -327,10 +327,10 @@ fn start_interview_turn_stream(
 #[tauri::command]
 async fn fetch_ai_models(
     app: tauri::AppHandle,
-    provider: Option<String>,
+    input: ai::FetchAiModelsInput,
 ) -> Result<FetchAiModelsResult, String> {
     let workspace_root = resolve_workspace_root(&app)?;
-    ai::fetch_ai_models(&workspace_root, provider.as_deref()).await
+    ai::fetch_ai_models(&workspace_root, input).await
 }
 
 #[tauri::command]

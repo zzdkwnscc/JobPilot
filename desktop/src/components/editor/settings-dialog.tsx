@@ -163,7 +163,11 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const fetchModelsForProvider = useCallback(async () => {
     setModelsFetching(true);
     try {
-      const result = await fetchAiModels(aiProvider);
+      const result = await fetchAiModels({
+        provider: aiProvider,
+        baseUrl: aiBaseURL,
+        apiKey: aiApiKey,
+      });
       setFetchedModels(result.models);
       setModelsFetched(true);
     } catch {
@@ -172,7 +176,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     } finally {
       setModelsFetching(false);
     }
-  }, [aiProvider]);
+  }, [aiProvider, aiBaseURL, aiApiKey]);
 
   useEffect(() => {
     if ((modelOpen || visionModelOpen) && !modelsFetched && !modelsFetching) {
