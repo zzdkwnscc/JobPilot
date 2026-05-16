@@ -194,7 +194,7 @@ Return ONLY the JSON array, no markdown fences.`;
         {/* Header */}
         <div className="px-6 pt-6 pb-0">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <Languages className="h-5 w-5 text-pink-500" />
+            <Languages className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
             {t("translate.title")}
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -246,7 +246,7 @@ Return ONLY the JSON array, no markdown fences.`;
                       className={cn(
                         "relative flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all cursor-pointer",
                         active
-                          ? "border-pink-500 bg-pink-50 dark:bg-pink-950/30 dark:border-pink-400"
+                          ? "border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-800"
                           : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800/50 dark:hover:border-zinc-600",
                       )}
                     >
@@ -254,7 +254,7 @@ Return ONLY the JSON array, no markdown fences.`;
                         className={cn(
                           "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
                           active
-                            ? "bg-pink-500 text-white"
+                            ? "bg-zinc-900 dark:bg-zinc-100 text-white"
                             : "bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400",
                         )}
                       >
@@ -264,7 +264,7 @@ Return ONLY the JSON array, no markdown fences.`;
                         className={cn(
                           "text-sm font-semibold",
                           active
-                            ? "text-pink-600 dark:text-pink-400"
+                            ? "text-zinc-700 dark:text-zinc-200"
                             : "text-zinc-700 dark:text-zinc-300",
                         )}
                       >
@@ -283,7 +283,7 @@ Return ONLY the JSON array, no markdown fences.`;
           {/* Translating State */}
           {state === "translating" && (
             <div className="flex flex-col items-center justify-center py-6 text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-pink-500 mb-3" />
+              <Loader2 className="h-8 w-8 animate-spin text-zinc-900 dark:text-zinc-100 mb-3" />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
                 {progress.total > 0
                   ? t("translate.progress", {
@@ -296,7 +296,7 @@ Return ONLY the JSON array, no markdown fences.`;
                 <div className="w-full max-w-xs">
                   <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-pink-500 rounded-full transition-all duration-300 ease-out"
+                      className="h-full bg-zinc-700 rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
@@ -339,7 +339,7 @@ Return ONLY the JSON array, no markdown fences.`;
               </Button>
               <Button
                 onClick={() => void handleTranslate()}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-zinc-700 hover:bg-zinc-600"
               >
                 {t("translate.translateAll")}
               </Button>
@@ -356,7 +356,7 @@ Return ONLY the JSON array, no markdown fences.`;
               </Button>
               <Button
                 onClick={() => void handleTranslate()}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-zinc-700 hover:bg-zinc-600"
               >
                 {t("translate.translateAll")}
               </Button>

@@ -355,12 +355,14 @@ export interface ProviderConfigUpdateInput {
   model: string;
   setAsDefault: boolean;
   resumeImportVisionModel?: string;
+  exaPoolBaseUrl?: string;
 }
 
 export interface WorkspaceAppearanceSettingsUpdateInput {
   locale: string;
   theme: string;
   autoSave: boolean;
+  autoSaveIntervalMs?: number;
   rememberWindowState: boolean;
 }
 
@@ -1742,6 +1744,10 @@ export async function writeSecretValue(
   return invoke<SecretInventorySnapshot>("write_secret_value", { input });
 }
 
+export async function readSecretValue(key: string): Promise<string | null> {
+  return invoke<string | null>("read_secret_value", { key });
+}
+
 export async function startAiPromptStream(
   input: StartAiPromptStreamInput,
 ): Promise<AiStreamStartReceipt> {
@@ -1770,7 +1776,7 @@ export async function getInterviewSession(
 export async function createInterviewSession(
   input: CreateInterviewSessionInput,
 ): Promise<InterviewSessionDetail> {
-  const detail = await invoke<RawInterviewSessionDetail>("create_interview_session", {
+  const payload = {
     input: {
       resumeId: input.resumeId ?? null,
       jobDescription: input.jobDescription,
@@ -1781,7 +1787,9 @@ export async function createInterviewSession(
         maxQuestions: 8,
       })),
     },
-  });
+  };
+  console.log("createInterviewSession payload:", JSON.stringify(payload, null, 2));
+  const detail = await invoke<RawInterviewSessionDetail>("create_interview_session", payload);
 
   return normalizeInterviewSessionDetail(detail);
 }

@@ -1,109 +1,164 @@
 <div align="center">
+  <img src="public/logo.svg" alt="JobPilot" width="200">
 
-# RoleRover
+  **本地优先的 AI 简历工作台**
 
-**Local-first AI resume workspace for Windows**
-
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tauri](https://img.shields.io/badge/Tauri-2-24c8db)](https://tauri.app/)
-[![React](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)](https://www.typescriptlang.org/)
-[![Platform](https://img.shields.io/badge/Platform-Windows-0078d4)](./desktop)
-
-[中文文档](./README.zh-CN.md)
+  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+  [![Tauri](https://img.shields.io/badge/Tauri-2-24c8db)](https://tauri.app/)
+  [![React](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)](https://www.typescriptlang.org/)
+  [![Platform](https://img.shields.io/badge/Platform-Windows-0078d4)](./desktop)
 
 </div>
 
-RoleRover helps you write, tailor, and export resumes in a desktop app that keeps the main workflow close to your local machine. Install it, open your workspace, iterate with AI, and export polished resumes without setting up a server.
+---
 
-## Highlights
+JobPilot 是一款本地优先的 AI 求职桌面应用，帮助你完成简历编写与优化、面试模拟与复盘，从简历到面试全覆盖。下载安装后即可开始使用，无需搭建服务端环境。
 
-- Drag-and-drop resume editor with inline editing and autosave
-- 50 resume templates with theme customization and export support
-- AI-powered resume writing, resume parsing, JD matching, cover letter drafting, translation, and writing polish
-- English and Chinese interface
-- Local-first desktop experience with native import, export, window persistence, and in-app updates
-- AI provider settings and secrets stay under the user's local control
+## 功能特色
 
-## Screenshots
+<details>
+<summary><b>原有功能（来自 JadeAI / RoleRover）</b></summary>
 
-| Template Gallery | Resume Editor |
-|:---:|:---:|
-| ![Template Gallery](images/template-list.png) | ![Resume Editor](images/resume-edit.png) |
+- **拖拽式简历编辑器** — 支持行内编辑、自动保存、模块拖拽排序
+- **50+ 简历模板** — 涵盖经典、现代、极简、ATS 友好等多种风格，支持主题定制
+- **AI 智能助手** — 简历生成、内容优化、JD 匹配分析、求职信撰写、翻译润色
+- **简历解析** — 支持从 PDF 和图片中解析简历内容
+- **多格式导出** — 支持 PDF、PNG、Word 等格式导出
+- **简历分享** — 生成分享链接，方便投递和展示
+- **LinkedIn 职业照** — AI 生成专业证件照
+- **中英双语** — 完整的国际化支持
+- **本地优先** — 数据存储在本地，隐私安全有保障
 
-| AI Resume Generation | Shared Resume |
-|:---:|:---:|
-| ![AI Resume Generation](images/AI%20填充简历.gif) | ![Shared Resume Page](images/简历分享页.png) |
+</details>
 
-## Download
+<details open>
+<summary><b>JobPilot 新增功能</b></summary>
 
-1. Open [GitHub Releases](https://github.com/lingshichat/RoleRover/releases).
-2. Download the latest Windows installer, usually `.exe` or `.msi`.
-3. Install RoleRover and launch it like a normal desktop app.
+- **Tauri 桌面端** — 基于 Tauri 2 构建原生桌面应用，更轻量、更快的体验，全新应用图标
+- **多格式导入** — 支持 JSON、Markdown、PDF、图片（PNG/JPG/WebP）多种格式导入，AI 智能解析简历内容
+- **PDF 导入增强** — 支持普通 PDF 和扫描件，图片与扫描 PDF 使用多模态模型智能解析
+- **Markdown 编辑器** — 新增编辑器组件，支持工具栏快捷操作（加粗、斜体、代码、列表、链接）
+- **文本域列表组件** — 支持多行文本输入，适合编辑经历描述等长文本内容
+- **亮点字段优化** — 改用文本域组件，便于输入长文本亮点描述
+- **应用内更新** — 自动检测并安装新版本
+- **模型列表获取** — 支持手动刷新获取可用模型列表，快速选择模型
 
-Current platform support:
+</details>
 
-- Windows is supported today
-- macOS is planned next
+<details open>
+<summary><b>Bug 修复与优化</b></summary>
 
-## Why Desktop First
+- **窗口启动优化** — 应用启动时以最小尺寸居中显示，体验更佳
+- **设置保存优化** — AI 配置即使测试失败也会保存用户填入的信息
+- **API Key 管理** — 支持显示/隐藏切换，默认以密文展示保护隐私
+- **Exa 配置保存** — 修复 Exa Base URL 无法保存的问题
+- **模型获取优化** — 测试连接前自动保存配置，确保获取模型列表时使用最新的 API Key 和 Base URL
+- **Tauri 权限配置** — 补全 interview 面试功能和 read_secret_value 命令的权限
+- **面试功能修复** — 修复面试创建失败的问题（Tauri 命令权限缺失）
+- **导入功能重构** — 统一文件导入组件，新建简历和导入简历对话框共享导入逻辑，支持 JSON 直接解析和 Markdown AI 解析
+- **导入进度显示** — 导入简历时显示详细的五阶段进度（验证、提取、渲染、解析、保存）
 
-- No server setup is required for the main product workflow
-- Resume editing, imports, exports, and update checks happen in a native desktop app
-- Local configuration makes it easier to control AI providers and credentials yourself
-- The product loop is optimized for a single-user workspace with less browser friction
+</details>
 
-## Build From Source
+## 后续计划
 
-If you want to run RoleRover locally from source:
+以下是计划在后续版本中开发的功能：
 
-### Prerequisites
+- **macOS 支持** — 适配苹果生态系统，支持 Intel 和 Apple Silicon
+- **LinkedIn 证件照** — AI 生成专业证件照功能
+- **简历版本管理** — 支持简历历史版本对比与恢复
+
+> 💡 **欢迎贡献想法！** 如果你有功能建议或发现了 Bug，欢迎在 [GitHub Issues](https://github.com/jlifeng/JobPilot/issues) 中提出，或者直接提交 Pull Request。
+
+## 产品截图
+
+### 工作台与模版库
+
+| 工作台 | 模版库 |
+|:------:|:------:|
+| ![工作台](images/工作台.png) | ![模版库](images/模版库.png) |
+
+### 简历编辑与 AI 助手
+
+| 编辑简历 | AI 助手 |
+|:--------:|:------:|
+| ![编辑简历](images/编辑简历.png) | ![AI助手](images/AI助手.png) |
+
+### AI 配置与导入
+
+| AI 助手配置 | AI 解析 Markdown | AI 解析 PDF |
+|:----------:|:----------------:|:----------:|
+| ![AI助手配置](images/AI助手配置.png) | ![AI解析markdown文件](images/AI解析markdown文件.png) | ![AI解析PDF文件](images/AI解析PDF文件.png) |
+
+### 导出与面试
+
+| 多项导出 | 模拟面试 | 面试报告 |
+|:--------:|:--------:|:--------:|
+| ![多项导出](images/多项导出.png) | ![模拟面试](images/模拟面试.png) | ![面试报告](images/面试报告.png) |
+
+## 下载安装
+
+1. 前往 [GitHub Releases](https://github.com/jlifeng/JobPilot/releases) 下载最新版本
+2. 下载 Windows 安装包（`.exe` 或 `.msi`）
+3. 双击安装，启动应用
+
+> 目前支持 Windows 平台，macOS 版本计划开发中。
+
+## 从源码构建
+
+### 环境要求
 
 - Node.js 20+
 - pnpm 9+
-- For `pnpm run dev:tauri` or release builds on Windows: Rust stable and the Tauri 2 Windows toolchain
+- Rust stable（构建桌面应用时需要）
+- Tauri 2 Windows 工具链
 
-### Install
+### 安装依赖
 
 ```bash
-git clone https://github.com/lingshichat/RoleRover.git
-cd RoleRover
+git clone https://github.com/jlifeng/JobPilot.git
+cd JobPilot
 pnpm install
 ```
 
-### Run
+### 开发模式
 
 ```bash
+# 启动 Tauri 桌面应用开发模式
 pnpm run dev:tauri
+
+# 启动 Web 版本开发模式
+pnpm run dev:web
 ```
 
-This starts the desktop renderer and the native Tauri shell together.
+### 构建发布
 
-## FAQ
+```bash
+# 构建 Tauri 桌面应用
+pnpm run build:tauri
+```
 
-<details>
-<summary><b>Where are AI provider settings and keys stored?</b></summary>
+## 技术栈
 
-In the supported desktop runtime, provider settings stay in the local client
-workspace and secrets are designed to prefer OS keyring-backed storage when
-available.
+| 类别 | 技术 |
+|------|------|
+| 框架 | Next.js 16、React 19 |
+| 桌面应用 | Tauri 2 |
+| 语言 | TypeScript 5 |
+| 样式 | Tailwind CSS 4 |
+| UI 组件 | shadcn/ui |
+| 状态管理 | Zustand |
+| AI SDK | Vercel AI SDK |
 
-</details>
+## 开源协议
 
-<details>
-<summary><b>Why do some files or screenshots still mention JadeAI?</b></summary>
+本项目基于 [Apache License Version 2.0](LICENSE) 开源。
 
-RoleRover is a maintained derivative of
-[JadeAI](https://github.com/twwch/JadeAI). Some historical names remain in
-older assets, shared code, or attribution files while the desktop product
-continues to evolve under the RoleRover name.
+## 致谢
 
-</details>
+本项目基于以下开源项目二次开发：
+- [JadeAI](https://github.com/LingyiChen-AI/JadeAI) — 感谢原作者的开源贡献
+- [RoleRover](https://github.com/lingshichat/RoleRover) — 感谢原作者的持续维护
 
-## License And Attribution
-
-RoleRover is distributed under the [Apache License 2.0](./LICENSE).
-
-This repository is a derivative work based on JadeAI. When redistributing or
-extending this project, keep the license text, upstream attribution, and the
-derivative-work notice in [NOTICE](./NOTICE).
+---

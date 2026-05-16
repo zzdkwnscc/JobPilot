@@ -193,7 +193,7 @@ export function TranslateDialog({ open, onOpenChange, resumeId }: TranslateDialo
       <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
-            <Languages className="h-5 w-5 text-pink-500" />
+            <Languages className="h-5 w-5 text-primary" />
             {t('title')}
           </DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>
@@ -222,21 +222,21 @@ export function TranslateDialog({ open, onOpenChange, resumeId }: TranslateDialo
                       className={cn(
                         'relative flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all cursor-pointer',
                         active
-                          ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/30 dark:border-pink-400'
+                          ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-800/70'
                           : 'border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800/50 dark:hover:border-zinc-600'
                       )}
                     >
                       <span className={cn(
                         'flex h-8 w-8 items-center justify-center rounded-lg transition-colors',
                         active
-                          ? 'bg-pink-500 text-white'
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400'
                       )}>
                         {opt.icon}
                       </span>
                       <span className={cn(
                         'text-sm font-semibold',
-                        active ? 'text-pink-600 dark:text-pink-400' : 'text-zinc-700 dark:text-zinc-300'
+                        active ? 'text-zinc-600 dark:text-zinc-400' : 'text-zinc-700 dark:text-zinc-300'
                       )}>
                         {opt.label}
                       </span>
@@ -253,7 +253,7 @@ export function TranslateDialog({ open, onOpenChange, resumeId }: TranslateDialo
           {/* Translating State */}
           {state === 'translating' && (
             <div className="flex flex-col items-center justify-center py-6 text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-pink-500 mb-3" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
                 {progress.total > 0
                   ? t('progress', { completed: progress.completed, total: progress.total })
@@ -263,7 +263,7 @@ export function TranslateDialog({ open, onOpenChange, resumeId }: TranslateDialo
                 <div className="w-full max-w-xs">
                   <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-pink-500 rounded-full transition-all duration-300 ease-out"
+                      className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
@@ -308,7 +308,7 @@ export function TranslateDialog({ open, onOpenChange, resumeId }: TranslateDialo
               </Button>
               <Button
                 onClick={handleTranslate}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('translateAll')}
               </Button>
@@ -325,7 +325,7 @@ export function TranslateDialog({ open, onOpenChange, resumeId }: TranslateDialo
               </Button>
               <Button
                 onClick={handleTranslate}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('translateAll')}
               </Button>

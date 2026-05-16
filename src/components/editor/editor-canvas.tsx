@@ -105,7 +105,7 @@ export function EditorCanvas({
 
             <DragOverlay>
               {activeSection && (
-                <div className="rounded-lg border-2 border-pink-300 bg-white dark:bg-zinc-800 p-4 opacity-80 shadow-xl">
+                <div className="rounded-lg border-2 border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 p-4 opacity-80 shadow-xl">
                   <p className="font-medium text-zinc-700 dark:text-zinc-200">{activeSection.title}</p>
                 </div>
               )}

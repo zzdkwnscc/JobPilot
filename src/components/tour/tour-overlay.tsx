@@ -166,7 +166,7 @@ export function TourOverlay({ tourId, steps }: TourOverlayProps) {
       {/* Highlight ring around target */}
       {rect && (
         <div
-          className="fixed z-[9999] rounded-lg ring-2 ring-pink-500 ring-offset-2 transition-all duration-300 pointer-events-none"
+          className="fixed z-[9999] rounded-lg ring-2 ring-primary ring-offset-2 transition-all duration-300 pointer-events-none"
           style={{
             top: rect.top - PADDING,
             left: rect.left - PADDING,
@@ -216,7 +216,7 @@ export function TourOverlay({ tourId, steps }: TourOverlayProps) {
               <Button
                 size="sm"
                 onClick={nextStep}
-                className="h-7 cursor-pointer gap-1 bg-pink-500 px-3 text-xs text-white hover:bg-pink-600"
+                className="h-7 cursor-pointer gap-1 bg-primary px-3 text-xs text-primary-foreground hover:bg-primary/90"
               >
                 {isLast ? t('finish') : t('next')}
                 {!isLast && <ChevronRight className="h-3 w-3" />}

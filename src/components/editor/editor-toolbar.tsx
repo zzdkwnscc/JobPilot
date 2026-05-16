@@ -62,7 +62,7 @@ export function EditorToolbar() {
             variant="ghost"
             size="sm"
             onClick={() => save()}
-            className="cursor-pointer gap-1 text-pink-600 hover:text-pink-700 hover:bg-pink-50"
+            className="cursor-pointer gap-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
           >
             <Save className="h-3.5 w-3.5" />
             <span className="text-xs">{t('save')}</span>

@@ -113,10 +113,13 @@ export function InterviewSetupForm({
         params: { sessionId: detail.id },
       });
     } catch (caughtError) {
+      console.error("Failed to create interview session:", caughtError);
       setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : t("interview.setup.createError"),
+        typeof caughtError === "string"
+          ? caughtError
+          : caughtError instanceof Error
+            ? caughtError.message
+            : t("interview.setup.createError"),
       );
     } finally {
       setIsCreating(false);
@@ -200,7 +203,7 @@ export function InterviewSetupForm({
                     className={`rounded-2xl border p-4 text-left transition-colors ${
                       selected
                         ? `${getInterviewerColorClass(interviewer.type)} shadow-sm`
-                        : "border-zinc-200 bg-white hover:border-pink-200 hover:bg-pink-50/50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-pink-900 dark:hover:bg-pink-950/20"
+                        : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50/50 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -235,7 +238,7 @@ export function InterviewSetupForm({
         <CardContent className="space-y-5">
           <div className="rounded-2xl bg-zinc-50 px-4 py-3 dark:bg-zinc-900/70">
             <div className="flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-              <BriefcaseBusiness className="h-4 w-4 text-pink-500" />
+              <BriefcaseBusiness className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
               {deriveJobTitle(jobTitle, jobDescription)}
             </div>
             <p className="mt-2 text-xs leading-6 text-zinc-500 dark:text-zinc-400">
@@ -247,7 +250,7 @@ export function InterviewSetupForm({
 
           <div className="rounded-2xl bg-zinc-50 px-4 py-3 dark:bg-zinc-900/70">
             <div className="flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-              <FileText className="h-4 w-4 text-pink-500" />
+              <FileText className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
               {selectedResumeId === "none"
                 ? t("interview.setup.resumeOptional")
                 : resumes.find((resume) => resume.id === selectedResumeId)?.title ??
@@ -321,7 +324,7 @@ export function InterviewSetupForm({
           </div>
 
           {error ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
               {error}
             </div>
           ) : null}

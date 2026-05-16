@@ -40,7 +40,7 @@ export function ReasoningBlock({
         ) : (
           <ChevronRight className="h-3.5 w-3.5 shrink-0" />
         )}
-        <Brain className="h-3.5 w-3.5 shrink-0 text-pink-500" />
+        <Brain className="h-3.5 w-3.5 shrink-0 text-zinc-900 dark:text-zinc-100" />
         <span className="shrink-0 font-medium text-zinc-700 dark:text-zinc-100">{label}</span>
         {!open && preview ? (
           <span className="min-w-0 truncate text-zinc-400 dark:text-zinc-500">{preview}</span>

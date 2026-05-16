@@ -1,21 +1,38 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, X, Loader2, FileIcon } from "lucide-react";
+import { Upload, X, Loader2 } from "lucide-react";
 import {
   importDocument,
-  parseMarkdownResume,
-  parsePdfResume,
   type DesktopDocumentDetail,
 } from "../../lib/desktop-api";
+import {
+  importResumeFromFile,
+  ResumeImportError,
+  detectResumeImportFileType,
+  resolveImportLanguage,
+  MAX_RESUME_IMPORT_FILE_SIZE_BYTES,
+  type ResumeImportProgress,
+  type ResumeImportStage,
+} from "../../lib/resume-import";
+import { getDesktopAiRuntimeConfig } from "../editor/ai-dialog-helpers";
+import {
+  FileUploadArea,
+  useFileValidation,
+  ImportProgressDisplay,
+  ImportStageIndicators,
+} from "./file-upload-area";
+import {
+  IMPORT_STAGE_SEQUENCE,
+  IMPORT_STAGE_PROGRESS_RANGES,
+  calculateImportProgressPercent,
+} from "./import-progress-stages";
 
 interface ImportJsonDialogProps {
   open: boolean;
   onClose: () => void;
   onImport?: (document?: DesktopDocumentDetail | null) => void | Promise<void>;
 }
-
-type FileType = "json" | "markdown" | "pdf";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -25,58 +42,65 @@ function readString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value : undefined;
 }
 
-function getFileType(file: File): FileType {
-  const name = file.name.toLowerCase();
-  if (name.endsWith(".json")) return "json";
-  if (name.endsWith(".md") || name.endsWith(".markdown")) return "markdown";
-  if (name.endsWith(".pdf")) return "pdf";
-  return "json";
-}
-
-function isSupportedFile(file: File): boolean {
-  const name = file.name.toLowerCase();
-  return (
-    name.endsWith(".json") ||
-    name.endsWith(".md") ||
-    name.endsWith(".markdown") ||
-    name.endsWith(".pdf")
-  );
-}
-
 export function ImportJsonDialog({
   open,
   onClose,
   onImport,
 }: ImportJsonDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [file, setFile] = useState<File | null>(null);
-  const [fileType, setFileType] = useState<FileType>("json");
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [importProgress, setImportProgress] = useState<ResumeImportProgress | null>(null);
+  const [resumeImportVisionModel, setResumeImportVisionModel] = useState("");
+  const [isLoadingImportConfig, setIsLoadingImportConfig] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { validateFile } = useFileValidation();
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setIsLoadingImportConfig(true);
+    void (async () => {
+      try {
+        const runtimeConfig = await getDesktopAiRuntimeConfig();
+        setResumeImportVisionModel(runtimeConfig.resumeImportVisionModel || "");
+      } catch {
+        setResumeImportVisionModel("");
+      } finally {
+        setIsLoadingImportConfig(false);
+      }
+    })();
+  }, [open]);
 
   const resetAndClose = () => {
     setFile(null);
-    setFileType("json");
     setError("");
     setIsDragging(false);
+    setImportProgress(null);
     onClose();
   };
 
   const handleFileSelect = (selectedFile: File) => {
     setError("");
-    if (!isSupportedFile(selectedFile)) {
-      setError(t("importInvalidFormat"));
+    setImportProgress(null);
+    const validation = validateFile(selectedFile);
+    if (!validation.isValid) {
+      setError(validation.error || "Invalid file");
       return;
     }
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      setError(t("importFileTooLarge"));
-      return;
-    }
-    setFileType(getFileType(selectedFile));
     setFile(selectedFile);
+  };
+
+  const handleFileClear = () => {
+    setFile(null);
+    setError("");
+    setImportProgress(null);
   };
 
   const handleImport = async () => {
@@ -86,27 +110,49 @@ export function ImportJsonDialog({
     setError("");
 
     try {
+      const fileType = detectResumeImportFileType(file);
       let document: DesktopDocumentDetail;
 
       if (fileType === "json") {
         document = await handleJsonImport(file);
-      } else if (fileType === "markdown") {
-        document = await handleMarkdownImport(file);
-      } else if (fileType === "pdf") {
-        document = await handlePdfImport(file);
       } else {
-        throw new Error(t("importInvalidFormat"));
+        // Use unified import for PDF, Markdown, and images
+        document = await handleUnifiedImport(file);
       }
 
       await onImport?.(document);
       resetAndClose();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("importError");
+      let message: string;
+      if (err instanceof ResumeImportError) {
+        if (err.code === "vision_model_required_for_image") {
+          message = t("dashboard.upload.imageNeedsVisionModel");
+        } else if (err.code === "vision_model_required_for_scanned_pdf") {
+          message = t("dashboard.upload.scannedPdfNeedsVisionModel");
+        } else {
+          message = err.message;
+        }
+      } else if (err instanceof Error) {
+        message = err.message;
+      } else {
+        message = t("import.error");
+      }
       console.error("[import-json-dialog] Import failed:", err);
       setError(message);
     } finally {
       setIsImporting(false);
+      setImportProgress(null);
     }
+  };
+
+  const handleUnifiedImport = async (
+    importFile: File
+  ): Promise<DesktopDocumentDetail> => {
+    return importResumeFromFile({
+      file: importFile,
+      language: resolveImportLanguage(i18n.language),
+      onProgress: setImportProgress,
+    });
   };
 
   const handleJsonImport = async (
@@ -116,18 +162,18 @@ export function ImportJsonDialog({
     const data = JSON.parse(text) as unknown;
 
     if (!isRecord(data)) {
-      throw new Error(t("importInvalidFormat"));
+      throw new Error(t("import.invalidFormat"));
     }
 
     const metadata = isRecord(data.metadata) ? data.metadata : {};
     const rawSections = Array.isArray(data.sections) ? data.sections : null;
     if (!rawSections) {
-      throw new Error(t("importInvalidFormat"));
+      throw new Error(t("import.invalidFormat"));
     }
 
     const sections = rawSections.map((section, index) => {
       if (!isRecord(section)) {
-        throw new Error(t("importInvalidFormat"));
+        throw new Error(t("import.invalidFormat"));
       }
 
       return {
@@ -171,150 +217,119 @@ export function ImportJsonDialog({
     });
   };
 
-  const handleMarkdownImport = async (
-    mdFile: File
-  ): Promise<DesktopDocumentDetail> => {
-    const content = await mdFile.text();
+  // Vision model check for images
+  const fileType = file ? detectResumeImportFileType(file) : null;
+  const hasVisionModel = resumeImportVisionModel.trim().length > 0;
+  const isImageFile = fileType === "image";
+  const uploadBlockedByMissingVisionModel =
+    isImageFile && !hasVisionModel && !isLoadingImportConfig;
 
-    const parsed = await parseMarkdownResume({
-      content,
-      locale: "zh",
-    });
+  const progressPercent = calculateImportProgressPercent(importProgress);
 
-    const sections = parsed.sections.map((section, index) => ({
-      sectionType: section.sectionType,
-      title: section.title,
-      sortOrder: index,
-      visible: true,
-      content: section.content,
-    }));
-
-    return importDocument({
-      title: parsed.title,
-      template: parsed.template,
-      language: parsed.language,
-      sections,
-    });
-  };
-
-  const handlePdfImport = async (
-    pdfFile: File
-  ): Promise<DesktopDocumentDetail> => {
-    const arrayBuffer = await pdfFile.arrayBuffer();
-    const content = Array.from(new Uint8Array(arrayBuffer));
-
-    const parsed = await parsePdfResume({
-      content,
-      locale: "zh",
-    });
-
-    const sections = parsed.sections.map((section, index) => ({
-      sectionType: section.sectionType,
-      title: section.title,
-      sortOrder: index,
-      visible: true,
-      content: section.content,
-    }));
-
-    return importDocument({
-      title: parsed.title,
-      template: parsed.template,
-      language: parsed.language,
-      sections,
-    });
-  };
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      handleFileSelect(droppedFile);
-    }
-  }, []);
+  const currentStageLabel = importProgress
+    ? t(`dashboard.upload.progress.${importProgress.stage}`)
+    : "";
+  const currentStageDescription = importProgress
+    ? importProgress.stage === "extracting" || importProgress.stage === "rendering"
+      ? t("dashboard.upload.progress.pageProgress", {
+          completed: importProgress.completed,
+          total: importProgress.total,
+        })
+      : t(`dashboard.upload.progress.${importProgress.stage}Description`)
+    : "";
 
   if (!open) return null;
 
   return (
     <div className="dialog-backdrop" onClick={resetAndClose}>
-      <div className="dialog-content" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="dialog-content max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="dialog-header">
           <div className="flex items-center gap-2">
-            <Upload className="h-5 w-5 text-pink-500" />
-            <h2 className="dialog-title">{t("importTitle")}</h2>
+            <Upload className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
+            <h2 className="dialog-title">{t("import.title")}</h2>
           </div>
-          <button type="button" className="dialog-close" onClick={resetAndClose}>
+          <button
+            type="button"
+            className="dialog-close"
+            onClick={resetAndClose}
+            disabled={isImporting}
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="dialog-body">
+        <div className="dialog-body flex-1 overflow-y-auto">
           <p className="text-sm text-zinc-500 mb-4">
-            {t("importDescription")}
+            {t("import.description")}
           </p>
 
-          {/* Upload area */}
-          <div
-            className={`upload-area ${isDragging ? "upload-area--dragging" : ""} ${file ? "upload-area--has-file" : ""}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json,.md,.markdown,.pdf"
-              className="hidden"
-              onChange={(e) =>
-                e.target.files?.[0] && handleFileSelect(e.target.files[0])
-              }
-            />
-            {file ? (
-              <div className="upload-file-info">
-                {fileType === "json" ? (
-                  <FileText className="h-8 w-8 text-pink-500" />
-                ) : (
-                  <FileIcon className="h-8 w-8 text-emerald-500" />
-                )}
-                <span className="upload-file-name">{file.name}</span>
-                <span className="text-xs text-zinc-400">
-                  ({fileType.toUpperCase()})
-                </span>
-                <button
-                  type="button"
-                  className="upload-file-remove"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFile(null);
-                    setError("");
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <Upload className="h-12 w-12 text-zinc-400" />
-                <p className="upload-hint">{t("importSelectFile")}</p>
-                <p className="upload-subhint">{t("importDragHint")}</p>
-              </>
-            )}
-          </div>
+          {isImporting && importProgress ? (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      {t("dashboard.upload.progress.title")}
+                    </p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      {t("dashboard.upload.progress.description")}
+                    </p>
+                  </div>
+                  <Loader2 className="h-5 w-5 shrink-0 animate-spin text-zinc-900 dark:text-zinc-100" />
+                </div>
 
-          {error && <p className="form-error mt-3">{error}</p>}
+                <ImportProgressDisplay
+                  fileName={importProgress.fileName}
+                  stage={importProgress.stage}
+                  completed={importProgress.completed}
+                  total={importProgress.total}
+                  progressPercent={progressPercent}
+                />
+              </div>
+
+              <ImportStageIndicators currentStage={importProgress.stage} />
+            </div>
+          ) : (
+            <>
+              {/* Upload area */}
+              <FileUploadArea
+                file={file}
+                onFileSelect={handleFileSelect}
+                onFileClear={handleFileClear}
+                isDragging={isDragging}
+                onDragStateChange={setIsDragging}
+                isDisabled={isImporting}
+              />
+
+              {/* Vision model hint for images */}
+              {file && fileType === "image" && (
+                <div className="mt-3 space-y-2">
+                  <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
+                    {isLoadingImportConfig
+                      ? t("dashboard.upload.loadingImportConfig")
+                      : hasVisionModel
+                        ? t("dashboard.upload.imageWillUseVisionModel", {
+                            model: resumeImportVisionModel,
+                          })
+                        : t("dashboard.upload.imageNeedsVisionModel")}
+                  </div>
+
+                  {!hasVisionModel && !isLoadingImportConfig && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      {t("dashboard.upload.configureVisionModelHint")}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {error && <p className="form-error mt-3">{error}</p>}
+            </>
+          )}
         </div>
 
         {/* Footer */}
@@ -324,10 +339,10 @@ export function ImportJsonDialog({
           </Button>
           <Button
             onClick={() => void handleImport()}
-            disabled={!file || isImporting}
+            disabled={!file || isImporting || uploadBlockedByMissingVisionModel}
           >
             {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isImporting ? t("importImporting") : t("importImportBtn")}
+            {isImporting ? t("import.importing") : t("import.importBtn")}
           </Button>
         </div>
       </div>

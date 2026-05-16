@@ -48,7 +48,7 @@ function InterviewLobbyRoute() {
       {sessions.length === 0 ? (
         <Card className="rounded-3xl border-dashed border-zinc-300 shadow-none dark:border-zinc-700">
           <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-pink-50 text-pink-500 dark:bg-pink-950/20">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-50 text-zinc-500 dark:bg-zinc-800">
               <Sparkles className="h-6 w-6" />
             </div>
             <div className="space-y-2">

@@ -343,7 +343,7 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
       >
         <div className="dialog-header border-b border-zinc-100">
           <div className="flex items-center gap-2">
-            <FileDown className="h-5 w-5 text-pink-500" />
+            <FileDown className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
             <div>
               <h2 className="dialog-title">
                 {translateExport("title", "Export Resume")}
@@ -381,18 +381,18 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
                       onClick={() => setSelectedFormat(option.value)}
                       className={`cursor-pointer flex min-h-[128px] flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-all duration-150 ${
                         isSelected
-                          ? "border-pink-500 bg-pink-50"
-                          : "border-zinc-200 bg-white hover:border-pink-300 hover:bg-pink-50/50"
+                          ? "border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-800"
+                          : "border-zinc-200 bg-white border-zinc-300 hover:bg-zinc-50/50"
                       }`}
                     >
                       <Icon
                         className={`h-6 w-6 ${
-                          isSelected ? "text-pink-500" : "text-zinc-500"
+                          isSelected ? "text-zinc-900 dark:text-zinc-100" : "text-zinc-500"
                         }`}
                       />
                       <span
                         className={`text-sm font-medium ${
-                          isSelected ? "text-pink-600" : "text-zinc-700"
+                          isSelected ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-700"
                         }`}
                         title={
                           option.tooltipKey
@@ -426,7 +426,7 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
 
           {state === "exporting" ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Loader2 className="mb-3 h-8 w-8 animate-spin text-pink-500" />
+              <Loader2 className="mb-3 h-8 w-8 animate-spin text-zinc-900 dark:text-zinc-100" />
               <p className="text-sm font-medium text-zinc-700">
                 {translateExport("exporting", "Exporting...")}
               </p>

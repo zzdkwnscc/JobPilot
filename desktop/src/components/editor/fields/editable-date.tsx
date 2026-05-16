@@ -125,7 +125,7 @@ export function EditableDate({ label, value, onChange }: EditableDateProps) {
                     size="sm"
                     className={`h-8 cursor-pointer text-xs ${
                       isSelected
-                        ? "bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:hover:bg-pink-900/50"
+                        ? "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
                         : ""
                     }`}
                     onClick={() => handleMonthClick(m)}

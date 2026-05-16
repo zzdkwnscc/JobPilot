@@ -49,7 +49,7 @@ export function HeroSection() {
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Button
             asChild
-            className="h-12 w-full cursor-pointer rounded-xl bg-pink-500 px-8 text-base font-semibold text-white shadow-lg shadow-pink-500/25 transition-all hover:-translate-y-0.5 hover:bg-pink-600 hover:shadow-xl hover:shadow-pink-500/30 sm:h-11 sm:w-auto sm:px-6 sm:text-sm"
+            className="h-12 w-full cursor-pointer rounded-xl bg-primary px-8 text-base font-semibold text-primary-foreground shadow-lg shadow-pink-500/25 transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-xl hover:shadow-pink-500/30 sm:h-11 sm:w-auto sm:px-6 sm:text-sm"
           >
             <Link href="/dashboard">{t('cta')}</Link>
           </Button>

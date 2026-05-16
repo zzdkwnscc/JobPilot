@@ -41,7 +41,7 @@ export default function PreviewPage({ params }: { params: Promise<{ id: string }
           size="sm"
           disabled={isExporting}
           onClick={() => exportPdf(id, resume.title)}
-          className="cursor-pointer gap-1 bg-pink-500 hover:bg-pink-600"
+          className="cursor-pointer gap-1 bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Download className="h-4 w-4" />
           {isExporting ? t('pdf.exporting') : t('editor.toolbar.export')}

@@ -62,7 +62,7 @@ export function LandingHeader() {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.svg" alt="RoleRover" width={140} height={36} priority />
+          <Image src="/logo.svg" alt="JobPilot" width={140} height={36} priority />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
@@ -99,7 +99,7 @@ export function LandingHeader() {
           <LocaleSwitcher />
           <Button
             asChild
-            className="hidden cursor-pointer bg-pink-500 text-white hover:bg-pink-600 sm:inline-flex"
+            className="hidden cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 sm:inline-flex"
           >
             <Link href="/dashboard">{ctaLabel}</Link>
           </Button>
@@ -129,7 +129,7 @@ export function LandingHeader() {
                 </a>
                 <Button
                   asChild
-                  className="mt-4 cursor-pointer bg-pink-500 text-white hover:bg-pink-600"
+                  className="mt-4 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   <Link href="/dashboard">{ctaLabel}</Link>
                 </Button>

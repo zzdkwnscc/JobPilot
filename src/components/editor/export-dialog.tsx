@@ -108,7 +108,7 @@ export function ExportDialog({ open, onOpenChange, resumeId }: ExportDialogProps
       <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
-            <FileDown className="h-5 w-5 text-pink-500" />
+            <FileDown className="h-5 w-5 text-primary" />
             {t('title')}
           </DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>
@@ -125,14 +125,14 @@ export function ExportDialog({ open, onOpenChange, resumeId }: ExportDialogProps
                     <button
                       key={format.value}
                       onClick={() => setSelectedFormat(format.value)}
-                      className={`cursor-pointer flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-all duration-150 hover:border-pink-300 hover:bg-pink-50/50 dark:hover:border-pink-700 dark:hover:bg-pink-950/20 ${
+                      className={`cursor-pointer flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-all duration-150 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 ${
                         isSelected
-                          ? 'border-pink-500 bg-pink-50 dark:border-pink-500 dark:bg-pink-950/30'
+                          ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-800/30'
                           : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900'
                       }`}
                     >
-                      <Icon className={`h-6 w-6 ${isSelected ? 'text-pink-500' : 'text-zinc-500 dark:text-zinc-400'}`} />
-                      <span className={`text-sm font-medium ${isSelected ? 'text-pink-600 dark:text-pink-400' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                      <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-zinc-500 dark:text-zinc-400'}`} />
+                      <span className={`text-sm font-medium ${isSelected ? 'text-zinc-600 dark:text-zinc-400' : 'text-zinc-700 dark:text-zinc-300'}`}>
                         {t(format.labelKey)}
                       </span>
                       <span className="text-xs text-zinc-400 dark:text-zinc-500">
@@ -158,7 +158,7 @@ export function ExportDialog({ open, onOpenChange, resumeId }: ExportDialogProps
 
           {state === 'exporting' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-pink-500 mb-3" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {t('exporting')}
               </p>
@@ -197,7 +197,7 @@ export function ExportDialog({ open, onOpenChange, resumeId }: ExportDialogProps
               <Button
                 onClick={handleExport}
                 disabled={isLoading}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('export')}
               </Button>

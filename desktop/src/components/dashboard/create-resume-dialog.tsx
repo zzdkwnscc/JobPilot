@@ -3,19 +3,31 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TEMPLATES } from "@/lib/constants";
-import { Upload, FileText, X, Loader2, Check } from "lucide-react";
+import { FileText, X, Loader2, Check } from "lucide-react";
 import { TemplateThumbnail } from "@/components/dashboard/template-thumbnail";
 import { templateLabelsMap } from "../../lib/template-labels";
 import type { DesktopDocumentDetail } from "../../lib/desktop-api";
 import { getDesktopAiRuntimeConfig } from "../editor/ai-dialog-helpers";
 import {
   importResumeFromFile,
+  detectResumeImportFileType,
+  resolveImportLanguage,
   MAX_RESUME_IMPORT_FILE_SIZE_BYTES,
+  RESUME_IMPORT_ACCEPTED_EXTENSIONS,
   ResumeImportError,
   type ResumeImportProgress,
   type ResumeImportStage,
-  resolveResumeImportMimeType,
 } from "../../lib/resume-import";
+import {
+  FileUploadArea,
+  useFileValidation,
+  ImportProgressDisplay,
+  ImportStageIndicators,
+} from "./file-upload-area";
+import {
+  IMPORT_STAGE_SEQUENCE,
+  calculateImportProgressPercent,
+} from "./import-progress-stages";
 
 interface CreateResumeDialogProps {
   open: boolean;
@@ -29,57 +41,6 @@ interface CreateResumeDialogProps {
 }
 
 type Tab = "template" | "upload";
-
-const ACCEPTED_EXTENSIONS = ".pdf,.png,.jpg,.jpeg,.webp";
-
-const IMPORT_STAGE_SEQUENCE: ResumeImportStage[] = [
-  "validating",
-  "extracting",
-  "rendering",
-  "parsing",
-  "saving",
-];
-
-const IMPORT_STAGE_PROGRESS_RANGES: Record<
-  ResumeImportStage,
-  { start: number; end: number }
-> = {
-  validating: { start: 0, end: 12 },
-  extracting: { start: 12, end: 44 },
-  rendering: { start: 44, end: 72 },
-  parsing: { start: 72, end: 90 },
-  saving: { start: 90, end: 100 },
-};
-
-function calculateImportProgressPercent(progress: ResumeImportProgress | null): number {
-  if (!progress) {
-    return 0;
-  }
-
-  const range = IMPORT_STAGE_PROGRESS_RANGES[progress.stage];
-  const total = progress.total > 0 ? progress.total : 1;
-  const ratio = Math.max(0, Math.min(progress.completed / total, 1));
-
-  return Math.round(range.start + (range.end - range.start) * ratio);
-}
-
-function getImportStageStatus(
-  currentStage: ResumeImportStage,
-  stage: ResumeImportStage,
-): "completed" | "current" | "pending" {
-  const currentIndex = IMPORT_STAGE_SEQUENCE.indexOf(currentStage);
-  const stageIndex = IMPORT_STAGE_SEQUENCE.indexOf(stage);
-
-  if (stageIndex < currentIndex) {
-    return "completed";
-  }
-
-  if (stageIndex === currentIndex) {
-    return "current";
-  }
-
-  return "pending";
-}
 
 function normalizeCreateErrorMessage(
   error: unknown,
@@ -137,7 +98,8 @@ export function CreateResumeDialog({
   const [importProgress, setImportProgress] = useState<ResumeImportProgress | null>(null);
   const [resumeImportVisionModel, setResumeImportVisionModel] = useState("");
   const [isLoadingImportConfig, setIsLoadingImportConfig] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { validateFile } = useFileValidation();
 
   useEffect(() => {
     if (!open) {
@@ -190,15 +152,18 @@ export function CreateResumeDialog({
   const handleFileSelect = (selectedFile: File) => {
     setParseError("");
     setImportProgress(null);
-    if (!resolveResumeImportMimeType(selectedFile)) {
-      setParseError(t("dashboardUploadInvalidType"));
-      return;
-    }
-    if (selectedFile.size > MAX_RESUME_IMPORT_FILE_SIZE_BYTES) {
-      setParseError(t("dashboardUploadFileTooLarge"));
+    const validation = validateFile(selectedFile);
+    if (!validation.isValid) {
+      setParseError(validation.error || "Invalid file");
       return;
     }
     setFile(selectedFile);
+  };
+
+  const handleFileClear = () => {
+    setFile(null);
+    setParseError("");
+    setImportProgress(null);
   };
 
   const handleUploadParse = async () => {
@@ -210,7 +175,7 @@ export function CreateResumeDialog({
       const document = await importResumeFromFile({
         file,
         template,
-        language: i18n.language.toLowerCase().startsWith("zh") ? "zh" : "en",
+        language: resolveImportLanguage(i18n.language),
         onProgress: setImportProgress,
       });
 
@@ -233,32 +198,14 @@ export function CreateResumeDialog({
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      handleFileSelect(droppedFile);
-    }
-  };
-
-  const selectedMimeType = file ? resolveResumeImportMimeType(file) : null;
+  // Vision model check
+  const fileType = file ? detectResumeImportFileType(file) : null;
   const hasVisionModel = resumeImportVisionModel.trim().length > 0;
-  const isImageResume =
-    selectedMimeType !== null && selectedMimeType !== "application/pdf";
+  const isImageFile = fileType === "image";
   const uploadBlockedByMissingVisionModel =
-    isImageResume && !hasVisionModel && !isLoadingImportConfig;
-  const importProgressPercent = calculateImportProgressPercent(importProgress);
+    isImageFile && !hasVisionModel && !isLoadingImportConfig;
+
+  const progressPercent = calculateImportProgressPercent(importProgress);
 
   const currentStageLabel = importProgress
     ? t(`dashboard.upload.progress.${importProgress.stage}`)
@@ -310,7 +257,7 @@ export function CreateResumeDialog({
             onClick={() => setTab("upload")}
             disabled={isCreating || isParsing}
           >
-            <Upload className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             {t("dashboardUploadFromFile")}
           </button>
         </div>
@@ -341,7 +288,7 @@ export function CreateResumeDialog({
                         type="button"
                         className={`relative flex flex-col items-center overflow-hidden rounded-lg border-2 p-2 transition-all ${
                           template === tId
-                            ? "border-pink-500 bg-pink-50 dark:bg-pink-950/20"
+                            ? "border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-800"
                             : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600"
                         }`}
                         onClick={() => setTemplate(tId)}
@@ -353,7 +300,7 @@ export function CreateResumeDialog({
                           {t(templateLabelsMap[tId] || "templateClassic")}
                         </span>
                         {template === tId && (
-                          <div className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-500 text-white">
+                          <div className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-900 dark:bg-zinc-100 text-white">
                             <Check className="h-2.5 w-2.5" />
                           </div>
                         )}
@@ -366,7 +313,7 @@ export function CreateResumeDialog({
             </div>
           ) : (
             <div className="space-y-4">
-              {isParsing ? (
+              {isParsing && importProgress ? (
                 <div className="space-y-4">
                   <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60">
                     <div className="flex items-start justify-between gap-3">
@@ -378,126 +325,46 @@ export function CreateResumeDialog({
                           {t("dashboard.upload.progress.description")}
                         </p>
                       </div>
-                      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-pink-500" />
+                      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-zinc-900 dark:text-zinc-100" />
                     </div>
 
-                    <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950/80">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-pink-500" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                            {importProgress?.fileName || file?.name}
-                          </p>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            {currentStageDescription}
-                          </p>
-                        </div>
-                        <span className="text-xs font-medium text-zinc-400">
-                          {importProgressPercent}%
-                        </span>
-                      </div>
-
-                      <div className="mt-4 space-y-2">
-                        <div className="flex items-center justify-between gap-3 text-sm">
-                          <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                            {currentStageLabel}
-                          </span>
-                          {importProgress ? (
-                            <span className="text-xs text-zinc-400">
-                              {importProgress.completed}/{importProgress.total}
-                            </span>
-                          ) : null}
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                          <div
-                            className="h-full bg-pink-500 transition-all duration-300"
-                            style={{ width: `${importProgressPercent}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <ImportProgressDisplay
+                      fileName={importProgress.fileName}
+                      stage={importProgress.stage}
+                      completed={importProgress.completed}
+                      total={importProgress.total}
+                      progressPercent={progressPercent}
+                    />
                   </div>
 
-                  <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-                    {IMPORT_STAGE_SEQUENCE.map((stage) => {
-                      const stageStatus = importProgress
-                        ? getImportStageStatus(importProgress.stage, stage)
-                        : "pending";
-
-                      return (
-                        <div
-                          key={stage}
-                          className={`rounded-xl border px-3 py-3 text-sm transition-all ${
-                            stageStatus === "completed"
-                              ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
-                              : stageStatus === "current"
-                                ? "border-pink-200 bg-pink-50 text-pink-700 dark:border-pink-900/60 dark:bg-pink-950/30 dark:text-pink-300"
-                                : "border-zinc-200 bg-white text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-500"
-                          }`}
-                        >
-                          <div className="font-medium">
-                            {t(`dashboard.upload.progress.${stage}`)}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <ImportStageIndicators currentStage={importProgress.stage} />
                 </div>
               ) : (
                 <>
                   {/* File upload area */}
-                  <div
-                    className={`upload-area ${isDragging ? "upload-area--dragging" : ""} ${file ? "upload-area--has-file" : ""}`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept={ACCEPTED_EXTENSIONS}
-                      className="hidden"
-                      onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-                    />
-                    {file ? (
-                      <div className="upload-file-info">
-                        <FileText className="h-8 w-8 text-pink-500" />
-                        <span className="upload-file-name">{file.name}</span>
-                        <button
-                          type="button"
-                          className="upload-file-remove"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFile(null);
-                            setParseError("");
-                            setImportProgress(null);
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="h-12 w-12 text-zinc-400" />
-                        <p className="upload-hint">{t("dashboardUploadDropzone")}</p>
-                        <p className="upload-subhint">{t("dashboardUploadAcceptedTypes")}</p>
-                      </>
-                    )}
-                  </div>
+                  <FileUploadArea
+                    file={file}
+                    onFileSelect={handleFileSelect}
+                    onFileClear={handleFileClear}
+                    isDragging={isDragging}
+                    onDragStateChange={setIsDragging}
+                    isDisabled={isParsing}
+                    acceptedExtensions={RESUME_IMPORT_ACCEPTED_EXTENSIONS}
+                  />
 
-                  {file && (
+                  {/* Vision model hint */}
+                  {file && (fileType === "image" || fileType === "pdf") && (
                     <div className="space-y-2">
                       <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
                         {isLoadingImportConfig
                           ? t("dashboard.upload.loadingImportConfig")
-                          : selectedMimeType === "application/pdf"
-                          ? t("dashboard.upload.pdfVisionHint")
-                          : uploadBlockedByMissingVisionModel
-                            ? t("dashboard.upload.imageNeedsVisionModel")
-                            : t("dashboard.upload.imageWillUseVisionModel", {
-                                model: resumeImportVisionModel,
-                              })}
+                          : fileType === "pdf"
+                            ? t("dashboard.upload.pdfVisionHint")
+                            : uploadBlockedByMissingVisionModel
+                              ? t("dashboard.upload.imageNeedsVisionModel")
+                              : t("dashboard.upload.imageWillUseVisionModel", {
+                                  model: resumeImportVisionModel,
+                                })}
                       </div>
 
                       {uploadBlockedByMissingVisionModel ? (
@@ -555,7 +422,7 @@ export function CreateResumeDialog({
           ) : (
             <Button
               onClick={() => void handleUploadParse()}
-              disabled={!file || isParsing || (isImageResume && (isLoadingImportConfig || uploadBlockedByMissingVisionModel))}
+              disabled={!file || isParsing || uploadBlockedByMissingVisionModel}
             >
               {isParsing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isParsing ? t("dashboardUploadParsing") : t("dashboardUploadUploadAndParse")}

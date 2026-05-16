@@ -423,7 +423,7 @@ export function JdAnalysisDialog({
       >
         <div className="dialog-header">
           <div className="flex items-center gap-2">
-            <FileSearch className="h-5 w-5 text-pink-500" />
+            <FileSearch className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
             <h2 className="dialog-title">{t("jdAnalysisTitle")}</h2>
           </div>
           <button
@@ -450,7 +450,7 @@ export function JdAnalysisDialog({
                   value={jdText}
                   onChange={(event) => setJdText(event.target.value)}
                   placeholder={t("jdAnalysisPlaceholder")}
-                  className="h-48 w-full resize-none rounded-lg border border-zinc-200 p-3 focus:border-pink-500 focus:outline-none"
+                  className="h-48 w-full resize-none rounded-lg border border-zinc-200 p-3 border-zinc-300 dark:border-zinc-600 focus:border-zinc-500 focus:outline-none"
                 />
               </div>
             </>
@@ -563,7 +563,7 @@ export function JdAnalysisDialog({
                                 </div>
                               </div>
                               <div>
-                                <div className="text-xs font-medium text-pink-500">
+                                <div className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
                                   {t("jdAnalysisSuggested")}
                                 </div>
                                 <div className="font-medium text-zinc-900">

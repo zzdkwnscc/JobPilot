@@ -113,7 +113,7 @@ export function CoverLetterDialog({ open, onOpenChange, resumeId }: CoverLetterD
       <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-pink-500" />
+            <FileText className="h-5 w-5 text-primary" />
             {t('title')}
           </DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>
@@ -145,7 +145,7 @@ export function CoverLetterDialog({ open, onOpenChange, resumeId }: CoverLetterD
                     className={cn(
                       'flex-1 cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
                       tone === t_tone
-                        ? 'border-pink-500 bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300 dark:border-pink-700'
+                        ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                         : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600'
                     )}
                     onClick={() => setTone(t_tone)}
@@ -183,7 +183,7 @@ export function CoverLetterDialog({ open, onOpenChange, resumeId }: CoverLetterD
               <Button
                 onClick={handleGenerate}
                 disabled={isGenerating || !jobDescription.trim()}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {isGenerating ? (
                   <>

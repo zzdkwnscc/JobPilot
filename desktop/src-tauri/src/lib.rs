@@ -259,6 +259,15 @@ fn write_secret_value(
 }
 
 #[tauri::command]
+fn read_secret_value(
+    app: tauri::AppHandle,
+    key: String,
+) -> Result<Option<String>, String> {
+    let workspace_root = resolve_workspace_root(&app)?;
+    settings::read_secret_value(&workspace_root, &key)
+}
+
+#[tauri::command]
 fn start_ai_prompt_stream(
     app: tauri::AppHandle,
     input: ai::StartAiPromptStreamInput,
@@ -475,6 +484,7 @@ pub fn run() {
             update_ai_provider_settings,
             update_workspace_appearance_settings,
             write_secret_value,
+            read_secret_value,
             start_ai_prompt_stream,
             list_interview_sessions,
             get_interview_session,

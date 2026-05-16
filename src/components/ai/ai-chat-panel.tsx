@@ -272,7 +272,7 @@ export function AIChatContent({ resumeId, hideTitle }: AIChatContentProps) {
       <div className={`flex items-center ${hideTitle ? 'justify-end' : 'justify-between'} border-b px-4 py-3`}>
         {!hideTitle && (
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-pink-500" />
+            <Sparkles className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t('panelTitle')}</h3>
           </div>
         )}
@@ -365,9 +365,9 @@ export function AIChatContent({ resumeId, hideTitle }: AIChatContentProps) {
           {status === 'submitted' && (
             <div className="flex items-center gap-2 text-xs text-zinc-400 dark:text-zinc-500">
               <span className="flex gap-1">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-pink-400 [animation-delay:0ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-pink-400 [animation-delay:150ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-pink-400 [animation-delay:300ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:0ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:150ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:300ms]" />
               </span>
               {t('thinking')}
             </div>

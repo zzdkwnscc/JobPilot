@@ -75,7 +75,7 @@ export function SectionWrapper({ section, onUpdate, onRemove }: SectionWrapperPr
     <div
       className={`rounded-xl border bg-white shadow-sm transition-all duration-200 dark:bg-zinc-900 ${
         isSelected
-          ? "border-pink-300 shadow-pink-100/50 dark:shadow-pink-900/20"
+          ? "border-zinc-300 shadow-zinc-100/50 dark:shadow-zinc-700/20"
           : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600"
       } ${!section.visible ? "opacity-50" : ""}`}
       onClick={() => selectSection(section.id)}
@@ -100,7 +100,7 @@ export function SectionWrapper({ section, onUpdate, onRemove }: SectionWrapperPr
                   setIsRenaming(false);
                 }
               }}
-              className="h-6 w-32 rounded border border-pink-300 bg-transparent px-1 text-sm font-semibold text-zinc-700 outline-none dark:text-zinc-200"
+              className="h-6 w-32 rounded border border-zinc-300 dark:border-zinc-600 bg-transparent px-1 text-sm font-semibold text-zinc-700 outline-none dark:text-zinc-200"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
@@ -128,7 +128,7 @@ export function SectionWrapper({ section, onUpdate, onRemove }: SectionWrapperPr
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 cursor-pointer p-0 text-pink-400 hover:text-pink-600"
+            className="h-7 w-7 cursor-pointer p-0 text-zinc-700 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-200"
             title={t("editor.aiPolish")}
             onClick={(e) => {
               e.stopPropagation();

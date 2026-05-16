@@ -13,71 +13,18 @@ import {
 } from "../lib/desktop-api";
 import { useAppUpdateStore } from "../stores/app-update-store";
 
-function RoleRoverLogo() {
+function JobPilotLogo() {
   return (
-    <svg
-      className="h-8 w-auto"
-      viewBox="0 0 220 48"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient
-          id="rover-f"
-          x1="2"
-          y1="2"
-          x2="46"
-          y2="46"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop offset="0%" stopColor="#34D399" />
-          <stop offset="100%" stopColor="#059669" />
-        </linearGradient>
-      </defs>
-
-      <g>
-        <rect x="2" y="2" width="44" height="44" rx="11" fill="url(#rover-f)" />
-
-        <g
-          stroke="white"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        >
-          <path d="M11 12H24" />
-          <path d="M22 12V32" />
-          <path d="M22 32C22 35.5 20 38 16.5 38C14.5 38 13 37 13 36" />
-          <path d="M22 12H30C34.5 12 37 15 37 19C37 23 34.5 26 30 26H22" />
-          <path d="M29 26L39 38" />
-        </g>
-
-        <circle cx="41" cy="9" r="6" fill="#FCD34D" opacity="0.12" />
-        <path
-          d="M41 3.5L42.4 8L47 9.5L42.4 11L41 15.5L39.6 11L35 9.5L39.6 8Z"
-          fill="#FCD34D"
-        />
-        <path
-          d="M34.5 2L35.1 4L37 4.5L35.1 5L34.5 7L33.9 5L32 4.5L33.9 4Z"
-          fill="#FCD34D"
-          opacity="0.6"
-        />
-        <circle cx="45" cy="4" r="1.1" fill="#FCD34D" opacity="0.45" />
-      </g>
-
-      <text
-        x="54"
-        y="33"
-        fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif"
-        fontSize="24"
-        fontWeight="700"
-        fill="currentColor"
-        letterSpacing="-0.5"
-      >
-        Role<tspan className="fill-emerald-500">Rover</tspan>
-      </text>
-    </svg>
+    <div className="flex items-center gap-2">
+      <img
+        src="/icon.png"
+        alt="JobPilot"
+        className="h-8 w-8"
+      />
+      <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+        Job<span style={{ color: 'rgb(0, 127, 251)' }}>Pilot</span>
+      </span>
+    </div>
   );
 }
 
@@ -215,8 +162,8 @@ function RootLayout() {
         <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-zinc-800 dark:bg-background/95 dark:supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
             <div className="flex items-center gap-6">
-              <Link to="/dashboard" className="flex items-center" aria-label="RoleRover">
-                <RoleRoverLogo />
+              <Link to="/dashboard" className="flex items-center" aria-label="JobPilot">
+                <JobPilotLogo />
               </Link>
 
               <nav className="flex items-center gap-1">

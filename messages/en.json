@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "RoleRover",
+    "appName": "JobPilot",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -128,8 +128,8 @@
     }
   },
   "interview": {
-    "navLabel": "Interview",
-    "dashboardCta": "Interview Practice",
+    "navLabel": "Mock Interview",
+    "dashboardCta": "Mock Interview",
     "fallback": {
       "title": "Native desktop runtime required",
       "body": "Interview sessions, streamed follow-up questions, and report generation rely on native Tauri commands. Launch the desktop app to use this feature."
@@ -619,14 +619,17 @@
   },
   "import": {
     "title": "Import Resume",
-    "description": "Import a previously exported JSON file to replace current content",
+    "description": "Supports JSON (existing resume), Markdown (AI parsing), PDF & images (AI recognition) - auto-extracts resume content",
     "dashboardDescription": "Import a previously exported JSON file to create a new resume",
-    "selectFile": "Click to select or drag a .json file here",
-    "dragHint": "Supports .json files exported from RoleRover",
+    "selectFile": "Click to select or drag a file here",
+    "dragHint": "Supports .json, .md, .pdf, .png, .jpg, .webp formats",
     "importing": "Importing...",
     "success": "Import successful!",
     "error": "Import failed. Please try again.",
-    "invalidFormat": "Invalid file format. Please select a valid JSON file with sections data.",
+    "invalidFormat": "Invalid file format. Please select a supported file format.",
+    "fileTooLarge": "File size exceeds 10MB limit.",
+    "visionModelRequired": "Importing images requires a vision model. Please configure it in settings.",
+    "visionModelRequiredPdf": "This PDF is scanned and requires a vision model. Please configure it in settings.",
     "importBtn": "Import",
     "cancel": "Cancel"
   },
@@ -677,7 +680,7 @@
     "preview": "Preview",
     "useTemplate": "Use This Template",
     "creating": "Creating...",
-    "nav": "Templates"
+    "nav": "Template Gallery"
   },
   "tour": {
     "next": "Next",
@@ -736,7 +739,7 @@
       "features": "Features",
       "templates": "Templates",
       "getStarted": "Get Started",
-      "dashboard": "Dashboard"
+      "dashboard": "Workspace"
     },
     "hero": {
       "title": "Build Your Perfect Resume with AI",
@@ -838,7 +841,7 @@
         "terms": "Terms of Service",
         "cookies": "Cookie Policy"
       },
-      "copyright": "© {year} RoleRover. All rights reserved."
+      "copyright": "© {year} JobPilot. All rights reserved."
     }
   },
   "linkedinPhoto": {
@@ -886,7 +889,7 @@
     "errorGenerate": "Generation failed, please try again",
     "errorInvalidKey": "Invalid API Key, please check and try again",
     "errorSafety": "Image did not pass content safety review, please try a different photo",
-    "back": "Back to Dashboard"
+    "back": "Back to Workspace"
   },
   "publicView": {
     "title": "Shared Resume",
@@ -895,6 +898,6 @@
     "submit": "View Resume",
     "invalidPassword": "Invalid password. Please try again.",
     "notFound": "This resume is not available or has been removed.",
-    "openInApp": "Open in RoleRover"
+    "openInApp": "Open in JobPilot"
   }
 }

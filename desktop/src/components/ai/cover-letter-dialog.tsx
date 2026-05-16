@@ -175,7 +175,7 @@ Return ONLY the JSON, no markdown fences.`;
         {/* Header */}
         <div className="px-6 pt-6 pb-0">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <FileText className="h-5 w-5 text-pink-500" />
+            <FileText className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
             {t("coverLetter.title")}
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -218,7 +218,7 @@ Return ONLY the JSON, no markdown fences.`;
                     className={cn(
                       "flex-1 cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
                       tone === t_tone
-                        ? "border-pink-500 bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300 dark:border-pink-700"
+                        ? "border-zinc-500 dark:border-zinc-400 bg-zinc-50 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                         : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600",
                     )}
                     onClick={() => setTone(t_tone)}
@@ -269,7 +269,7 @@ Return ONLY the JSON, no markdown fences.`;
               <Button
                 onClick={() => void handleGenerate()}
                 disabled={isGenerating || !jobDescription.trim()}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200"
               >
                 {isGenerating ? (
                   <>

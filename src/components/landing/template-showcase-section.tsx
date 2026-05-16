@@ -153,7 +153,7 @@ export function TemplateShowcaseSection() {
         <div className="mt-12 text-center">
           <Link
             href="/templates"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-pink-500 transition-colors hover:text-pink-600 dark:text-pink-400 dark:hover:text-pink-300"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary/80 dark:text-primary dark:hover:text-primary/80"
           >
             {t('viewAll')}
             <ArrowRight className="h-4 w-4" />

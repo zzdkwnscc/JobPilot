@@ -837,7 +837,7 @@ export function AIChatContent({
       >
         {!hideTitle && (
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-pink-500" />
+            <Sparkles className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               {panelTitle}
             </h3>
@@ -927,7 +927,7 @@ export function AIChatContent({
           )}
 
           {activeSession && activeSession.messages.length === 0 && (
-            <div className="rounded-xl bg-gradient-to-br from-pink-50 to-rose-50 p-3 text-[13px] text-pink-700 dark:from-pink-950/40 dark:to-rose-950/30 dark:text-pink-100">
+            <div className="rounded-xl bg-zinc-100 p-3 text-[13px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
               {defaultGreeting}
             </div>
           )}
@@ -948,7 +948,7 @@ export function AIChatContent({
                       ? "bg-zinc-700"
                       : message.error
                         ? "bg-red-500"
-                        : "bg-gradient-to-br from-pink-400 to-pink-500"
+                        : "bg-zinc-900 dark:bg-zinc-100"
                   }`}
                 >
                   {isUser ? (
@@ -1005,8 +1005,8 @@ export function AIChatContent({
 
           {(streamingToolCalls.length > 0 || streamingText) && (
             <div className="flex gap-2.5">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-pink-500">
-                <Bot className="h-3 w-3 text-white" />
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-900 dark:bg-zinc-100">
+                <Bot className="h-3 w-3 text-white dark:text-zinc-900" />
               </div>
               <div className="min-w-0 max-w-[calc(100%-2.5rem)] rounded-2xl bg-zinc-50 px-3 py-2 text-[13px] leading-relaxed text-zinc-700 ring-1 ring-zinc-200/60 dark:bg-zinc-900 dark:text-zinc-200 dark:ring-zinc-800/80">
                 <div className="space-y-2">
@@ -1044,9 +1044,9 @@ export function AIChatContent({
           {isThinking && !streamingText && streamingToolCalls.length === 0 && (
             <div className="flex items-center gap-2 text-xs text-zinc-400 dark:text-zinc-500">
               <span className="flex gap-1">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-pink-400 [animation-delay:0ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-pink-400 [animation-delay:150ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-pink-400 [animation-delay:300ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-700 [animation-delay:0ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-700 [animation-delay:150ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-700 [animation-delay:300ms]" />
               </span>
               {thinkingLabel}
             </div>
@@ -1115,7 +1115,7 @@ export function AIChatContent({
                 !runtimeSettings.hasApiKey ||
                 !input.trim()
               }
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-zinc-500 transition-colors hover:bg-zinc-300 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 [&:not(:disabled)]:bg-pink-500 [&:not(:disabled)]:text-white [&:not(:disabled)]:hover:bg-pink-600 dark:[&:not(:disabled)]:bg-pink-500 dark:[&:not(:disabled)]:text-white dark:[&:not(:disabled)]:hover:bg-pink-600"
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-zinc-500 transition-colors hover:bg-zinc-300 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 [&:not(:disabled)]:bg-zinc-700 [&:not(:disabled)]:text-white [&:not(:disabled)]:bg-zinc-700 hover:bg-zinc-600 dark:[&:not(:disabled)]:bg-zinc-700 dark:[&:not(:disabled)]:text-white dark:[&:not(:disabled)]:bg-zinc-700 hover:bg-zinc-600"
             >
               <SendHorizonal className="h-4 w-4" />
             </button>

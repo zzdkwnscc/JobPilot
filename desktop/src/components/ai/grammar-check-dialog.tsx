@@ -223,7 +223,7 @@ function GrammarCheckResultView({
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs font-medium text-pink-500">
+                    <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
                       {t("grammarCheck.suggestion")}
                     </span>
                     <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
@@ -355,7 +355,7 @@ Return ONLY the JSON, no markdown fences.`;
         {/* Header */}
         <div className="px-6 pt-6 pb-0">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <SpellCheck className="h-5 w-5 text-pink-500" />
+            <SpellCheck className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
             {t("grammarCheck.title")}
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -412,7 +412,7 @@ Return ONLY the JSON, no markdown fences.`;
 
                 {isChecking && (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-pink-500 mb-3" />
+                    <Loader2 className="h-8 w-8 animate-spin text-zinc-900 dark:text-zinc-100 mb-3" />
                     <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                       {t("grammarCheck.checking")}
                     </p>
@@ -437,7 +437,7 @@ Return ONLY the JSON, no markdown fences.`;
                   <Button
                     onClick={() => void handleCheck()}
                     disabled={isChecking}
-                    className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                    className="cursor-pointer bg-zinc-900 hover:bg-zinc-800"
                   >
                     {isChecking ? (
                       <>
@@ -472,7 +472,7 @@ Return ONLY the JSON, no markdown fences.`;
                     {t("grammarCheck.checkAgain")}
                   </Button>
                   {result.issues.length > 0 && (
-                    <Button className="cursor-pointer gap-1.5 bg-pink-500 hover:bg-pink-600">
+                    <Button className="cursor-pointer gap-1.5 bg-zinc-900 hover:bg-zinc-800">
                       <Wand2 className="h-3.5 w-3.5" />
                       {t("grammarCheck.fixAll")}
                     </Button>

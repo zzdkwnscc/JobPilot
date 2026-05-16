@@ -137,7 +137,7 @@ export function ImportJsonDialog({ open, onOpenChange }: ImportJsonDialogProps) 
       <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5 text-pink-500" />
+            <Upload className="h-5 w-5 text-primary" />
             {t('title')}
           </DialogTitle>
           <DialogDescription>{t('dashboardDescription')}</DialogDescription>
@@ -196,7 +196,7 @@ export function ImportJsonDialog({ open, onOpenChange }: ImportJsonDialogProps) 
 
           {state === 'importing' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Loader2 className="mb-3 h-8 w-8 animate-spin text-pink-500" />
+              <Loader2 className="mb-3 h-8 w-8 animate-spin text-primary" />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {t('importing')}
               </p>
@@ -226,7 +226,7 @@ export function ImportJsonDialog({ open, onOpenChange }: ImportJsonDialogProps) 
               <Button
                 onClick={handleImport}
                 disabled={!selectedFile || isLoading}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('importBtn')}
               </Button>

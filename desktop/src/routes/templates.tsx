@@ -308,7 +308,7 @@ function TemplatesRoute() {
                 </Button>
                 <Button
                   size="sm"
-                  className="flex-1 cursor-pointer gap-1.5 bg-pink-500 text-white hover:bg-pink-600"
+                  className="flex-1 cursor-pointer gap-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900"
                   onClick={() => void handleUseTemplate(template)}
                   disabled={isCreating}
                 >

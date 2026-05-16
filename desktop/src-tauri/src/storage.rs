@@ -1405,6 +1405,11 @@ pub fn create_interview_session(
     app: &AppHandle,
     input: CreateInterviewSessionInput,
 ) -> Result<InterviewSessionDetail, String> {
+    eprintln!("[DEBUG] create_interview_session called with {} rounds", input.rounds.len());
+    for (i, round) in input.rounds.iter().enumerate() {
+        eprintln!("[DEBUG] Round {}: interviewerType={}", i + 1, round.interviewer_type);
+    }
+
     let job_description = input.job_description.trim().to_string();
     if job_description.is_empty() {
         return Err("jobDescription is required".into());
@@ -1478,12 +1483,14 @@ pub fn create_interview_session(
 
     for (index, round) in input.rounds.iter().enumerate() {
         let interviewer_type = round.interviewer_type.trim().to_string();
+        eprintln!("[DEBUG] Round {}: interviewerType='{}'", index + 1, interviewer_type);
         if interviewer_type.is_empty() {
             return Err(format!("round {} is missing interviewerType", index + 1));
         }
 
         let interviewer_config_json = serde_json::to_string(&round.interviewer_config)
             .map_err(|error| format!("failed to serialize round interviewer config: {error}"))?;
+        eprintln!("[DEBUG] Round {}: interviewerConfig length={}", index + 1, interviewer_config_json.len());
         let round_id = Uuid::new_v4().to_string();
         let max_questions = round.max_questions.unwrap_or(8).clamp(1, 20);
 

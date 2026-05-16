@@ -205,7 +205,7 @@ export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDial
                             />
                             {/* Selected check */}
                             {isSelected && (
-                              <div className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-white shadow-sm">
+                              <div className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
                                 <Check className="h-3 w-3" />
                               </div>
                             )}
@@ -317,7 +317,7 @@ export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDial
                               className="mx-auto h-[100px] w-[71px] shadow-sm ring-1 ring-zinc-200/50"
                             />
                             {isSelected && (
-                              <div className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-white shadow-sm">
+                              <div className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
                                 <Check className="h-3 w-3" />
                               </div>
                             )}
@@ -349,7 +349,7 @@ export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDial
             <Button
               onClick={handleCreate}
               disabled={isCreating}
-              className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+              className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {isCreating ? t('common.loading') : t('common.create')}
             </Button>
@@ -357,7 +357,7 @@ export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDial
             <Button
               onClick={handleUploadParse}
               disabled={!file || isParsing}
-              className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+              className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {isParsing ? (
                 <>

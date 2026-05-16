@@ -203,7 +203,7 @@ function GrammarCheckResultView({ result, t }: { result: GrammarCheckResult; t: 
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs font-medium text-pink-500">
+                    <span className="text-xs font-medium text-primary">
                       {t('suggestion')}
                     </span>
                     <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
@@ -345,7 +345,7 @@ export function GrammarCheckDialog({ open, onOpenChange, resumeId }: GrammarChec
       <DialogContent className="sm:max-w-2xl max-h-[85vh] p-0 gap-0 overflow-hidden flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
-            <SpellCheck className="h-5 w-5 text-pink-500" />
+            <SpellCheck className="h-5 w-5 text-primary" />
             {t('title')}
           </DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>
@@ -360,7 +360,7 @@ export function GrammarCheckDialog({ open, onOpenChange, resumeId }: GrammarChec
               <TabsTrigger value="history" className="flex-1 cursor-pointer gap-1.5">
                 {t('historyTab')}
                 {history.length > 0 && (
-                  <Badge className="ml-1 h-5 min-w-5 px-1 text-xs bg-pink-500 text-white">
+                  <Badge className="ml-1 h-5 min-w-5 px-1 text-xs bg-primary text-primary-foreground">
                     {history.length}
                   </Badge>
                 )}
@@ -383,7 +383,7 @@ export function GrammarCheckDialog({ open, onOpenChange, resumeId }: GrammarChec
 
                 {isChecking && (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-pink-500 mb-3" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
                     <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                       {t('checking')}
                     </p>
@@ -404,7 +404,7 @@ export function GrammarCheckDialog({ open, onOpenChange, resumeId }: GrammarChec
                   <Button
                     onClick={handleCheck}
                     disabled={isChecking}
-                    className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                    className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     {isChecking ? (
                       <>
@@ -431,7 +431,7 @@ export function GrammarCheckDialog({ open, onOpenChange, resumeId }: GrammarChec
                     {t('checkAgain')}
                   </Button>
                   {result.issues.length > 0 && (
-                    <Button onClick={handleFixAll} className="cursor-pointer gap-1.5 bg-pink-500 hover:bg-pink-600">
+                    <Button onClick={handleFixAll} className="cursor-pointer gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90">
                       <Wand2 className="h-3.5 w-3.5" />
                       {t('fixAll')}
                     </Button>
@@ -467,7 +467,7 @@ export function GrammarCheckDialog({ open, onOpenChange, resumeId }: GrammarChec
               </>
             ) : historyLoading ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-pink-500 mb-2" />
+                <Loader2 className="h-6 w-6 animate-spin text-primary mb-2" />
                 <p className="text-sm text-zinc-500">{t('loadingHistory')}</p>
               </div>
             ) : history.length === 0 ? (
@@ -541,7 +541,7 @@ export function GrammarCheckDialog({ open, onOpenChange, resumeId }: GrammarChec
             )}
             {historyDetailLoading && !historyDetail && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50">
-                <Loader2 className="h-6 w-6 animate-spin text-pink-500" />
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             )}
           </TabsContent>

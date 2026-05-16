@@ -1,4 +1,4 @@
-export const APP_NAME = 'RoleRover';
+export const APP_NAME = 'JobPilot';
 
 export const SECTION_TYPES = [
   'personal_info',

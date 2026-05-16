@@ -116,10 +116,10 @@ export function ResumeCard({ resume, onDelete, onDuplicate, onRename }: ResumeCa
                 }}
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="w-full truncate rounded border border-pink-300 bg-white px-1 text-sm font-semibold text-zinc-900 outline-none focus:ring-1 focus:ring-pink-400 dark:bg-zinc-800 dark:text-zinc-100"
+                className="w-full truncate rounded border border-zinc-300 dark:border-zinc-600 bg-white px-1 text-sm font-semibold text-zinc-900 outline-none focus:ring-1 focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100"
               />
             ) : (
-              <h3 className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-pink-600">
+              <h3 className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-700 dark:hover:text-zinc-300">
                 {resume.title}
               </h3>
             )}
@@ -128,7 +128,7 @@ export function ResumeCard({ resume, onDelete, onDuplicate, onRename }: ResumeCa
                 {templateLabel}
               </span>
               {resume.targetJobTitle && (
-                <span className="inline-flex items-center rounded-full bg-pink-50 px-1.5 py-0 text-[11px] font-medium text-pink-700 dark:bg-pink-950/30 dark:text-pink-300">
+                <span className="inline-flex items-center rounded-full bg-zinc-50 dark:bg-zinc-800 px-1.5 py-0 text-[11px] font-medium text-zinc-800 dark:text-zinc-200">
                   {resume.targetJobTitle}
                 </span>
               )}

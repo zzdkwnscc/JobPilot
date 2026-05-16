@@ -99,7 +99,7 @@ export function CreateJdVersionDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-pink-500" />
+            <Sparkles className="h-5 w-5 text-primary" />
             {t('title')}
           </DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>
@@ -174,7 +174,7 @@ export function CreateJdVersionDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isCreating} className="cursor-pointer">
             {ct('cancel')}
           </Button>
-          <Button onClick={handleCreate} disabled={isCreating} className="cursor-pointer bg-pink-500 hover:bg-pink-600">
+          <Button onClick={handleCreate} disabled={isCreating} className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90">
             {isCreating ? (
               <>
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />

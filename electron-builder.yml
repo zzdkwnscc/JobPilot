@@ -1,5 +1,5 @@
-appId: com.rolerover.desktop
-productName: RoleRover
+appId: com.jobpilot.desktop
+productName: JobPilot
 
 directories:
   output: release-installer

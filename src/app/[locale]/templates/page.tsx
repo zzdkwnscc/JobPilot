@@ -315,7 +315,7 @@ export default function TemplatesPage() {
                 <Button
                   {...(isFirst ? { 'data-tour': 'tpl-use' } : {})}
                   size="sm"
-                  className="flex-1 cursor-pointer gap-1.5 bg-pink-500 hover:bg-pink-600"
+                  className="flex-1 cursor-pointer gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
                   onClick={() => handleUseTemplate(template)}
                   disabled={isCreating}
                 >

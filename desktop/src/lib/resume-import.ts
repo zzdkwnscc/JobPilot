@@ -2,6 +2,7 @@ import type { ParsedResume } from "@/lib/ai/parse-schema";
 import mupdfWasmUrl from "../../../node_modules/mupdf/dist/mupdf-wasm.wasm?url";
 import {
   importDocument,
+  parseMarkdownResume,
   type DesktopDocumentDetail,
   type ImportDocumentInput,
 } from "./desktop-api";
@@ -10,11 +11,24 @@ import {
   runPromptStream,
 } from "../components/editor/ai-dialog-helpers";
 
+// ============================================================================
+// Supported File Types
+// ============================================================================
+
+export type ResumeImportFileType =
+  | "json"
+  | "markdown"
+  | "pdf"
+  | "image"
+  | "unsupported";
+
 type SupportedResumeImportMimeType =
   | "application/pdf"
   | "image/png"
   | "image/jpeg"
   | "image/webp";
+
+export const RESUME_IMPORT_ACCEPTED_EXTENSIONS = ".json,.md,.markdown,.pdf,.png,.jpg,.jpeg,.webp";
 
 export type ResumeImportStage =
   | "validating"
@@ -41,7 +55,7 @@ export class ResumeImportError extends Error {
   }
 }
 
-interface ImportResumeFromFileInput {
+export interface ImportResumeFromFileInput {
   file: File;
   template?: string;
   language?: string;
@@ -65,6 +79,43 @@ type GlobalWithMupdfModule = typeof globalThis & {
 const TEXT_BASED_PDF_THRESHOLD = 200;
 
 export const MAX_RESUME_IMPORT_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Detect the file type for resume import
+ */
+export function detectResumeImportFileType(file: File): ResumeImportFileType {
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".json")) return "json";
+  if (name.endsWith(".md") || name.endsWith(".markdown")) return "markdown";
+  if (name.endsWith(".pdf")) return "pdf";
+  if (
+    name.endsWith(".png") ||
+    name.endsWith(".jpg") ||
+    name.endsWith(".jpeg") ||
+    name.endsWith(".webp")
+  ) {
+    return "image";
+  }
+  return "unsupported";
+}
+
+/**
+ * Check if file type is supported for resume import
+ */
+export function isSupportedResumeImportFile(file: File): boolean {
+  return detectResumeImportFileType(file) !== "unsupported";
+}
+
+/**
+ * Resolve language from i18n language code
+ */
+export function resolveImportLanguage(i18nLanguage: string): "zh" | "en" {
+  return i18nLanguage.toLowerCase().startsWith("zh") ? "zh" : "en";
+}
 
 const SYSTEM_PROMPT = `You are a resume parser. Extract ALL information from the resume into the EXACT JSON schema below.
 
@@ -116,6 +167,179 @@ export async function importResumeFromFile({
   language = "zh",
   onProgress,
 }: ImportResumeFromFileInput): Promise<DesktopDocumentDetail> {
+  const fileType = detectResumeImportFileType(file);
+
+  if (fileType === "unsupported") {
+    throw new Error("Unsupported resume file type. Accepted: JSON, Markdown, PDF, PNG, JPG, WebP.");
+  }
+
+  if (fileType === "json") {
+    return importResumeFromJsonFile(file, { template, language, onProgress });
+  }
+
+  if (fileType === "markdown") {
+    return importResumeFromMarkdownFile(file, { template, language, onProgress });
+  }
+
+  // PDF or image - use AI vision parsing
+  return importResumeFromPdfOrImage(file, { template, language, onProgress });
+}
+
+/**
+ * Import resume from JSON file (direct parse, no AI needed)
+ */
+async function importResumeFromJsonFile(
+  file: File,
+  options: { template?: string; language: string; onProgress?: ImportResumeFromFileInput["onProgress"] }
+): Promise<DesktopDocumentDetail> {
+  const { onProgress, template, language } = options;
+
+  emitImportProgress(onProgress, {
+    stage: "validating",
+    completed: 0,
+    total: 1,
+    fileName: file.name,
+  });
+
+  const text = await file.text();
+  const data = JSON.parse(text) as unknown;
+
+  if (typeof data !== "object" || data === null || Array.isArray(data)) {
+    throw new Error("Invalid JSON resume format.");
+  }
+
+  emitImportProgress(onProgress, {
+    stage: "parsing",
+    completed: 0,
+    total: 1,
+    fileName: file.name,
+  });
+
+  const rawJson = data as Record<string, unknown>;
+  const parsedResume = mapToResumeSchema(rawJson);
+
+  emitImportProgress(onProgress, {
+    stage: "parsing",
+    completed: 1,
+    total: 1,
+    fileName: file.name,
+  });
+
+  const documentInput = buildImportDocumentInput(parsedResume, {
+    language,
+    template,
+    fallbackTitle: stripFileExtension(file.name),
+  });
+
+  emitImportProgress(onProgress, {
+    stage: "saving",
+    completed: 0,
+    total: 1,
+    fileName: file.name,
+  });
+
+  const imported = await importDocument(documentInput);
+
+  emitImportProgress(onProgress, {
+    stage: "saving",
+    completed: 1,
+    total: 1,
+    fileName: file.name,
+  });
+
+  return imported;
+}
+
+/**
+ * Import resume from Markdown file (uses backend AI parser)
+ */
+async function importResumeFromMarkdownFile(
+  file: File,
+  options: { template?: string; language: string; onProgress?: ImportResumeFromFileInput["onProgress"] }
+): Promise<DesktopDocumentDetail> {
+  const { onProgress, template, language } = options;
+
+  emitImportProgress(onProgress, {
+    stage: "validating",
+    completed: 0,
+    total: 1,
+    fileName: file.name,
+  });
+
+  const content = await file.text();
+  const aiRuntime = await getDesktopAiRuntimeConfig();
+
+  emitImportProgress(onProgress, {
+    stage: "validating",
+    completed: 1,
+    total: 1,
+    fileName: file.name,
+  });
+
+  emitImportProgress(onProgress, {
+    stage: "parsing",
+    completed: 0,
+    total: 1,
+    fileName: file.name,
+  });
+
+  const parsedData = await parseMarkdownResume({
+    content,
+    provider: aiRuntime.provider,
+    model: aiRuntime.model,
+    baseUrl: aiRuntime.baseUrl,
+    locale: language === "zh" ? "zh-CN" : "en-US",
+  });
+
+  emitImportProgress(onProgress, {
+    stage: "parsing",
+    completed: 1,
+    total: 1,
+    fileName: file.name,
+  });
+
+  // Convert ParsedResumeData to ImportDocumentInput
+  const documentInput: ImportDocumentInput = {
+    title: parsedData.title || stripFileExtension(file.name),
+    template: template || parsedData.template || "classic",
+    language: parsedData.language || language,
+    sections: parsedData.sections.map((section, index) => ({
+      sectionType: section.sectionType,
+      title: section.title,
+      sortOrder: index,
+      visible: true,
+      content: section.content,
+    })),
+  };
+
+  emitImportProgress(onProgress, {
+    stage: "saving",
+    completed: 0,
+    total: 1,
+    fileName: file.name,
+  });
+
+  const imported = await importDocument(documentInput);
+
+  emitImportProgress(onProgress, {
+    stage: "saving",
+    completed: 1,
+    total: 1,
+    fileName: file.name,
+  });
+
+  return imported;
+}
+
+/**
+ * Import resume from PDF or image file (uses AI vision)
+ */
+async function importResumeFromPdfOrImage(
+  file: File,
+  options: { template?: string; language: string; onProgress?: ImportResumeFromFileInput["onProgress"] }
+): Promise<DesktopDocumentDetail> {
+  const { onProgress, template, language } = options;
+
   emitImportProgress(onProgress, {
     stage: "validating",
     completed: 0,

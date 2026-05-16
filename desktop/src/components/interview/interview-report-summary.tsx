@@ -163,12 +163,12 @@ export function InterviewReportSummary({
               <CardDescription>{t("interview.report.subtitle")}</CardDescription>
             </div>
             {report ? (
-              <div className="rounded-2xl bg-pink-50 px-5 py-4 text-right dark:bg-pink-950/20">
+              <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-800 px-5 py-4 text-right">
                 <div className="text-sm text-zinc-500 dark:text-zinc-400">
                   {t("interview.report.score")}
                 </div>
                 <div className="mt-1 inline-flex items-center gap-2 text-3xl font-semibold text-zinc-950 dark:text-zinc-50">
-                  <Trophy className="h-6 w-6 text-pink-500" />
+                  <Trophy className="h-6 w-6 text-zinc-900 dark:text-zinc-100" />
                   {report.overallScore}
                 </div>
               </div>
@@ -190,8 +190,8 @@ export function InterviewReportSummary({
       </Card>
 
       {error ? (
-        <Card className="rounded-3xl border-rose-200 bg-rose-50 shadow-none dark:border-rose-900 dark:bg-rose-950/40">
-          <CardContent className="pt-6 text-sm text-rose-700 dark:text-rose-200">
+        <Card className="rounded-3xl border-red-200 bg-red-50 shadow-none dark:border-red-900 dark:bg-red-950/40">
+          <CardContent className="pt-6 text-sm text-red-700 dark:text-red-200">
             {error}
           </CardContent>
         </Card>

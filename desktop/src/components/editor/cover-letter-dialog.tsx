@@ -191,7 +191,7 @@ Write a polished cover letter that:
       <div className="dialog-content dialog-content--lg" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-header">
           <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-pink-500" />
+            <FileText className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
             <h2 className="dialog-title">{t("coverLetterTitle")}</h2>
           </div>
           <button type="button" className="dialog-close" onClick={onClose} disabled={isLoading}>

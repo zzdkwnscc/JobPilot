@@ -98,7 +98,7 @@ function SortableSidebarItem({
       style={style}
       className={`group/item flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-150 ${
         isSelected
-          ? 'bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300'
+          ? 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
           : 'text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800'
       }`}
     >
@@ -124,7 +124,7 @@ function SortableSidebarItem({
               if (e.key === 'Escape') { setRenameValue(section.title); setIsRenaming(false); }
             }}
             onClick={(e) => e.stopPropagation()}
-            className="h-5 w-full min-w-0 rounded border border-pink-300 bg-transparent px-1 text-sm outline-none"
+            className="h-5 w-full min-w-0 rounded border border-zinc-300 dark:border-zinc-600 bg-transparent px-1 text-sm outline-none"
           />
         ) : (
           <span className="truncate">{section.title}</span>

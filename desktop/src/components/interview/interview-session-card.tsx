@@ -85,7 +85,7 @@ export function InterviewSessionCard({
                 {t("interview.report.score")}
               </span>
               <span className="inline-flex items-center gap-1 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
-                <Trophy className="h-4 w-4 text-pink-500" />
+                <Trophy className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
                 {session.reportOverallScore}
               </span>
             </div>

@@ -18,6 +18,13 @@ import { Skeleton } from "../components/skeleton";
 import { CreateResumeDialog } from "../components/dashboard/create-resume-dialog";
 import { GenerateResumeDialog } from "../components/dashboard/generate-resume-dialog";
 import { ImportJsonDialog } from "../components/dashboard/import-json-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Resume } from "../types/resume";
 import {
   listDocuments,
@@ -191,8 +198,9 @@ function DashboardRoute() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="button button--secondary cursor-pointer gap-2"
-            onClick={() => navigate({ to: "/dashboard" })}
+            className="button button--secondary cursor-not-allowed gap-2 opacity-50"
+            disabled
+            title={t("dashboardLinkedinPhotoComingSoon")}
           >
             <Camera className="h-4 w-4" />
             <span className="hidden sm:inline">{t("dashboardLinkedinPhoto")}</span>
@@ -249,16 +257,17 @@ function DashboardRoute() {
 
           <div className="flex items-center gap-2">
             {/* Sort */}
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value as SortOption)}
-              className="select-input"
-            >
-              <option value="lastEdited">{t("dashboardSortLastEdited")}</option>
-              <option value="created">{t("dashboardSortCreated")}</option>
-              <option value="nameAsc">{t("dashboardSortNameAsc")}</option>
-              <option value="nameDesc">{t("dashboardSortNameDesc")}</option>
-            </select>
+            <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="lastEdited">{t("dashboardSortLastEdited")}</SelectItem>
+                <SelectItem value="created">{t("dashboardSortCreated")}</SelectItem>
+                <SelectItem value="nameAsc">{t("dashboardSortNameAsc")}</SelectItem>
+                <SelectItem value="nameDesc">{t("dashboardSortNameDesc")}</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* View toggle */}
             <div className="flex items-center rounded-md border border-zinc-200 dark:border-zinc-700">
@@ -267,7 +276,7 @@ function DashboardRoute() {
                 onClick={() => handleViewChange("grid")}
                 className={`cursor-pointer rounded-l-md p-1.5 transition-colors ${
                   viewMode === "grid"
-                    ? "bg-pink-500 text-white"
+                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                     : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
                 }`}
                 title={t("dashboardViewGrid")}
@@ -279,7 +288,7 @@ function DashboardRoute() {
                 onClick={() => handleViewChange("list")}
                 className={`cursor-pointer rounded-r-md p-1.5 transition-colors ${
                   viewMode === "list"
-                    ? "bg-pink-500 text-white"
+                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                     : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
                 }`}
                 title={t("dashboardViewList")}

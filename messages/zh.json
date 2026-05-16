@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "RoleRover",
+    "appName": "JobPilot",
     "save": "保存",
     "cancel": "取消",
     "delete": "删除",
@@ -128,7 +128,7 @@
     }
   },
   "interview": {
-    "navLabel": "面试",
+    "navLabel": "模拟面试",
     "dashboardCta": "模拟面试",
     "fallback": {
       "title": "当前需要原生桌面运行时",
@@ -619,14 +619,17 @@
   },
   "import": {
     "title": "导入简历",
-    "description": "导入之前导出的 JSON 文件，替换当前简历内容",
+    "description": "支持 JSON（已有简历）、Markdown（AI 解析）、PDF 和图片（AI 识别），自动提取简历内容",
     "dashboardDescription": "导入之前导出的 JSON 文件，创建新简历",
-    "selectFile": "点击选择或拖拽 .json 文件到此处",
-    "dragHint": "支持从 RoleRover 导出的 .json 文件",
+    "selectFile": "点击选择或拖拽文件到此处",
+    "dragHint": "支持 .json、.md、.pdf、.png、.jpg、.webp 格式",
     "importing": "导入中...",
     "success": "导入成功！",
     "error": "导入失败，请重试。",
-    "invalidFormat": "文件格式无效，请选择包含 sections 数据的有效 JSON 文件。",
+    "invalidFormat": "文件格式无效，请选择支持的文件格式。",
+    "fileTooLarge": "文件大小超过 10MB 限制。",
+    "visionModelRequired": "导入图片需要配置视觉模型，请在设置中配置简历导入视觉模型。",
+    "visionModelRequiredPdf": "该 PDF 为扫描版，需要配置视觉模型，请在设置中配置简历导入视觉模型。",
     "importBtn": "导入",
     "cancel": "取消"
   },
@@ -672,12 +675,12 @@
     "noLabel": "未标记"
   },
   "templates": {
-    "title": "模板",
+    "title": "模版库",
     "subtitle": "选择一个模板开始创建你的简历",
     "preview": "预览",
     "useTemplate": "使用此模板",
     "creating": "创建中...",
-    "nav": "模板"
+    "nav": "模版库"
   },
   "tour": {
     "next": "下一步",
@@ -838,7 +841,7 @@
         "terms": "服务条款",
         "cookies": "Cookie 政策"
       },
-      "copyright": "© {year} RoleRover. 保留所有权利。"
+      "copyright": "© {year} JobPilot. 保留所有权利。"
     }
   },
   "linkedinPhoto": {
@@ -895,6 +898,6 @@
     "submit": "查看简历",
     "invalidPassword": "密码错误，请重试。",
     "notFound": "此简历不存在或已被删除。",
-    "openInApp": "前往 RoleRover"
+    "openInApp": "前往 JobPilot"
   }
 }

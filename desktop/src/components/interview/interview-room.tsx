@@ -448,7 +448,7 @@ export function InterviewRoom({
                   const bubbleClass = isSystem
                     ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
                     : isCandidate
-                      ? "border-pink-200 bg-pink-50 text-zinc-900 dark:border-pink-900 dark:bg-pink-950/30 dark:text-zinc-50"
+                      ? "border-zinc-200 bg-zinc-50 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
                       : "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50";
 
                   return (
@@ -470,7 +470,7 @@ export function InterviewRoom({
                             </span>
                             <span>{formatTime(message.createdAtEpochMs, i18n.language)}</span>
                             {message.metadata.marked ? (
-                              <Badge variant="outline" className="rounded-full border-pink-300 text-pink-700 dark:border-pink-900 dark:text-pink-200">
+                              <Badge variant="outline" className="rounded-full border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-200">
                                 {t("interview.room.marked")}
                               </Badge>
                             ) : null}
@@ -494,7 +494,7 @@ export function InterviewRoom({
         <Card className="rounded-3xl border-zinc-200/80 shadow-sm dark:border-zinc-800">
           <CardContent className="space-y-4 pt-6">
             {error ? (
-              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
                 {error}
               </div>
             ) : null}
@@ -619,7 +619,7 @@ export function InterviewRoom({
                     key={round.id}
                     className={`rounded-2xl border px-4 py-3 ${
                       index === currentRoundIndex
-                        ? "border-pink-200 bg-pink-50 dark:border-pink-900 dark:bg-pink-950/20"
+                        ? "border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800"
                         : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
                     }`}
                   >

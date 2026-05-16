@@ -527,7 +527,7 @@ export default function LinkedInPhotoPage() {
                     <Button
                       size="sm"
                       onClick={confirmCapture}
-                      className="cursor-pointer gap-1.5 bg-pink-500 hover:bg-pink-600"
+                      className="cursor-pointer gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       <Check className="h-3.5 w-3.5" />
                       {t('useSelfie')}
@@ -538,7 +538,7 @@ export default function LinkedInPhotoPage() {
                     size="sm"
                     onClick={capturePhoto}
                     disabled={!cameraReady}
-                    className="cursor-pointer gap-1.5 bg-pink-500 hover:bg-pink-600 disabled:opacity-50"
+                    className="cursor-pointer gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                   >
                     <Camera className="h-3.5 w-3.5" />
                     {t('capture')}
@@ -686,7 +686,7 @@ export default function LinkedInPhotoPage() {
           <Button
             onClick={handleGenerate}
             disabled={isGenerating || !apiKey.trim() || !uploadedImage}
-            className="w-full cursor-pointer gap-2 bg-pink-500 py-6 text-base font-medium hover:bg-pink-600 disabled:opacity-50"
+            className="w-full cursor-pointer gap-2 bg-primary text-primary-foreground py-6 text-base font-medium hover:bg-primary/90 disabled:opacity-50"
           >
             {isGenerating ? (
               <>
@@ -715,7 +715,7 @@ export default function LinkedInPhotoPage() {
               {isGenerating ? (
                 <div className="flex flex-col items-center justify-center py-24">
                   <div className="relative mb-6">
-                    <div className="h-16 w-16 animate-spin rounded-full border-4 border-zinc-200 border-t-pink-500" />
+                    <div className="h-16 w-16 animate-spin rounded-full border-4 border-zinc-200 border-t-primary" />
                   </div>
                   <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
                     {t('generating')}
@@ -784,7 +784,7 @@ export default function LinkedInPhotoPage() {
                         </Select>
                         <Button
                           onClick={handleSetAsAvatar}
-                          className="cursor-pointer gap-1.5 bg-pink-500 hover:bg-pink-600"
+                          className="cursor-pointer gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
                         >
                           <UserCircle className="h-4 w-4" />
                           {t('setAsAvatar')}

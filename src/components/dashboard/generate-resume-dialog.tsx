@@ -121,7 +121,7 @@ export function GenerateResumeDialog({ open, onOpenChange, onCreated }: Generate
       <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-pink-500" />
+            <Sparkles className="h-5 w-5 text-primary" />
             {t('title')}
           </DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>
@@ -227,7 +227,7 @@ export function GenerateResumeDialog({ open, onOpenChange, onCreated }: Generate
 
           {state === 'generating' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-pink-500 mb-3" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {t('generating')}
               </p>
@@ -270,7 +270,7 @@ export function GenerateResumeDialog({ open, onOpenChange, onCreated }: Generate
               <Button
                 onClick={handleGenerate}
                 disabled={!jobTitle.trim()}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('generate')}
               </Button>
@@ -287,7 +287,7 @@ export function GenerateResumeDialog({ open, onOpenChange, onCreated }: Generate
               </Button>
               <Button
                 onClick={handleOpenResume}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('openResume')}
               </Button>
@@ -304,7 +304,7 @@ export function GenerateResumeDialog({ open, onOpenChange, onCreated }: Generate
               </Button>
               <Button
                 onClick={handleRetry}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('generate')}
               </Button>

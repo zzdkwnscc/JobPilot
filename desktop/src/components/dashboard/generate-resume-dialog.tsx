@@ -139,7 +139,7 @@ export function GenerateResumeDialog({ open, onClose, onCreated }: GenerateResum
         {/* Header */}
         <div className="dialog-header">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-pink-500" />
+            <Sparkles className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
             <h2 className="dialog-title">{t("generateResumeTitle")}</h2>
           </div>
           <button type="button" className="dialog-close" onClick={resetAndClose}>

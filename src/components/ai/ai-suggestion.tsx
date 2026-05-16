@@ -16,7 +16,7 @@ export function AISuggestion({ suggestion, onApply, onDismiss }: AISuggestionPro
 
   return (
     <Card className="border-pink-200 bg-pink-50 p-3">
-      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-pink-600">
+      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-primary">
         <Sparkles className="h-3 w-3" />
         {t('suggestion')}
       </div>
@@ -25,7 +25,7 @@ export function AISuggestion({ suggestion, onApply, onDismiss }: AISuggestionPro
         <Button
           size="sm"
           onClick={onApply}
-          className="h-7 cursor-pointer gap-1 bg-pink-500 text-xs hover:bg-pink-600"
+          className="h-7 cursor-pointer gap-1 bg-primary text-xs text-primary-foreground hover:bg-primary/90"
         >
           <Check className="h-3 w-3" />
           {t('applySuggestion')}

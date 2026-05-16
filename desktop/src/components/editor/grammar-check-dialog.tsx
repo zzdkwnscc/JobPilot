@@ -335,7 +335,7 @@ ${JSON.stringify(
       >
         <div className="dialog-header">
           <div className="flex items-center gap-2">
-            <SpellCheck className="h-5 w-5 text-pink-500" />
+            <SpellCheck className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
             <h2 className="dialog-title">{t("grammarCheckTitle")}</h2>
           </div>
           <button
@@ -363,7 +363,7 @@ ${JSON.stringify(
                     onClick={() => setCheckScope("all")}
                     className={`flex-1 rounded-md border px-4 py-2 transition-colors ${
                       checkScope === "all"
-                        ? "border-pink-500 bg-pink-50 text-pink-700"
+                        ? "border-zinc-500 dark:border-zinc-400 bg-zinc-50 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                         : "border-zinc-200 hover:border-zinc-300"
                     }`}
                   >
@@ -374,7 +374,7 @@ ${JSON.stringify(
                     onClick={() => setCheckScope("current")}
                     className={`flex-1 rounded-md border px-4 py-2 transition-colors ${
                       checkScope === "current"
-                        ? "border-pink-500 bg-pink-50 text-pink-700"
+                        ? "border-zinc-500 dark:border-zinc-400 bg-zinc-50 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                         : "border-zinc-200 hover:border-zinc-300"
                     }`}
                   >

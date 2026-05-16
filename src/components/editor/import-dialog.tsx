@@ -124,7 +124,7 @@ export function ImportDialog({ open, onOpenChange, resumeId }: ImportDialogProps
       <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5 text-pink-500" />
+            <Upload className="h-5 w-5 text-primary" />
             {t('title')}
           </DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>
@@ -139,10 +139,10 @@ export function ImportDialog({ open, onOpenChange, resumeId }: ImportDialogProps
               onClick={() => fileInputRef.current?.click()}
               className={`flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
                 isDragging
-                  ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/20'
+                  ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-800/20'
                   : selectedFile
                     ? 'border-green-300 bg-green-50/50 dark:border-green-700 dark:bg-green-950/20'
-                    : 'border-zinc-300 hover:border-pink-300 hover:bg-pink-50/30 dark:border-zinc-600 dark:hover:border-pink-700 dark:hover:bg-pink-950/10'
+                    : 'border-zinc-300 hover:border-zinc-300 dark:border-zinc-600 dark:hover:border-zinc-600 hover:bg-zinc-50/30 dark:hover:bg-zinc-800/10'
               }`}
             >
               <input
@@ -183,7 +183,7 @@ export function ImportDialog({ open, onOpenChange, resumeId }: ImportDialogProps
 
           {state === 'importing' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Loader2 className="mb-3 h-8 w-8 animate-spin text-pink-500" />
+              <Loader2 className="mb-3 h-8 w-8 animate-spin text-primary" />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {t('importing')}
               </p>
@@ -213,7 +213,7 @@ export function ImportDialog({ open, onOpenChange, resumeId }: ImportDialogProps
               <Button
                 onClick={handleImport}
                 disabled={!selectedFile || isLoading}
-                className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {t('importBtn')}
               </Button>

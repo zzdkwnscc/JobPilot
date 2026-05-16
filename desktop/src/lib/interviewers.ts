@@ -227,7 +227,7 @@ const presets: Record<InterviewerType, PresetInterviewer> = {
 export const INTERVIEWER_TYPES = Object.keys(presets) as InterviewerType[];
 
 export const INTERVIEWER_COLOR_MAP: Record<InterviewerType, string> = {
-  hr: "bg-pink-50 border-pink-200 text-pink-700 dark:bg-pink-950/40 dark:border-pink-900 dark:text-pink-200",
+  hr: "bg-zinc-50 border-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200",
   technical:
     "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-200",
   scenario:

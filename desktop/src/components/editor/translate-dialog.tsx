@@ -388,7 +388,7 @@ Rules:
       <div className="dialog-content dialog-content--lg" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-header">
           <div className="flex items-center gap-2">
-            <Languages className="h-5 w-5 text-pink-500" />
+            <Languages className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
             <h2 className="dialog-title">{t("translateTitle")}</h2>
           </div>
           <button type="button" className="dialog-close" onClick={onClose} disabled={isLoading}>
@@ -444,14 +444,14 @@ Rules:
                   className={cn(
                     "flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 text-center transition-all",
                     mode === "overwrite"
-                      ? "border-pink-500 bg-pink-50 text-pink-700"
+                      ? "border-zinc-500 dark:border-zinc-400 bg-zinc-50 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                       : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300",
                   )}
                 >
                   <span
                     className={cn(
                       "flex h-9 w-9 items-center justify-center rounded-lg",
-                      mode === "overwrite" ? "bg-pink-500 text-white" : "bg-zinc-100 text-zinc-500",
+                      mode === "overwrite" ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900" : "bg-zinc-100 text-zinc-500",
                     )}
                   >
                     <FileEdit className="h-4 w-4" />
@@ -468,14 +468,14 @@ Rules:
                   className={cn(
                     "flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 text-center transition-all",
                     mode === "copy"
-                      ? "border-pink-500 bg-pink-50 text-pink-700"
+                      ? "border-zinc-500 dark:border-zinc-400 bg-zinc-50 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                       : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300",
                   )}
                 >
                   <span
                     className={cn(
                       "flex h-9 w-9 items-center justify-center rounded-lg",
-                      mode === "copy" ? "bg-pink-500 text-white" : "bg-zinc-100 text-zinc-500",
+                      mode === "copy" ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900" : "bg-zinc-100 text-zinc-500",
                     )}
                   >
                     <FilePlus2 className="h-4 w-4" />
@@ -511,7 +511,7 @@ Rules:
                   ) : null}
                   <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
                     <div
-                      className="h-full bg-pink-500 transition-all duration-300"
+                      className="h-full bg-zinc-900 dark:bg-zinc-100 transition-all duration-300"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>

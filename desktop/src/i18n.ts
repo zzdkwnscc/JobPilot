@@ -6,7 +6,7 @@ import zhMessages from "../../messages/zh.json";
 const legacyResources = {
   zh: {
     translation: {
-      appName: "RoleRover Desktop",
+      appName: "JobPilot Desktop",
       subtitle: "桌面端重构的 Tauri + Rust 启动壳。",
       branch: "当前分支",
       runtime: "运行时",
@@ -70,7 +70,7 @@ const legacyResources = {
       libraryNoResultsTitle: "没有匹配的内容",
       libraryNoResultsBody:
         "换个关键词，或者切换视图模式，再回到需要的桌面集合。",
-      libraryLabel: "Dashboard",
+      libraryLabel: "工作台",
       libraryTitle: "桌面资料库骨架",
       libraryBody:
         "这个路由是桌面 Dashboard 的第一层骨架，后续会在这里汇总简历、会话和模板。",
@@ -306,7 +306,7 @@ const legacyResources = {
       updaterDialogAvailableBody:
         "已检测到新版本，可以先查看本次新增和优化，再决定是否安装。",
       updaterDialogReadySummary:
-        "RoleRover {version} 已可更新，下面是这次版本的新增和优化。",
+        "JobPilot {version} 已可更新，下面是这次版本的新增和优化。",
       updaterReleaseNotesTitle: "Release Notes",
       updaterReleaseNotesHeading: "本次版本更新内容",
       updaterReleaseNotesEmpty: "这个版本暂时没有附带可展示的更新日志。",
@@ -493,7 +493,7 @@ const legacyResources = {
       languageZh: "中文",
       aiRuntimeSetDefaultLabel: "设为默认 Provider",
       // Templates page
-      templatesTitle: "模板",
+      templatesTitle: "模版库",
       templatesSubtitle: "选择一个模板开始创建你的简历",
       templatesPreview: "预览",
       templatesUseTemplate: "使用此模板",
@@ -570,6 +570,7 @@ const legacyResources = {
       dashboardImportJson: "导入简历",
       dashboardAiGenerate: "AI 生成",
       dashboardLinkedinPhoto: "LinkedIn 证件照",
+      dashboardLinkedinPhotoComingSoon: "证件照功能即将推出",
       dashboardDeleteConfirm: "确定要删除 \"{title}\" 吗？此操作无法撤销。",
       dashboardDuplicateSuccess: "简历已复制",
       // Template i18n keys
@@ -806,8 +807,8 @@ const legacyResources = {
       dashboardUploadFromTemplate: "从模板创建",
       dashboardUploadFromFile: "从文件导入",
       dashboardUploadDropzone: "拖放文件到此处或点击选择",
-      dashboardUploadAcceptedTypes: "支持 PDF、PNG、JPG、WebP 格式",
-      dashboardUploadInvalidType: "文件类型无效。请上传 PDF 或图片文件。",
+      dashboardUploadAcceptedTypes: "支持 JSON、Markdown、PDF、图片，AI 智能解析简历内容",
+      dashboardUploadInvalidType: "文件类型无效。请上传 JSON、Markdown、PDF 或图片文件。",
       dashboardUploadFileTooLarge: "文件过大。最大支持 10MB。",
       dashboardUploadParsing: "解析中...",
       dashboardUploadUploadAndParse: "上传并解析",
@@ -829,7 +830,7 @@ const legacyResources = {
   },
   en: {
     translation: {
-      appName: "RoleRover Desktop",
+      appName: "JobPilot Desktop",
       subtitle: "Tauri + Rust bootstrap shell for the desktop-first rewrite.",
       branch: "Working branch",
       runtime: "Runtime",
@@ -893,7 +894,7 @@ const legacyResources = {
       libraryNoResultsTitle: "Nothing matches this search",
       libraryNoResultsBody:
         "Try another keyword or switch view modes to get back to the right desktop collection.",
-      libraryLabel: "Dashboard",
+      libraryLabel: "Workspace",
       libraryTitle: "Desktop library scaffold",
       libraryBody:
         "This route is the first desktop dashboard surface where resumes, sessions, and templates will converge.",
@@ -919,6 +920,7 @@ const legacyResources = {
       dashboardImportJson: "Import Resume",
       dashboardAiGenerate: "AI Generate",
       dashboardLinkedinPhoto: "LinkedIn Photo",
+      dashboardLinkedinPhotoComingSoon: "Photo feature coming soon",
       dashboardDeleteConfirm: "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
       dashboardDuplicateSuccess: "Resume duplicated",
       // Template i18n keys
@@ -1114,8 +1116,8 @@ const legacyResources = {
       dashboardUploadFromTemplate: "From Template",
       dashboardUploadFromFile: "From File",
       dashboardUploadDropzone: "Drop file here or click to select",
-      dashboardUploadAcceptedTypes: "Supports PDF, PNG, JPG, WebP",
-      dashboardUploadInvalidType: "Invalid file type. Please upload a PDF or image.",
+      dashboardUploadAcceptedTypes: "Supports JSON, Markdown, PDF, images - AI auto-extracts resume content",
+      dashboardUploadInvalidType: "Invalid file type. Please upload JSON, Markdown, PDF, or an image.",
       dashboardUploadFileTooLarge: "File too large. Maximum size is 10MB.",
       dashboardUploadParsing: "Parsing...",
       dashboardUploadUploadAndParse: "Upload & Parse",
@@ -1283,7 +1285,7 @@ const legacyResources = {
       updaterDialogAvailableBody:
         "A newer version is available. Review the product additions and improvements before installing it.",
       updaterDialogReadySummary:
-        "RoleRover {version} is ready to install. Here are the user-facing additions and improvements in this release.",
+        "JobPilot {version} is ready to install. Here are the user-facing additions and improvements in this release.",
       updaterReleaseNotesTitle: "Release Notes",
       updaterReleaseNotesHeading: "What's new in this version",
       updaterReleaseNotesEmpty: "This release does not include product notes yet.",

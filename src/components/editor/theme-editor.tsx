@@ -330,7 +330,7 @@ export function ThemeEditor({ onClose }: ThemeEditorProps) {
                     className={cn(
                       'group/tpl relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all duration-200',
                       isSelected
-                        ? 'border-pink-500 shadow-sm shadow-pink-500/10'
+                        ? 'border-zinc-500 dark:border-zinc-400 shadow-sm shadow-zinc-500/10'
                         : 'border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600'
                     )}
                     onClick={() => handleTemplateSwitch(tpl)}
@@ -341,7 +341,7 @@ export function ThemeEditor({ onClose }: ThemeEditorProps) {
                         className="mx-auto h-[56px] w-[40px] shadow-sm ring-1 ring-zinc-200/50"
                       />
                       {isSelected && (
-                        <div className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-pink-500 text-white shadow-sm">
+                        <div className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
                           <Check className="h-2.5 w-2.5" />
                         </div>
                       )}
@@ -349,7 +349,7 @@ export function ThemeEditor({ onClose }: ThemeEditorProps) {
                     <div className={cn(
                       'truncate px-1 py-0.5 text-center text-[10px] font-medium transition-colors',
                       isSelected
-                        ? 'bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300'
+                        ? 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                         : 'text-zinc-500 dark:text-zinc-400'
                     )}>
                       {tRoot(templateLabelsMap[tpl])}

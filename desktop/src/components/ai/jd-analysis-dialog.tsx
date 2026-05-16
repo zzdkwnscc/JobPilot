@@ -250,7 +250,7 @@ function JdAnalysisResultView({
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs font-medium text-pink-500">
+                    <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
                       {t("jdAnalysis.suggestedChange")}
                     </span>
                     <p className="text-sm text-zinc-800 dark:text-zinc-200">
@@ -439,7 +439,7 @@ Return ONLY the JSON, no markdown fences.`;
                     </p>
                     <Badge
                       variant="secondary"
-                      className="mt-2 gap-1 border border-pink-200 bg-pink-50 text-pink-700 dark:border-pink-900/60 dark:bg-pink-950/30 dark:text-pink-200"
+                      className="mt-2 gap-1 border border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                     >
                       <Briefcase className="h-3 w-3" />
                       <span className="truncate">
@@ -479,7 +479,7 @@ Return ONLY the JSON, no markdown fences.`;
                   <Button
                     onClick={() => void handleAnalyze()}
                     disabled={isAnalyzing || !jobDescription.trim()}
-                    className="cursor-pointer bg-pink-500 hover:bg-pink-600"
+                    className="cursor-pointer bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200"
                   >
                     {isAnalyzing ? (
                       <>

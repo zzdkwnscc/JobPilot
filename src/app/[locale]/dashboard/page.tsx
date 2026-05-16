@@ -176,7 +176,7 @@ export default function DashboardPage() {
           <Button
             data-tour="dash-create"
             onClick={() => openModal('create-resume')}
-            className="cursor-pointer gap-2 bg-pink-500 hover:bg-pink-600"
+            className="cursor-pointer gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
             {t('createResume')}
@@ -228,7 +228,7 @@ export default function DashboardPage() {
                 className={cn(
                   'cursor-pointer rounded-l-md p-1.5 transition-colors',
                   viewMode === 'grid'
-                    ? 'bg-pink-500 text-white'
+                    ? 'bg-primary text-white'
                     : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
                 )}
                 title={t('viewGrid')}
@@ -241,7 +241,7 @@ export default function DashboardPage() {
                 className={cn(
                   'cursor-pointer rounded-r-md p-1.5 transition-colors',
                   viewMode === 'list'
-                    ? 'bg-pink-500 text-white'
+                    ? 'bg-primary text-white'
                     : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
                 )}
                 title={t('viewList')}

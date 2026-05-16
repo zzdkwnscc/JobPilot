@@ -176,6 +176,7 @@ pub struct ProviderConfigUpdateInput {
     pub model: String,
     pub set_as_default: bool,
     pub resume_import_vision_model: Option<String>,
+    pub exa_pool_base_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -184,6 +185,7 @@ pub struct WorkspaceAppearanceSettingsUpdateInput {
     pub locale: String,
     pub theme: String,
     pub auto_save: bool,
+    pub auto_save_interval_ms: Option<u32>,
     pub remember_window_state: bool,
 }
 
@@ -371,6 +373,11 @@ pub fn update_ai_provider_settings(
         };
     }
 
+    if let Some(exa_base_url) = input.exa_pool_base_url {
+        let trimmed = exa_base_url.trim();
+        document.ai.exa_pool_base_url = trimmed.into();
+    }
+
     persist_settings(workspace_root, document.clone())?;
     load_or_initialize_settings(workspace_root)
 }
@@ -393,6 +400,9 @@ pub fn update_workspace_appearance_settings(
     document.locale = locale.into();
     document.theme = theme.into();
     document.editor.auto_save = input.auto_save;
+    if let Some(interval) = input.auto_save_interval_ms {
+        document.editor.auto_save_interval_ms = interval;
+    }
     document.window.remember_window_state = input.remember_window_state;
 
     persist_settings(workspace_root, document.clone())?;

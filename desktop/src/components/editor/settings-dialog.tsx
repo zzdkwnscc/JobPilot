@@ -14,10 +14,8 @@ import {
   ChevronsUpDown,
   Check,
   Loader2,
-  X,
   Plug,
   RefreshCw,
-  Save,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +23,19 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "../../stores/ui-store";
 import {
@@ -32,6 +43,7 @@ import {
   updateWorkspaceAppearanceSettings,
   updateAiProviderSettings,
   writeSecretValue,
+  readSecretValue,
   fetchAiModels,
   testAiConnectivity,
   testExaConnectivity,
@@ -87,7 +99,6 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const [aiModel, setAIModel] = useState("");
   const [resumeImportVisionModel, setResumeImportVisionModel] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
-  const [setAsDefault, setSetAsDefault] = useState(true);
 
   // Exa
   const [exaPoolBaseURL, setExaPoolBaseURL] = useState("https://api.exa.ai");
@@ -111,10 +122,6 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const [exaTestResult, setExaTestResult] = useState<ConnectivityTestResult | null>(null);
   const [exaTesting, setExaTesting] = useState(false);
 
-  // Save state
-  const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-
   // Load settings on open
   useEffect(() => {
     if (!open) return;
@@ -132,10 +139,19 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         setAIBaseURL(config?.baseUrl || "");
         setAIModel(config?.model || "");
         setResumeImportVisionModel(settings.ai?.resumeImportVisionModel || "");
-        setSetAsDefault(true);
+
+        // Load saved API keys
+        const apiKey = await readSecretValue(`provider.${provider}.api_key`);
+        if (apiKey) {
+          setAIApiKey(apiKey);
+        }
 
         // Exa
         setExaPoolBaseURL(settings.ai?.exaPoolBaseUrl || "https://api.exa.ai");
+        const exaApiKey = await readSecretValue("provider.exa_pool.api_key");
+        if (exaApiKey) {
+          setExaPoolApiKey(exaApiKey);
+        }
       } catch (error) {
         console.error("Failed to load settings:", error);
       }
@@ -202,91 +218,157 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     m.toLowerCase().includes(visionModelSearch.toLowerCase()),
   );
 
-  // Mark as changed when settings are modified
-  const markChanged = () => setHasChanges(true);
+  // Auto-save handlers
+  const saveAppearance = useCallback(async (updates: { locale?: string; theme?: ThemeMode; autoSave?: boolean; autoSaveIntervalMs?: number }) => {
+    try {
+      const settings = await getWorkspaceSettingsSnapshot();
+      await updateWorkspaceAppearanceSettings({
+        locale: updates.locale ?? settings.locale ?? "zh",
+        theme: updates.theme ?? settings.theme ?? "system",
+        autoSave: updates.autoSave ?? settings.editor?.autoSave ?? true,
+        autoSaveIntervalMs: updates.autoSaveIntervalMs ?? settings.editor?.autoSaveIntervalMs ?? 500,
+        rememberWindowState: true,
+      });
+      if (updates.theme) {
+        applyDesktopTheme(updates.theme);
+      }
+      if (updates.locale) {
+        void i18n.changeLanguage(updates.locale);
+      }
+    } catch (error) {
+      console.error("Failed to save appearance settings:", error);
+    }
+  }, []);
+
+  const saveAIConfig = useCallback(async (updates: {
+    provider?: AiProvider;
+    baseUrl?: string;
+    model?: string;
+    resumeImportVisionModel?: string;
+    exaPoolBaseUrl?: string;
+  }) => {
+    try {
+      const payload: ProviderConfigUpdateInput = {
+        provider: updates.provider ?? aiProvider,
+        baseUrl: updates.baseUrl ?? aiBaseURL,
+        model: updates.model ?? aiModel,
+        setAsDefault: true,
+        resumeImportVisionModel: updates.resumeImportVisionModel ?? resumeImportVisionModel,
+        exaPoolBaseUrl: updates.exaPoolBaseUrl ?? exaPoolBaseURL,
+      };
+      await updateAiProviderSettings(payload);
+    } catch (error) {
+      console.error("Failed to save AI settings:", error);
+    }
+  }, [aiProvider, aiBaseURL, aiModel, resumeImportVisionModel]);
 
   const handleThemeChange = (value: ThemeMode) => {
     setTheme(value);
-    markChanged();
+    void saveAppearance({ theme: value });
   };
 
   const handleLanguageChange = (value: string) => {
     setLanguage(value);
-    markChanged();
+    void saveAppearance({ locale: value });
   };
 
   const handleAutoSaveChange = (value: boolean) => {
     setAutoSave(value);
-    markChanged();
+    void saveAppearance({ autoSave: value });
   };
 
   const handleAutoSaveIntervalChange = ([v]: number[]) => {
     setAutoSaveInterval(v);
-    markChanged();
+    void saveAppearance({ autoSaveIntervalMs: v });
   };
 
-  // Save AI settings
   const handleProviderChange = async (value: AiProvider) => {
     setAIProvider(value);
-    markChanged();
     // Load config for new provider
     try {
       const settings = await getWorkspaceSettingsSnapshot();
       const config = settings.ai?.providerConfigs?.[value];
       setAIBaseURL(config?.baseUrl || "");
       setAIModel(config?.model || "");
+      // Load API key for new provider
+      const apiKey = await readSecretValue(`provider.${value}.api_key`);
+      setAIApiKey(apiKey || "");
     } catch { /* ignore */ }
+    void saveAIConfig({ provider: value });
   };
 
-  // Save all settings
-  const handleSaveAll = useCallback(async () => {
-    setSaving(true);
-    try {
-      // Save appearance settings
-      await updateWorkspaceAppearanceSettings({
-        locale: language,
-        theme,
-        autoSave,
-        rememberWindowState: true,
-      });
-      applyDesktopTheme(theme);
-      void i18n.changeLanguage(language);
+  const handleBaseURLChange = (value: string) => {
+    setAIBaseURL(value);
+  };
 
-      // Save AI settings
-      const payload: ProviderConfigUpdateInput = {
-        provider: aiProvider,
-        baseUrl: aiBaseURL,
-        model: aiModel,
-        setAsDefault,
-        resumeImportVisionModel,
-      };
-      await updateAiProviderSettings(payload);
+  const handleBaseURLBlur = () => {
+    void saveAIConfig({ baseUrl: aiBaseURL });
+  };
 
-      // Save API keys if provided
-      if (aiApiKey.trim()) {
+  const handleModelChange = (value: string) => {
+    setAIModel(value);
+    setModelOpen(false);
+    void saveAIConfig({ model: value });
+  };
+
+  const handleVisionModelChange = (value: string) => {
+    setResumeImportVisionModel(value);
+    setVisionModelOpen(false);
+    void saveAIConfig({ resumeImportVisionModel: value });
+  };
+
+  const handleApiKeyBlur = async () => {
+    if (aiApiKey.trim()) {
+      try {
         await writeSecretValue({
           key: `provider.${aiProvider}.api_key`,
           provider: aiProvider,
           value: aiApiKey.trim(),
         });
+      } catch (error) {
+        console.error("Failed to save API key:", error);
       }
-      if (exaPoolApiKey.trim()) {
+    }
+  };
+
+  const handleExaBaseURLChange = (value: string) => {
+    setExaPoolBaseURL(value);
+  };
+
+  const handleExaBaseURLBlur = () => {
+    void saveAIConfig({ exaPoolBaseUrl: exaPoolBaseURL });
+  };
+
+  const handleExaApiKeyBlur = async () => {
+    if (exaPoolApiKey.trim()) {
+      try {
         await writeSecretValue({
           key: "provider.exa_pool.api_key",
           provider: "openai",
           value: exaPoolApiKey.trim(),
         });
+      } catch (error) {
+        console.error("Failed to save Exa API key:", error);
       }
-
-      setHasChanges(false);
-    } catch (error) {
-      console.error("Failed to save settings:", error);
-    } finally {
-      setSaving(false);
     }
-  }, [theme, language, autoSave, aiProvider, aiBaseURL, aiModel, aiApiKey, resumeImportVisionModel, exaPoolApiKey, setAsDefault]);
+  };
 
   const handleTestAiConnection = useCallback(async () => {
+    // Save API key first before testing
+    if (aiApiKey.trim()) {
+      try {
+        await writeSecretValue({
+          key: `provider.${aiProvider}.api_key`,
+          provider: aiProvider,
+          value: aiApiKey.trim(),
+        });
+      } catch (error) {
+        console.error("Failed to save API key before test:", error);
+      }
+    }
+    // Also save other settings
+    await saveAIConfig({ baseUrl: aiBaseURL, model: aiModel });
+
     setAiTesting(true);
     setAiTestResult(null);
     try {
@@ -301,9 +383,23 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     } finally {
       setAiTesting(false);
     }
-  }, [aiProvider]);
+  }, [aiProvider, aiApiKey, aiBaseURL, aiModel, saveAIConfig]);
 
   const handleTestExaConnection = useCallback(async () => {
+    // Save Exa settings first before testing
+    await saveAIConfig({ exaPoolBaseUrl: exaPoolBaseURL });
+    if (exaPoolApiKey.trim()) {
+      try {
+        await writeSecretValue({
+          key: "provider.exa_pool.api_key",
+          provider: "openai",
+          value: exaPoolApiKey.trim(),
+        });
+      } catch (error) {
+        console.error("Failed to save Exa API key before test:", error);
+      }
+    }
+
     setExaTesting(true);
     setExaTestResult(null);
     try {
@@ -318,27 +414,21 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     } finally {
       setExaTesting(false);
     }
-  }, []);
-
-  if (!open) return null;
+  }, [exaPoolApiKey, exaPoolBaseURL, saveAIConfig]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 grid items-start justify-items-center overflow-y-auto bg-black/50 p-4 sm:items-center"
-    >
-      <div
-        className="relative my-4 w-full max-w-[540px] max-h-[calc(100vh-2rem)] overflow-y-auto rounded-lg bg-white shadow-xl dark:bg-zinc-900"
-      >
+    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <SheetContent side="right" className="w-[420px] sm:max-w-[420px] p-0 flex flex-col" showCloseButton>
         {/* Header */}
-        <div className="px-6 pt-6 pb-0">
-          <div className="flex items-center gap-2">
+        <SheetHeader className="px-6 py-4 border-b dark:border-zinc-800">
+          <SheetTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-zinc-500" />
-            <h2 className="text-lg font-semibold">{t("settings.title")}</h2>
-          </div>
-        </div>
+            {t("settings.title")}
+          </SheetTitle>
+        </SheetHeader>
 
         {/* Tabs */}
-        <div className="mt-4 px-6">
+        <div className="px-6 pt-4">
           <div className="inline-flex h-10 w-full items-center justify-center rounded-md bg-zinc-100 p-1 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
             {[
               { value: "ai", icon: Cpu, label: t("settings.ai.title") },
@@ -363,508 +453,398 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
           </div>
         </div>
 
-        {/* AI Configuration Tab */}
-        {settingsTab === "ai" && (
-          <div className="px-6 pb-6 pt-4 space-y-5">
-            {/* Provider */}
-            <div className="space-y-2">
-              <Label>{t("settings.ai.provider")}</Label>
-              <select
-                value={aiProvider}
-                onChange={(e) => void handleProviderChange(e.target.value as AiProvider)}
-                className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
-              >
-                {AI_PROVIDERS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* API Key */}
-            <div className="space-y-2">
-              <Label>{t("settings.ai.apiKey")}</Label>
-              <div className="relative">
-                <Input
-                  type={showApiKey ? "text" : "password"}
-                  value={aiApiKey}
-                  onChange={(e) => {
-                    setAIApiKey(e.target.value);
-                    markChanged();
-                  }}
-                  placeholder={t("settings.ai.apiKeyPlaceholder")}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 text-zinc-400 hover:text-zinc-600 cursor-pointer"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                >
-                  {showApiKey ? (
-                    <EyeOff className="h-3.5 w-3.5" />
-                  ) : (
-                    <Eye className="h-3.5 w-3.5" />
-                  )}
-                </Button>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4">
+          {/* AI Configuration Tab */}
+          {settingsTab === "ai" && (
+            <div className="space-y-4">
+              {/* Provider */}
+              <div className="space-y-2">
+                <Label>{t("settings.ai.provider")}</Label>
+                <Select value={aiProvider} onValueChange={(v) => void handleProviderChange(v as AiProvider)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AI_PROVIDERS.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <p className="text-xs text-zinc-400">{t("settings.ai.apiKeyHint")}</p>
-            </div>
 
-            {/* Base URL */}
-            <div className="space-y-2">
-              <Label>{t("settings.ai.baseURL")}</Label>
-              <Input
-                value={aiBaseURL}
-                onChange={(e) => {
-                  setAIBaseURL(e.target.value);
-                  markChanged();
-                }}
-                placeholder="https://api.openai.com/v1"
-              />
-            </div>
-
-            {/* Model — Combobox */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>{t("settings.ai.model")}</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 gap-1 text-xs cursor-pointer text-zinc-400 hover:text-zinc-600"
-                  disabled={modelsFetching}
-                  onClick={() => void fetchModelsForProvider()}
-                >
-                  <RefreshCw className={cn("h-3 w-3", modelsFetching && "animate-spin")} />
-                  {modelsFetching ? t("aiFetchingModels") : t("settings.ai.fetchModels")}
-                </Button>
-              </div>
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={modelOpen}
-                  className="w-full justify-between cursor-pointer font-normal"
-                  onClick={() => {
-                    setModelOpen(!modelOpen);
-                    setVisionModelOpen(false);
-                  }}
-                >
-                  <span className="truncate">
-                    {aiModel || t("settings.ai.modelPlaceholder")}
-                  </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-                {modelOpen && (
-                  <div className="absolute z-50 mt-1 w-full rounded-md border border-zinc-200 bg-white shadow-md dark:border-zinc-800 dark:bg-zinc-900">
-                    {/* Search input */}
-                    <div className="border-b px-3 py-2 dark:border-zinc-800">
-                      <Input
-                        ref={modelSearchRef}
-                        value={modelSearch}
-                        onChange={(e) => setModelSearch(e.target.value)}
-                        placeholder={t("settings.ai.modelPlaceholder")}
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    {/* Model list */}
-                    <div className="max-h-48 overflow-y-auto">
-                      {modelsFetching && (
-                        <div className="flex items-center gap-2 px-3 py-3 text-xs text-zinc-400">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          {t("aiFetchingModels")}
-                        </div>
-                      )}
-                      {!modelsFetching && filteredModels.length === 0 && modelsFetched && (
-                        <div className="px-3 py-3 text-xs text-zinc-400">
-                          {t("aiNoModelsFound")}
-                        </div>
-                      )}
-                      {filteredModels.map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          className={cn(
-                            "flex w-full cursor-pointer items-center px-3 py-1.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800",
-                            aiModel === m && "bg-zinc-100 dark:bg-zinc-800",
-                          )}
-                          onClick={() => {
-                            setAIModel(m);
-                            setModelOpen(false);
-                            markChanged();
-                          }}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", aiModel === m ? "opacity-100" : "opacity-0")} />
-                          {m}
-                        </button>
-                      ))}
-                    </div>
-                    {/* Manual entry */}
-                    <div className="border-t px-3 py-2 dark:border-zinc-800">
-                      <Input
-                        value={aiModel}
-                        onChange={(e) => {
-                          setAIModel(e.target.value);
-                          markChanged();
-                        }}
-                        placeholder={t("settings.ai.modelPlaceholder")}
-                        className="h-8 text-sm"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            setModelOpen(false);
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("settings.ai.resumeImportVisionModel")}</Label>
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={visionModelOpen}
-                  className="w-full justify-between cursor-pointer font-normal"
-                  onClick={() => {
-                    setVisionModelOpen(!visionModelOpen);
-                    setModelOpen(false);
-                  }}
-                >
-                  <span className="truncate">
-                    {resumeImportVisionModel || t("settings.ai.resumeImportVisionModelPlaceholder")}
-                  </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-                {visionModelOpen && (
-                  <div className="absolute z-50 mt-1 w-full rounded-md border border-zinc-200 bg-white shadow-md dark:border-zinc-800 dark:bg-zinc-900">
-                    <div className="border-b px-3 py-2 dark:border-zinc-800">
-                      <Input
-                        ref={visionModelSearchRef}
-                        value={visionModelSearch}
-                        onChange={(e) => setVisionModelSearch(e.target.value)}
-                        placeholder={t("settings.ai.resumeImportVisionModelPlaceholder")}
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div className="max-h-48 overflow-y-auto">
-                      {modelsFetching && (
-                        <div className="flex items-center gap-2 px-3 py-3 text-xs text-zinc-400">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          {t("aiFetchingModels")}
-                        </div>
-                      )}
-                      {!modelsFetching && filteredVisionModels.length === 0 && modelsFetched && (
-                        <div className="px-3 py-3 text-xs text-zinc-400">
-                          {t("aiNoModelsFound")}
-                        </div>
-                      )}
-                      {filteredVisionModels.map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          className={cn(
-                            "flex w-full cursor-pointer items-center px-3 py-1.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800",
-                            resumeImportVisionModel === m && "bg-zinc-100 dark:bg-zinc-800",
-                          )}
-                          onClick={() => {
-                            setResumeImportVisionModel(m);
-                            setVisionModelOpen(false);
-                            markChanged();
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              resumeImportVisionModel === m ? "opacity-100" : "opacity-0",
-                            )}
-                          />
-                          {m}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="border-t px-3 py-2 dark:border-zinc-800">
-                      <Input
-                        value={resumeImportVisionModel}
-                        onChange={(e) => {
-                          setResumeImportVisionModel(e.target.value);
-                          markChanged();
-                        }}
-                        placeholder={t("settings.ai.resumeImportVisionModelPlaceholder")}
-                        className="h-8 text-sm"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            setVisionModelOpen(false);
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-zinc-400">
-                {t("settings.ai.resumeImportVisionModelHint")}
-              </p>
-            </div>
-
-            {/* Test AI Connection */}
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="cursor-pointer gap-1.5"
-                disabled={aiTesting}
-                onClick={() => void handleTestAiConnection()}
-              >
-                {aiTesting ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Plug className="h-3.5 w-3.5" />
-                )}
-                {aiTesting ? t("aiTesting") : t("aiTestConnection")}
-              </Button>
-              {aiTestResult && (
-                <span
-                  className={cn(
-                    "text-xs font-medium",
-                    aiTestResult.success
-                      ? "text-green-600"
-                      : "text-red-500",
-                  )}
-                >
-                  {aiTestResult.success
-                    ? `${t("aiConnected")} (${aiTestResult.latencyMs}ms)`
-                    : aiTestResult.errorMessage || t("aiConnectionFailed")}
-                </span>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Web Tools (Exa) */}
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                {t("settings.ai.webToolsTitle")}
-              </div>
-              <p className="text-xs leading-relaxed text-zinc-400">
-                {t("settings.ai.webToolsDescription")}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("settings.ai.exaPoolBaseURL")}</Label>
-              <Input
-                value={exaPoolBaseURL}
-                onChange={(e) => {
-                  setExaPoolBaseURL(e.target.value);
-                  markChanged();
-                }}
-                placeholder={t("settings.ai.exaPoolBaseURLPlaceholder")}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("settings.ai.exaPoolApiKey")}</Label>
-              <div className="relative">
-                <Input
-                  type={showExaPoolApiKey ? "text" : "password"}
-                  value={exaPoolApiKey}
-                  onChange={(e) => {
-                    setExaPoolApiKey(e.target.value);
-                    markChanged();
-                  }}
-                  placeholder={t("settings.ai.exaPoolApiKeyPlaceholder")}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-zinc-400 hover:text-zinc-600 cursor-pointer"
-                  onClick={() => setShowExaPoolApiKey(!showExaPoolApiKey)}
-                >
-                  {showExaPoolApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                </Button>
-              </div>
-              <p className="text-xs text-zinc-400">{t("settings.ai.exaPoolApiKeyHint")}</p>
-            </div>
-
-            {/* Test Exa Connection */}
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="cursor-pointer gap-1.5"
-                disabled={exaTesting}
-                onClick={() => void handleTestExaConnection()}
-              >
-                {exaTesting ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Plug className="h-3.5 w-3.5" />
-                )}
-                {exaTesting ? t("aiTesting") : t("aiTestConnection")}
-              </Button>
-              {exaTestResult && (
-                <span
-                  className={cn(
-                    "text-xs font-medium",
-                    exaTestResult.success
-                      ? "text-green-600"
-                      : "text-red-500",
-                  )}
-                >
-                  {exaTestResult.success
-                    ? `${t("aiConnected")} (${exaTestResult.latencyMs}ms)`
-                    : exaTestResult.errorMessage || t("aiConnectionFailed")}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Appearance Tab */}
-        {settingsTab === "appearance" && (
-          <div className="px-6 pb-6 pt-4 space-y-5">
-            {/* Theme */}
-            <div className="space-y-3">
-              <Label>{t("settings.appearance.theme")}</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { value: "light" as const, icon: Sun, label: t("settings.appearance.themeLight") },
-                  { value: "dark" as const, icon: Moon, label: t("settings.appearance.themeDark") },
-                  { value: "system" as const, icon: Monitor, label: t("settings.appearance.themeSystem") },
-                ].map(({ value, icon: Icon, label }) => (
-                  <button
-                    key={value}
+              {/* API Key */}
+              <div className="space-y-2">
+                <Label>{t("settings.ai.apiKey")}</Label>
+                <div className="relative">
+                  <Input
+                    type={showApiKey ? "text" : "password"}
+                    value={aiApiKey}
+                    onChange={(e) => setAIApiKey(e.target.value)}
+                    onBlur={() => void handleApiKeyBlur()}
+                    placeholder={t("settings.ai.apiKeyPlaceholder")}
+                    className="pr-10"
+                  />
+                  <Button
                     type="button"
-                    onClick={() => handleThemeChange(value)}
-                    className={`flex cursor-pointer flex-col items-center gap-2 rounded-lg border p-3 text-sm transition-all ${
-                      theme === value
-                        ? "border-zinc-900 bg-zinc-50 text-zinc-900 dark:border-zinc-100 dark:bg-zinc-800 dark:text-zinc-100"
-                        : "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:border-zinc-700 dark:hover:border-zinc-600"
-                    }`}
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                    onClick={() => setShowApiKey(!showApiKey)}
                   >
-                    <Icon className="h-5 w-5" />
-                    <span>{label}</span>
-                  </button>
-                ))}
+                    {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            <Separator />
-
-            {/* Language */}
-            <div className="space-y-2">
-              <Label>{t("settings.appearance.language")}</Label>
-              <select
-                value={language}
-                onChange={(e) => handleLanguageChange(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
-              >
-                {LOCALES.map((loc) => (
-                  <option key={loc.value} value={loc.value}>
-                    {loc.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
-
-        {/* Editor Tab */}
-        {settingsTab === "editor" && (
-          <div className="px-6 pb-6 pt-4 space-y-5">
-            {/* Auto Save */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>{t("settings.editorTab.autoSave")}</Label>
-                <p className="text-xs text-zinc-400">
-                  {t("settings.editorTab.autoSaveDescription")}
-                </p>
+              {/* Base URL */}
+              <div className="space-y-2">
+                <Label>{t("settings.ai.baseURL")}</Label>
+                <Input
+                  value={aiBaseURL}
+                  onChange={(e) => handleBaseURLChange(e.target.value)}
+                  onBlur={() => void handleBaseURLBlur()}
+                  placeholder="https://api.openai.com/v1"
+                />
               </div>
-              <Switch checked={autoSave} onCheckedChange={handleAutoSaveChange} />
-            </div>
 
-            <Separator />
-
-            {/* Auto Save Interval */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>{t("settings.editorTab.autoSaveInterval")}</Label>
-                <span className="text-sm text-zinc-500">
-                  {(autoSaveInterval / 1000).toFixed(1)}s
-                </span>
+              {/* Model */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1">
+                  <Label>{t("settings.ai.model")}</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-4 w-4 text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                    disabled={modelsFetching}
+                    onClick={() => void fetchModelsForProvider()}
+                  >
+                    <RefreshCw className={cn("h-3 w-3", modelsFetching && "animate-spin")} />
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={modelOpen}
+                    className="w-full justify-between cursor-pointer font-normal"
+                    onClick={() => {
+                      setModelOpen(!modelOpen);
+                      setVisionModelOpen(false);
+                    }}
+                  >
+                    <span className="truncate">{aiModel || t("settings.ai.modelPlaceholder")}</span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                  {modelOpen && (
+                    <div className="absolute z-50 mt-1 w-full rounded-md border border-zinc-200 bg-white shadow-md dark:border-zinc-800 dark:bg-zinc-900">
+                      <div className="border-b px-3 py-2 dark:border-zinc-800">
+                        <Input
+                          ref={modelSearchRef}
+                          value={modelSearch}
+                          onChange={(e) => setModelSearch(e.target.value)}
+                          placeholder={t("settings.ai.modelPlaceholder")}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="max-h-48 overflow-y-auto">
+                        {modelsFetching && (
+                          <div className="flex items-center gap-2 px-3 py-3 text-xs text-zinc-400">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            {t("aiFetchingModels")}
+                          </div>
+                        )}
+                        {!modelsFetching && filteredModels.length === 0 && modelsFetched && (
+                          <div className="px-3 py-3 text-xs text-zinc-400">{t("aiNoModelsFound")}</div>
+                        )}
+                        {filteredModels.map((m) => (
+                          <button
+                            key={m}
+                            type="button"
+                            className={cn(
+                              "flex w-full cursor-pointer items-center px-3 py-1.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800",
+                              aiModel === m && "bg-zinc-100 dark:bg-zinc-800",
+                            )}
+                            onClick={() => handleModelChange(m)}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", aiModel === m ? "opacity-100" : "opacity-0")} />
+                            {m}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="border-t px-3 py-2 dark:border-zinc-800">
+                        <Input
+                          value={aiModel}
+                          onChange={(e) => setAIModel(e.target.value)}
+                          placeholder={t("settings.ai.modelPlaceholder")}
+                          className="h-8 text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleModelChange(aiModel);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <Slider
-                value={[autoSaveInterval]}
-                onValueChange={handleAutoSaveIntervalChange}
-                min={300}
-                max={5000}
-                step={100}
-                disabled={!autoSave}
-              />
-              <div className="flex justify-between text-xs text-zinc-400">
-                <span>0.3s</span>
-                <span>5.0s</span>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Footer with Save button */}
-        <div className="sticky bottom-0 border-t bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex items-center justify-between">
-            {hasChanges && (
-              <span className="text-xs text-amber-600">
-                {t("settings.hasChanges")}
-              </span>
-            )}
-            <div className="flex items-center gap-2 ml-auto">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="cursor-pointer"
-                onClick={onClose}
-              >
-                {t("common.cancel")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                className="cursor-pointer gap-1.5"
-                disabled={saving || !hasChanges}
-                onClick={() => void handleSaveAll()}
-              >
-                {saving ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Save className="h-3.5 w-3.5" />
+              {/* Vision Model */}
+              <div className="space-y-2">
+                <Label>{t("settings.ai.resumeImportVisionModel")}</Label>
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={visionModelOpen}
+                    className="w-full justify-between cursor-pointer font-normal"
+                    onClick={() => {
+                      setVisionModelOpen(!visionModelOpen);
+                      setModelOpen(false);
+                    }}
+                  >
+                    <span className="truncate">
+                      {resumeImportVisionModel || t("settings.ai.resumeImportVisionModelPlaceholder")}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                  {visionModelOpen && (
+                    <div className="absolute z-50 mt-1 w-full rounded-md border border-zinc-200 bg-white shadow-md dark:border-zinc-800 dark:bg-zinc-900">
+                      <div className="border-b px-3 py-2 dark:border-zinc-800">
+                        <Input
+                          ref={visionModelSearchRef}
+                          value={visionModelSearch}
+                          onChange={(e) => setVisionModelSearch(e.target.value)}
+                          placeholder={t("settings.ai.resumeImportVisionModelPlaceholder")}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="max-h-48 overflow-y-auto">
+                        {modelsFetching && (
+                          <div className="flex items-center gap-2 px-3 py-3 text-xs text-zinc-400">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            {t("aiFetchingModels")}
+                          </div>
+                        )}
+                        {!modelsFetching && filteredVisionModels.length === 0 && modelsFetched && (
+                          <div className="px-3 py-3 text-xs text-zinc-400">{t("aiNoModelsFound")}</div>
+                        )}
+                        {filteredVisionModels.map((m) => (
+                          <button
+                            key={m}
+                            type="button"
+                            className={cn(
+                              "flex w-full cursor-pointer items-center px-3 py-1.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800",
+                              resumeImportVisionModel === m && "bg-zinc-100 dark:bg-zinc-800",
+                            )}
+                            onClick={() => handleVisionModelChange(m)}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", resumeImportVisionModel === m ? "opacity-100" : "opacity-0")} />
+                            {m}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="border-t px-3 py-2 dark:border-zinc-800">
+                        <Input
+                          value={resumeImportVisionModel}
+                          onChange={(e) => setResumeImportVisionModel(e.target.value)}
+                          placeholder={t("settings.ai.resumeImportVisionModelPlaceholder")}
+                          className="h-8 text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleVisionModelChange(resumeImportVisionModel);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-zinc-400">{t("settings.ai.resumeImportVisionModelHint")}</p>
+              </div>
+
+              {/* Test AI Connection */}
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="cursor-pointer gap-1.5"
+                  disabled={aiTesting}
+                  onClick={() => void handleTestAiConnection()}
+                >
+                  {aiTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plug className="h-3.5 w-3.5" />}
+                  {aiTesting ? t("aiTesting") : t("aiTestConnection")}
+                </Button>
+                {aiTestResult && (
+                  <span className={cn("text-xs font-medium", aiTestResult.success ? "text-green-600" : "text-red-500")}>
+                    {aiTestResult.success
+                      ? `${t("aiConnected")} (${aiTestResult.latencyMs}ms)`
+                      : aiTestResult.errorMessage || t("aiConnectionFailed")}
+                  </span>
                 )}
-                {saving ? t("settings.saving") : t("settings.save")}
-              </Button>
-            </div>
-          </div>
-        </div>
+              </div>
 
-        {/* Close button */}
-        <button
-          type="button"
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 cursor-pointer"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
+              <Separator />
+
+              {/* Web Tools (Exa) */}
+              <div className="space-y-1 pt-2">
+                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  {t("settings.ai.webToolsTitle")}
+                </div>
+                <p className="text-xs leading-relaxed text-zinc-400">{t("settings.ai.webToolsDescription")}</p>
+              </div>
+
+              {/* Exa Base URL */}
+              <div className="space-y-2">
+                <Label>{t("settings.ai.exaPoolBaseURL")}</Label>
+                <Input
+                  value={exaPoolBaseURL}
+                  onChange={(e) => handleExaBaseURLChange(e.target.value)}
+                  onBlur={handleExaBaseURLBlur}
+                  placeholder={t("settings.ai.exaPoolBaseURLPlaceholder")}
+                />
+              </div>
+
+              {/* Exa API Key */}
+              <div className="space-y-2">
+                <Label>{t("settings.ai.exaPoolApiKey")}</Label>
+                <div className="relative">
+                  <Input
+                    type={showExaPoolApiKey ? "text" : "password"}
+                    value={exaPoolApiKey}
+                    onChange={(e) => setExaPoolApiKey(e.target.value)}
+                    onBlur={() => void handleExaApiKeyBlur()}
+                    placeholder={t("settings.ai.exaPoolApiKeyPlaceholder")}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                    onClick={() => setShowExaPoolApiKey(!showExaPoolApiKey)}
+                  >
+                    {showExaPoolApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Test Exa Connection */}
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="cursor-pointer gap-1.5"
+                  disabled={exaTesting}
+                  onClick={() => void handleTestExaConnection()}
+                >
+                  {exaTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plug className="h-3.5 w-3.5" />}
+                  {exaTesting ? t("aiTesting") : t("aiTestConnection")}
+                </Button>
+                {exaTestResult && (
+                  <span className={cn("text-xs font-medium", exaTestResult.success ? "text-green-600" : "text-red-500")}>
+                    {exaTestResult.success
+                      ? `${t("aiConnected")} (${exaTestResult.latencyMs}ms)`
+                      : exaTestResult.errorMessage || t("aiConnectionFailed")}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Appearance Tab */}
+          {settingsTab === "appearance" && (
+            <div className="space-y-5">
+              {/* Theme */}
+              <div className="space-y-3">
+                <Label>{t("settings.appearance.theme")}</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "light" as const, icon: Sun, label: t("settings.appearance.themeLight") },
+                    { value: "dark" as const, icon: Moon, label: t("settings.appearance.themeDark") },
+                    { value: "system" as const, icon: Monitor, label: t("settings.appearance.themeSystem") },
+                  ].map(({ value, icon: Icon, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => handleThemeChange(value)}
+                      className={`flex cursor-pointer flex-col items-center gap-2 rounded-lg border p-3 text-sm transition-all ${
+                        theme === value
+                          ? "border-zinc-900 bg-zinc-50 text-zinc-900 dark:border-zinc-100 dark:bg-zinc-800 dark:text-zinc-100"
+                          : "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:border-zinc-700 dark:hover:border-zinc-600"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Language */}
+              <div className="space-y-2">
+                <Label>{t("settings.appearance.language")}</Label>
+                <Select value={language} onValueChange={(v) => handleLanguageChange(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOCALES.map((loc) => (
+                      <SelectItem key={loc.value} value={loc.value}>
+                        {loc.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {/* Editor Tab */}
+          {settingsTab === "editor" && (
+            <div className="space-y-5">
+              {/* Auto Save */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t("settings.editorTab.autoSave")}</Label>
+                  <p className="text-xs text-zinc-400">
+                    {t("settings.editorTab.autoSaveDescription")}
+                  </p>
+                </div>
+                <Switch checked={autoSave} onCheckedChange={handleAutoSaveChange} />
+              </div>
+
+              <Separator />
+
+              {/* Auto Save Interval */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>{t("settings.editorTab.autoSaveInterval")}</Label>
+                  <span className="text-sm text-zinc-500">
+                    {(autoSaveInterval / 1000).toFixed(1)}s
+                  </span>
+                </div>
+                <Slider
+                  value={[autoSaveInterval]}
+                  onValueChange={handleAutoSaveIntervalChange}
+                  min={300}
+                  max={5000}
+                  step={100}
+                  disabled={!autoSave}
+                />
+                <div className="flex justify-between text-xs text-zinc-400">
+                  <span>0.3s</span>
+                  <span>5.0s</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
