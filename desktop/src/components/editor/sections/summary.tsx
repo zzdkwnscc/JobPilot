@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { EditableRichText } from "../fields/editable-rich-text";
+import { EditableMarkdown } from "../fields/editable-markdown";
 import type { ResumeSection, SummaryContent } from "../../../types/resume";
 
 interface Props {
@@ -12,11 +12,11 @@ export function SummarySection({ section, onUpdate }: Props) {
   const content = section.content as SummaryContent;
 
   return (
-    <EditableRichText
+    <EditableMarkdown
       label={t("editor.fields.description")}
       value={content.text || ""}
       onChange={(v) => onUpdate({ text: v })}
-      rows={4}
+      rows={6}
     />
   );
 }

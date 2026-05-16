@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { EditableText } from "../fields/editable-text";
 import { EditableDate } from "../fields/editable-date";
-import { EditableList } from "../fields/editable-list";
+import { EditableTextareaList } from "../fields/editable-textarea-list";
 import { FieldWrapper } from "../fields/field-wrapper";
 import { generateId } from "../../../stores/resume-store";
 import type { ResumeSection, EducationContent, EducationItem } from "../../../types/resume";
@@ -98,10 +98,12 @@ export function EducationSection({ section, onUpdate }: Props) {
                 onChange={(v) => updateItem(index, { endDate: v })}
               />
             </FieldWrapper>
-            <EditableList
+            <EditableTextareaList
               label={t("editor.fields.highlights")}
               items={item.highlights || []}
               onChange={(v) => updateItem(index, { highlights: v })}
+              placeholder="每行输入一个亮点..."
+              rows={3}
             />
           </div>
         </div>

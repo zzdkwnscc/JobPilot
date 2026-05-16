@@ -3,7 +3,7 @@ import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { EditableText } from "../fields/editable-text";
-import { EditableRichText } from "../fields/editable-rich-text";
+import { EditableMarkdown } from "../fields/editable-markdown";
 import { FieldWrapper } from "../fields/field-wrapper";
 import { generateId } from "../../../stores/resume-store";
 import type { ResumeSection, CustomContent, CustomItem } from "../../../types/resume";
@@ -69,10 +69,11 @@ export function CustomSection({ section, onUpdate }: Props) {
                 onChange={(v) => updateItem(index, { date: v })}
               />
             </FieldWrapper>
-            <EditableRichText
+            <EditableMarkdown
               label={t("editor.fields.description")}
               value={item.description}
               onChange={(v) => updateItem(index, { description: v })}
+              rows={3}
             />
           </div>
         </div>
