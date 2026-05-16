@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { EditableText } from "../fields/editable-text";
 import { EditableDate } from "../fields/editable-date";
 import { EditableMarkdown } from "../fields/editable-markdown";
-import { EditableTextareaList } from "../fields/editable-textarea-list";
+import { EditableList } from "../fields/editable-list";
 import { FieldWrapper } from "../fields/field-wrapper";
 import { generateId } from "../../../stores/resume-store";
 import type { ResumeSection } from "../../../types/resume";
@@ -98,19 +98,15 @@ export function ProjectsSection({ section, onUpdate }: Props) {
               onChange={(v) => updateItem(index, { description: v })}
               rows={3}
             />
-            <EditableTextareaList
+            <EditableList
               label={t("editor.fields.technologies")}
               items={item.technologies || []}
               onChange={(v) => updateItem(index, { technologies: v })}
-              placeholder="每行输入一个技术栈..."
-              rows={2}
             />
-            <EditableTextareaList
+            <EditableList
               label={t("editor.fields.highlights")}
               items={item.highlights || []}
               onChange={(v) => updateItem(index, { highlights: v })}
-              placeholder="每行输入一个亮点..."
-              rows={3}
             />
           </div>
         </div>

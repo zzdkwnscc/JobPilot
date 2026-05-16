@@ -1,5 +1,5 @@
 import { Plus, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 interface EditableListProps {
@@ -7,6 +7,7 @@ interface EditableListProps {
   items: string[];
   onChange: (items: string[]) => void;
   placeholder?: string;
+  rows?: number;
 }
 
 export function EditableList({
@@ -14,6 +15,7 @@ export function EditableList({
   items,
   onChange,
   placeholder,
+  rows = 2,
 }: EditableListProps) {
   const addItem = () => onChange([...(items || []), ""]);
 
@@ -34,12 +36,13 @@ export function EditableList({
       </label>
       <div className="space-y-1.5">
         {(items || []).map((item, index) => (
-          <div key={index} className="flex items-center gap-1">
-            <Input
+          <div key={index} className="flex items-start gap-1">
+            <Textarea
               value={item}
               onChange={(e) => updateItem(index, e.target.value)}
               placeholder={placeholder}
-              className="h-8 text-sm"
+              rows={rows}
+              className="text-sm resize-none"
             />
             <Button
               variant="ghost"
