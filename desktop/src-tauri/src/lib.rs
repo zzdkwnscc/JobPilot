@@ -503,7 +503,7 @@ pub fn run() {
             parse_pdf_resume
         ])
         .run(tauri::generate_context!())
-        .expect("failed to run RoleRover desktop shell");
+        .expect("failed to run JobPilot desktop shell");
 }
 
 fn resolve_workspace_root(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {

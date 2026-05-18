@@ -1670,7 +1670,7 @@ async fn fetch_webpage_context(
         .post(&endpoint)
         .bearer_auth(&config.api_key)
         .header("Content-Type", "application/json")
-        .header("User-Agent", "rolerover-desktop/1.0")
+        .header("User-Agent", "jobpilot-desktop/1.0")
         .json(&json!({
             "urls": urls,
             "text": true,
@@ -1779,7 +1779,7 @@ async fn search_web_context(
         .post(&endpoint)
         .bearer_auth(&config.api_key)
         .header("Content-Type", "application/json")
-        .header("User-Agent", "rolerover-desktop/1.0")
+        .header("User-Agent", "jobpilot-desktop/1.0")
         .json(&json!({
             "query": query,
             "numResults": MAX_SEARCH_RESULTS,

@@ -3,8 +3,6 @@ name: Desktop CI
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -144,7 +142,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: rolerover-desktop-windows-${{ github.sha }}
+          name: jobpilot-desktop-windows-${{ github.sha }}
           path: |
             .codex-cargo-target/desktop-tauri/release/bundle/**/*.exe
             .codex-cargo-target/desktop-tauri/release/bundle/**/*.exe.sig
@@ -158,7 +156,7 @@ jobs:
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
-          name: rolerover-desktop-macos-${{ matrix.target }}-${{ github.sha }}
+          name: jobpilot-desktop-macos-${{ matrix.target }}-${{ github.sha }}
           path: |
             .codex-cargo-target/desktop-tauri/release/bundle/**/*.dmg
             .codex-cargo-target/desktop-tauri/release/bundle/**/*.dmg.sig

@@ -1149,7 +1149,7 @@ fn os_keyring_backend_supported() -> bool {
 }
 
 fn secret_keyring_target(secret_key: &str) -> String {
-    format!("RoleRoverDesktop/{secret_key}")
+    format!("JobPilot/{secret_key}")
 }
 
 fn read_secret_from_os_keyring(secret_key: &str) -> Result<Option<String>, String> {
@@ -1383,9 +1383,12 @@ mod windows_credential {
 
 #[cfg(target_os = "macos")]
 mod macos_keychain {
+    const SERVICE: &str = "JobPilot";
+
     pub fn read(target: &str) -> Result<Option<String>, String> {
-        let entry = keyring::Entry::new("RoleRoverDesktop", target)
-            .map_err(|error| format!("failed to create keyring entry for read ({target}): {error}"))?;
+        let entry = keyring::Entry::new(SERVICE, target).map_err(|error| {
+            format!("failed to create keyring entry for read ({target}): {error}")
+        })?;
         match entry.get_password() {
             Ok(password) => Ok(Some(password)),
             Err(keyring::Error::NoEntry) => Ok(None),
@@ -1396,19 +1399,20 @@ mod macos_keychain {
     }
 
     pub fn write(target: &str, value: &str) -> Result<(), String> {
-        let entry = keyring::Entry::new("RoleRoverDesktop", target)
-            .map_err(|error| format!("failed to create keyring entry for write ({target}): {error}"))?;
+        let entry = keyring::Entry::new(SERVICE, target).map_err(|error| {
+            format!("failed to create keyring entry for write ({target}): {error}")
+        })?;
         entry.set_password(value).map_err(|error| {
             format!("failed to write secret to macOS Keychain ({target}): {error}")
         })
     }
 
     pub fn delete(target: &str) -> Result<(), String> {
-        let entry = keyring::Entry::new("RoleRoverDesktop", target)
-            .map_err(|error| format!("failed to create keyring entry for delete ({target}): {error}"))?;
+        let entry = keyring::Entry::new(SERVICE, target).map_err(|error| {
+            format!("failed to create keyring entry for delete ({target}): {error}")
+        })?;
         match entry.delete_credential() {
-            Ok(()) => Ok(()),
-            Err(keyring::Error::NoEntry) => Ok(()),
+            Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
             Err(error) => Err(format!(
                 "failed to delete secret from macOS Keychain ({target}): {error}"
             )),
