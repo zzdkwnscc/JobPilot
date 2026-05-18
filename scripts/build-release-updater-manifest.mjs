@@ -29,7 +29,7 @@ const bundleDirCandidates = [
   path.join(ROOT, ".codex-cargo-target", "desktop-tauri", "release", "bundle"),
   path.join(ROOT, "desktop", "src-tauri", "target", "release", "bundle"),
 ].filter((value) => typeof value === "string" && value.length > 0);
-const supportedArtifactExtensions = [".zip", ".exe", ".msi", ".dmg"];
+const supportedArtifactExtensions = [".zip", ".exe", ".msi", ".dmg", ".app.tar.gz"];
 
 function walk(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -46,8 +46,12 @@ function walk(dir) {
 }
 
 function scoreArtifact(artifactPath) {
-  const extension = path.extname(artifactPath).toLowerCase();
   const normalized = artifactPath.toLowerCase();
+  // Check for .app.tar.gz first (macOS updater artifact)
+  if (normalized.endsWith(".app.tar.gz")) {
+    return 4;
+  }
+  const extension = path.extname(artifactPath).toLowerCase();
   if (normalized.includes("nsis") && extension === ".exe") {
     return 4;
   }
