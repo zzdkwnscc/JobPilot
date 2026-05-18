@@ -189,15 +189,16 @@ jobs:
         run: |
           $assets = @()
 
-          # Windows assets
+          # Collect all assets from both platforms
           Get-ChildItem -Path "build-artifacts" -Recurse -File -Force |
-            Where-Object { $_.Extension -in @('.exe', '.msi', '.zip', '.sig') } |
+            Where-Object {
+              $_.Extension -in @('.exe', '.msi', '.zip', '.dmg', '.sig') -or
+              $_.Name.EndsWith('.app.tar.gz')
+            } |
             ForEach-Object { $assets += $_.FullName }
 
-          # macOS assets
-          Get-ChildItem -Path "build-artifacts" -Recurse -File -Force |
-            Where-Object { $_.Extension -in @('.dmg', '.app', '.sig') -or $_.Name.EndsWith('.app.tar.gz') } |
-            ForEach-Object { $assets += $_.FullName }
+          # Remove duplicates (in case .sig was matched twice)
+          $assets = $assets | Select-Object -Unique
 
           # Merged manifest
           $manifestPath = (Resolve-Path "desktop/.codex-temp/release-assets/latest.json").Path
