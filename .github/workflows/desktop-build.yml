@@ -76,10 +76,6 @@ jobs:
             runner: macos-latest
             rust_target: aarch64-apple-darwin
             artifact_ext: dmg
-          - target: x86_64-apple-darwin
-            runner: macos-13
-            rust_target: x86_64-apple-darwin
-            artifact_ext: dmg
 
     steps:
       - name: Checkout repository
