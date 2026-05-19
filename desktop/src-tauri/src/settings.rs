@@ -447,27 +447,20 @@ pub fn write_secret_value(
             .key_descriptors
             .retain(|descriptor| descriptor.key != secret_key);
     } else {
-        match write_secret_to_os_keyring(secret_key, &trimmed_value) {
-            Ok(()) => {
-                fallback.entries.remove(secret_key);
-            }
-            Err(error) => {
-                if os_keyring_backend_supported() {
-                    return Err(error);
-                }
-
-                fallback.entries.insert(
-                    secret_key.into(),
-                    VaultFallbackEntry {
-                        encoding: VaultFallbackEncoding::Utf8Plaintext,
-                        encrypted: false,
-                        value: trimmed_value,
-                        imported_from: "desktop-runtime".into(),
-                        imported_at_epoch_ms: timestamp,
-                    },
-                );
-            }
-        }
+        // Always write to vault-fallback as persistent backup.
+        // On macOS, Keychain access can break after re-signing or permission changes;
+        // keeping the fallback ensures keys survive keyring failures.
+        let _ = write_secret_to_os_keyring(secret_key, &trimmed_value);
+        fallback.entries.insert(
+            secret_key.into(),
+            VaultFallbackEntry {
+                encoding: VaultFallbackEncoding::Utf8Plaintext,
+                encrypted: false,
+                value: trimmed_value,
+                imported_from: "desktop-runtime".into(),
+                imported_at_epoch_ms: timestamp,
+            },
+        );
 
         manifest
             .key_descriptors
@@ -504,45 +497,22 @@ pub fn read_secret_value(workspace_root: &Path, key: &str) -> Result<Option<Stri
         return Ok(None);
     }
 
+    // Try keyring first; on failure silently fall back to vault file.
+    // Keychain access can break on macOS after re-signing, permission changes,
+    // or when running unsigned dev builds — never surface keyring errors to the caller.
     match read_secret_from_os_keyring(secret_key) {
         Ok(Some(value)) => return Ok(Some(value)),
         Ok(None) => {}
-        Err(error) => {
-            if os_keyring_backend_supported() && !vault_fallback_path(workspace_root).exists() {
-                return Err(error);
-            }
-        }
+        Err(_) => {}
     }
 
-    let mut fallback = load_or_initialize_vault_fallback(workspace_root)?;
+    let fallback = load_or_initialize_vault_fallback(workspace_root)?;
     let Some(entry) = fallback.entries.get(secret_key).cloned() else {
         return Ok(None);
     };
 
     match entry.encoding {
-        VaultFallbackEncoding::Utf8Plaintext => {
-            let plaintext_value = entry.value.clone();
-            if write_secret_to_os_keyring(secret_key, &plaintext_value).is_ok() {
-                fallback.entries.remove(secret_key);
-
-                if fallback.entries.is_empty() {
-                    let path = vault_fallback_path(workspace_root);
-                    if path.exists() {
-                        let _ = fs::remove_file(&path);
-                    }
-                } else {
-                    let _ = persist_vault_fallback(workspace_root, fallback.clone());
-                }
-
-                if let Ok(mut manifest) = load_or_initialize_secrets_manifest(workspace_root) {
-                    if apply_runtime_vault_state(&mut manifest, &fallback).is_ok() {
-                        let _ = persist_secrets_manifest(workspace_root, manifest);
-                    }
-                }
-            }
-
-            Ok(Some(plaintext_value))
-        }
+        VaultFallbackEncoding::Utf8Plaintext => Ok(Some(entry.value.clone())),
         VaultFallbackEncoding::LegacySafeStorageBase64 => Ok(None),
     }
 }
