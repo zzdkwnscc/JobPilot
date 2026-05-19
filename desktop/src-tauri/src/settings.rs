@@ -447,18 +447,26 @@ pub fn write_secret_value(
             .key_descriptors
             .retain(|descriptor| descriptor.key != secret_key);
     } else {
-        let should_use_fallback = match write_secret_to_os_keyring(secret_key, &trimmed_value) {
-            Ok(()) => match read_secret_from_os_keyring(secret_key) {
-                Ok(Some(stored_value)) if stored_value == trimmed_value => false,
-                Ok(_) | Err(_) => true,
-            },
-            Err(_) => true,
-        };
+        match write_secret_to_os_keyring(secret_key, &trimmed_value) {
+            Ok(()) => {
+                fallback.entries.remove(secret_key);
+            }
+            Err(error) => {
+                if os_keyring_backend_supported() {
+                    return Err(error);
+                }
 
-        if should_use_fallback {
-            insert_runtime_fallback_secret(&mut fallback, secret_key, trimmed_value, timestamp);
-        } else {
-            fallback.entries.remove(secret_key);
+                fallback.entries.insert(
+                    secret_key.into(),
+                    VaultFallbackEntry {
+                        encoding: VaultFallbackEncoding::Utf8Plaintext,
+                        encrypted: false,
+                        value: trimmed_value,
+                        imported_from: "desktop-runtime".into(),
+                        imported_at_epoch_ms: timestamp,
+                    },
+                );
+            }
         }
 
         manifest
@@ -497,8 +505,8 @@ pub fn read_secret_value(workspace_root: &Path, key: &str) -> Result<Option<Stri
     }
 
     match read_secret_from_os_keyring(secret_key) {
-        Ok(Some(value)) if !value.trim().is_empty() => return Ok(Some(value)),
-        Ok(Some(_)) | Ok(None) => {}
+        Ok(Some(value)) => return Ok(Some(value)),
+        Ok(None) => {}
         Err(error) => {
             if os_keyring_backend_supported() && !vault_fallback_path(workspace_root).exists() {
                 return Err(error);
@@ -514,13 +522,7 @@ pub fn read_secret_value(workspace_root: &Path, key: &str) -> Result<Option<Stri
     match entry.encoding {
         VaultFallbackEncoding::Utf8Plaintext => {
             let plaintext_value = entry.value.clone();
-            if write_secret_to_os_keyring(secret_key, &plaintext_value)
-                .and_then(|()| match read_secret_from_os_keyring(secret_key)? {
-                    Some(stored_value) if stored_value == plaintext_value => Ok(()),
-                    _ => Err("OS keyring did not retain the migrated secret value.".into()),
-                })
-                .is_ok()
-            {
+            if write_secret_to_os_keyring(secret_key, &plaintext_value).is_ok() {
                 fallback.entries.remove(secret_key);
 
                 if fallback.entries.is_empty() {
@@ -725,24 +727,6 @@ fn persist_vault_fallback(
     let path = vault_fallback_path(workspace_root);
     ensure_parent(&path)?;
     write_json_file(&path, &document)
-}
-
-fn insert_runtime_fallback_secret(
-    fallback: &mut VaultFallbackDocument,
-    secret_key: &str,
-    value: String,
-    timestamp: u64,
-) {
-    fallback.entries.insert(
-        secret_key.into(),
-        VaultFallbackEntry {
-            encoding: VaultFallbackEncoding::Utf8Plaintext,
-            encrypted: false,
-            value,
-            imported_from: "desktop-runtime".into(),
-            imported_at_epoch_ms: timestamp,
-        },
-    );
 }
 
 fn default_secrets_manifest() -> Result<SecretsManifestDocument, String> {
