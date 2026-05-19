@@ -362,7 +362,7 @@ function buildReleaseNotesMarkdown({
   sections,
 }) {
   const lines = [
-    `# RoleRover ${currentTag}`,
+    `# JobPilot ${currentTag}`,
     "",
     `Release date: ${releaseDate} / 发布日期：${releaseDate}`,
   ];
@@ -371,7 +371,7 @@ function buildReleaseNotesMarkdown({
   if (compareLine) {
     lines.push(compareLine);
   } else {
-    lines.push("First official desktop release of RoleRover. / RoleRover 首个正式桌面版本发布。");
+    lines.push("First official desktop release of JobPilot. / JobPilot 首个正式桌面版本发布。");
   }
 
   lines.push("");

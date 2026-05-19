@@ -104,7 +104,7 @@ const target = process.env.DESKTOP_UPDATER_TARGET?.trim()
     : "windows-x86_64");
 const latestJson = {
   version: tauriConfig.version,
-  notes: "Local updater smoke-test feed for RoleRover Desktop.",
+  notes: "Local updater smoke-test feed for JobPilot Desktop.",
   pub_date: new Date().toISOString(),
   platforms: {
     [target]: {

@@ -150,7 +150,7 @@ export async function seedDemoUser(db: SeedDb) {
         items: [
           {
             id: crypto.randomUUID(),
-            name: 'RoleRover 简历助手',
+            name: 'JobPilot 简历助手',
             url: 'https://github.com/lingshichat/JadeAI',
             startDate: '2024-10',
             endDate: '2025-02',

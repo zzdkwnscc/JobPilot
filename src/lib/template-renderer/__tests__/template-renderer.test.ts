@@ -53,7 +53,7 @@ function createSampleResume(template: string): Resume {
           items: [
             {
               id: 'work-1',
-              company: 'RoleRover',
+              company: 'JobPilot',
               position: 'Frontend Engineer',
               startDate: '2023-01',
               endDate: null,

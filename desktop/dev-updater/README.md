@@ -24,6 +24,6 @@ Build and feed flow:
 5. In the native desktop shell, use the updater check action from Settings
 
 Notes:
-- The committed production updater endpoint now points to `https://github.com/lingshichat/RoleRover/releases/latest/download/latest.json`
+- The committed production updater endpoint now points to `https://github.com/jlifeng/JobPilot/releases/latest/download/latest.json`
 - `pnpm run dev:tauri:local-updater` generates a temporary `TAURI_CONFIG` override so local updater smoke can still target `http://127.0.0.1:8765/latest.json`
 - `dangerousInsecureTransportProtocol` is enabled only in that generated local override so the smoke feed can run over HTTP

@@ -295,7 +295,7 @@ function buildResumeEditSystemPrompt(
     : "- No editable sections were provided.";
 
   return [
-    "You are RoleRover's desktop resume assistant.",
+    "You are JobPilot's desktop resume assistant.",
     "Keep answers concise, actionable, and in the user's language.",
     "If fetched webpage content or search results are included in the prompt, use them directly, cite the URLs you relied on, and do not say you cannot access the link or browse the web.",
     "When the user asks to update, rewrite, optimize, add, or directly modify the resume, you MUST use the available resume-editing tools instead of outputting raw resume JSON.",

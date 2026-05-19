@@ -764,7 +764,7 @@ interface RawInterviewSessionDetail {
 }
 
 const FALLBACK_CONTEXT: BootstrapContext = {
-  appName: "RoleRover Desktop",
+  appName: "JobPilot Desktop",
   appVersion: "0.1.0",
   frontendShell: "React + Vite + TanStack Router + react-i18next",
   runtime: "Tauri bootstrap shell (browser fallback)",
@@ -1159,7 +1159,7 @@ function createFallbackTemplateValidationDocument(config: {
       template: config.template,
       language: "en",
       targetJobTitle: "Senior Product Engineer",
-      targetCompany: "RoleRover",
+      targetCompany: "JobPilot",
       isDefault: config.template === "classic",
       isSample: true,
       createdAtEpochMs: 0,
@@ -1213,7 +1213,7 @@ function createFallbackTemplateValidationDocument(config: {
           items: [
             {
               id: `${config.id}-work-item`,
-              company: "RoleRover",
+              company: "JobPilot",
               position: "Staff Product Engineer",
               location: "Remote",
               startDate: "2022.01",
