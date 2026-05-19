@@ -38,7 +38,7 @@ workspace/
 Run the initialization script:
 
 ```bash
-python3 ./.trellis/scripts/init_developer.py <your-name>
+python ./.trellis/scripts/init_developer.py <your-name>
 ```
 
 This will:
@@ -51,12 +51,12 @@ This will:
 
 1. Get your developer name:
    ```bash
-   python3 ./.trellis/scripts/get_developer.py
+   python ./.trellis/scripts/get_developer.py
    ```
 
 2. Read your personal index:
    ```bash
-   cat .trellis/workspace/$(python3 ./.trellis/scripts/get_developer.py)/index.md
+   cat .trellis/workspace/$(python ./.trellis/scripts/get_developer.py)/index.md
    ```
 
 ---
@@ -73,6 +73,7 @@ This will:
 
 Each session should include:
 - Summary: One-line description
+- Branch: Which branch the work was done on
 - Main Changes: What was modified
 - Git Commits: Commit hashes and messages
 - Next Steps: What to do next
@@ -88,6 +89,7 @@ Use this template when recording sessions:
 
 **Date**: YYYY-MM-DD
 **Task**: {task-name}
+**Branch**: `{branch-name}`
 
 ### Summary
 
