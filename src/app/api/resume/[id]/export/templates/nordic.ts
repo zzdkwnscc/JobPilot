@@ -10,6 +10,7 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { esc, md, degreeField, getPersonalInfo, visibleSections, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 
 const SLATE_500 = '#64748b';
 const SLATE_400 = '#94a3b8';
@@ -94,14 +95,22 @@ function buildNordicSectionContent(section: Section, lang: string): string {
 export function buildNordicHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const { row1, row2 } = buildContactEntries(pi);
+  const iconColor = SLATE_400;
+
+  const renderRow = (entries: typeof row1) =>
+    entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 6px"><span style="color:${iconColor}">${c.htmlIcon}</span><span style="color:${SLATE_400}">${esc(c.value)}</span></span>`).join('');
+
+  const contactHtml = (row1.length > 0 || row2.length > 0)
+    ? `<div style="margin-top:12px;font-size:12px;text-align:center">${renderRow(row1)}${row2.length > 0 ? `</div><div style="margin-top:4px;font-size:12px;text-align:center">${renderRow(row2)}` : ''}</div>`
+    : '';
 
   return `<div class="mx-auto max-w-[210mm] bg-white shadow-lg" style="font-family:Inter,sans-serif">
     <div class="mb-8 text-center">
       ${pi.avatar ? `<img src="${esc(pi.avatar)}" alt="" class="mx-auto mb-3 h-16 w-16 rounded-full object-cover" style="border:2px solid ${SLATE_400}"/>` : ''}
       <h1 class="text-2xl font-light tracking-wide" style="color:${SLATE_500}">${esc(pi.fullName || 'Your Name')}</h1>
       ${pi.jobTitle ? `<p class="mt-1 text-sm font-light tracking-wider" style="color:${SLATE_400}">${esc(pi.jobTitle)}</p>` : ''}
-      ${contacts.length ? `<div class="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs" style="color:${SLATE_400}">${contacts.map(ct => `<span>${esc(ct)}</span>`).join('')}</div>` : ''}
+      ${contactHtml}
     </div>
     <div class="mx-auto mb-8 h-px w-full" style="background-color:${SLATE_400}"></div>
     ${sections.map(s => `<div class="mb-7" data-section>

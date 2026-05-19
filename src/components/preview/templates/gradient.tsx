@@ -16,6 +16,7 @@ import type {
 import { AvatarImage } from '../avatar-image';
 import { isSectionEmpty, md, degreeField } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
+import { ContactInfo } from '../contact-info';
 
 const GRADIENT = 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)';
 const ACCENT = '#a855f7';
@@ -23,8 +24,6 @@ const ACCENT = '#a855f7';
 export function GradientTemplate({ resume }: { resume: Resume }) {
   const personalInfo = resume.sections.find((s) => s.type === 'personal_info');
   const pi = (personalInfo?.content || {}) as PersonalInfoContent;
-
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
 
   return (
     <div className="mx-auto max-w-[210mm] overflow-hidden bg-white shadow-lg" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -52,16 +51,7 @@ export function GradientTemplate({ resume }: { resume: Resume }) {
                 {pi.jobTitle}
               </p>
             )}
-            {contacts.length > 0 && (
-              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-white/70">
-                {contacts.map((item, i) => (
-                  <span key={i} className="flex items-center gap-2">
-                    {item}
-                    {i < contacts.length - 1 && <span className="text-white/30">|</span>}
-                  </span>
-                ))}
-              </div>
-            )}
+            <ContactInfo pi={pi} iconColor="rgba(255,255,255,0.6)" style={{ color: 'rgba(255,255,255,0.8)' }} align="left" />
           </div>
         </div>
 

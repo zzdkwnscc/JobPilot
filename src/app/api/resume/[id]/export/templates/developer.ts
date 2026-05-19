@@ -10,6 +10,7 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { esc, md, degreeField, getPersonalInfo, visibleSections, buildHighlights, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 
 function buildDeveloperSectionContent(section: Section, lang: string): string {
   const c = section.content as any;
@@ -79,11 +80,19 @@ function buildDeveloperSectionContent(section: Section, lang: string): string {
 export function buildDeveloperHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const { row1, row2 } = buildContactEntries(pi);
   const DARK = '#282c34';
   const GREEN = '#98c379';
   const BLUE = '#61afef';
   const ORANGE = '#e5c07b';
+  const iconColor = '#a1a1aa';
+
+  const renderRow = (entries: typeof row1) =>
+    entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 8px 2px 0"><span style="color:${iconColor}">${c.htmlIcon}</span><span style="color:#a1a1aa">${esc(c.value)}</span></span>`).join('');
+
+  const contactHtml = (row1.length > 0 || row2.length > 0)
+    ? `<div style="margin-top:8px;font-size:12px">${renderRow(row1)}${row2.length > 0 ? `</div><div style="margin-top:4px;font-size:12px">${renderRow(row2)}` : ''}</div>`
+    : '';
 
   return `<div class="mx-auto max-w-[210mm] bg-white shadow-lg" style="font-family:'JetBrains Mono','Fira Code',monospace">
     <div class="px-8 py-6" style="background:${DARK}">
@@ -98,7 +107,7 @@ export function buildDeveloperHtml(resume: ResumeWithSections): string {
         <div>
           <h1 class="text-2xl font-bold" style="color:${GREEN}">${esc(pi.fullName || 'Your Name')}</h1>
           ${pi.jobTitle ? `<p class="mt-0.5 text-sm" style="color:${BLUE}">// ${esc(pi.jobTitle)}</p>` : ''}
-          ${contacts.length ? `<div class="mt-2 flex flex-wrap gap-3 text-xs text-zinc-400">${contacts.map(c => `<span>${esc(c)}</span>`).join('')}</div>` : ''}
+          ${contactHtml}
         </div>
       </div>
     </div>

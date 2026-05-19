@@ -6,6 +6,7 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { esc, md, degreeField, getPersonalInfo, visibleSections, buildHighlights, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 
 function buildBoldSectionContent(s: Section, lang: string): string {
   const c = s.content as any;
@@ -93,7 +94,15 @@ function buildBoldSectionContent(s: Section, lang: string): string {
 export function buildBoldHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const { row1, row2 } = buildContactEntries(pi);
+  const iconColor = '#a1a1aa';
+
+  const renderRow = (entries: typeof row1) =>
+    entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 12px 2px 0"><span style="color:${iconColor}">${c.htmlIcon}</span><span style="color:#a1a1aa">${esc(c.value)}</span></span>`).join('');
+
+  const contactHtml = (row1.length > 0 || row2.length > 0)
+    ? `<div style="margin-top:12px;font-size:13px">${renderRow(row1)}${row2.length > 0 ? `</div><div style="margin-top:4px;font-size:13px">${renderRow(row2)}` : ''}</div>`
+    : '';
 
   return `<div class="mx-auto max-w-[210mm] bg-white shadow-lg" style="font-family:Inter,sans-serif">
     <div class="bg-black px-8 py-8 text-white">
@@ -104,7 +113,7 @@ export function buildBoldHtml(resume: ResumeWithSections): string {
           ${pi.jobTitle ? `<p class="mt-1 text-lg font-light text-zinc-400">${esc(pi.jobTitle)}</p>` : ''}
         </div>
       </div>
-      ${contacts.length ? `<div class="mt-3 flex flex-wrap gap-4 text-sm text-zinc-400">${contacts.map(c => `<span>${esc(c)}</span>`).join('')}</div>` : ''}
+      ${contactHtml}
     </div>
     <div class="p-8">
       ${sections.map(s => `<div class="mb-6" data-section>

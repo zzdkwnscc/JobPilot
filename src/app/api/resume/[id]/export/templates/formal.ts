@@ -10,6 +10,7 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { esc, md, degreeField, getPersonalInfo, visibleSections, buildHighlights, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 
 function buildFormalSectionContent(section: Section, lang: string): string {
   const c = section.content as any;
@@ -77,8 +78,16 @@ function buildFormalSectionContent(section: Section, lang: string): string {
 export function buildFormalHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const { row1, row2 } = buildContactEntries(pi);
   const DG = '#004d40';
+  const iconColor = '#71717a';
+
+  const renderRow = (entries: typeof row1) =>
+    entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 6px"><span style="color:${iconColor}">${c.htmlIcon}</span><span style="color:#6b7280">${esc(c.value)}</span></span>`).join('');
+
+  const contactHtml = (row1.length > 0 || row2.length > 0)
+    ? `<div style="margin-top:8px;font-size:13px;text-align:center">${renderRow(row1)}${row2.length > 0 ? `</div><div style="margin-top:4px;font-size:13px;text-align:center">${renderRow(row2)}` : ''}</div>`
+    : '';
 
   return `<div class="mx-auto max-w-[210mm] bg-white shadow-lg" style="font-family:Georgia,'Times New Roman',serif">
     <div class="mb-6 border-b-2 pb-4" style="border-color:${DG}">
@@ -89,7 +98,7 @@ export function buildFormalHtml(resume: ResumeWithSections): string {
           ${pi.jobTitle ? `<p class="mt-0.5 text-base text-zinc-500">${esc(pi.jobTitle)}</p>` : ''}
         </div>
       </div>
-      ${contacts.length || pi.linkedin || pi.github ? `<div class="mt-2 flex flex-wrap items-center justify-center gap-3 text-sm text-zinc-500">${contacts.map(c => `<span>${esc(c)}</span>`).join('')}${pi.linkedin ? `<span>LinkedIn: ${esc(pi.linkedin)}</span>` : ''}${pi.github ? `<span>GitHub: ${esc(pi.github)}</span>` : ''}</div>` : ''}
+      ${contactHtml}
     </div>
     ${sections.map(s => `<div class="mb-5" data-section>
       <div class="mb-2 flex items-center gap-2">

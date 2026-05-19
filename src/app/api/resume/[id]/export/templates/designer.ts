@@ -10,6 +10,7 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { esc, md, degreeField, getPersonalInfo, visibleSections, buildHighlights, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 
 function buildDesignerSectionContent(section: Section, lang: string = 'en'): string {
   const c = section.content as any;
@@ -77,16 +78,23 @@ function buildDesignerSectionContent(section: Section, lang: string = 'en'): str
 export function buildDesignerHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
+  const { row1, row2 } = buildContactEntries(pi);
   const CORAL = '#ff6b6b';
+  const iconColor = '#71717a';
+
+  const renderRow = (entries: typeof row1) =>
+    entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 12px 2px 0"><span style="color:${iconColor}">${c.htmlIcon}</span><span style="color:#6b7280">${esc(c.value)}</span></span>`).join('');
+
+  const contactHtml = (row1.length > 0 || row2.length > 0)
+    ? `<div style="margin-top:12px;font-size:13px">${renderRow(row1)}${row2.length > 0 ? `</div><div style="margin-top:4px;font-size:13px">${renderRow(row2)}` : ''}</div>`
+    : '';
 
   return `<div class="mx-auto max-w-[210mm] bg-white shadow-lg" style="font-family:Inter,sans-serif">
     <div class="flex">
       <div class="flex-1 px-8 py-8">
         <h1 class="text-4xl font-black tracking-tight text-black">${esc(pi.fullName || 'Your Name')}</h1>
         ${pi.jobTitle ? `<p class="mt-1 text-lg font-light" style="color:${CORAL}">${esc(pi.jobTitle)}</p>` : ''}
-        <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
-          ${[pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean).map(c => `<span>${esc(c)}</span>`).join('')}
-        </div>
+        ${contactHtml}
       </div>
       ${pi.avatar ? `<div class="w-32 shrink-0"><img src="${esc(pi.avatar)}" alt="" class="h-full w-full object-cover"/></div>` : ''}
     </div>

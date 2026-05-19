@@ -4,6 +4,7 @@ import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent
 import { degreeField, isSectionEmpty, md } from '../utils';
 import { AvatarImage } from '../avatar-image';
 import { QrCodesPreview } from '../qr-codes-preview';
+import { ContactInfo } from '../contact-info';
 
 const CHARCOAL = '#2d3436';
 const EMERALD = '#00b894';
@@ -23,23 +24,7 @@ export function ExecutiveTemplate({ resume }: { resume: Resume }) {
           <div className="flex-1">
             <h1 className="text-3xl font-bold tracking-tight text-white">{pi.fullName || 'Your Name'}</h1>
             {pi.jobTitle && <p className="mt-1 text-base font-light" style={{ color: EMERALD }}>{pi.jobTitle}</p>}
-            <div className="mt-2 flex flex-wrap gap-3 text-sm text-zinc-400">
-              {pi.age && <span>{pi.age}</span>}
-              {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
-              {pi.gender && <span>{pi.gender}</span>}
-              {pi.ethnicity && <span>{pi.ethnicity}</span>}
-              {pi.hometown && <span>{pi.hometown}</span>}
-              {pi.maritalStatus && <span>{pi.maritalStatus}</span>}
-              {pi.yearsOfExperience && <span>{pi.yearsOfExperience}</span>}
-              {pi.educationLevel && <span>{pi.educationLevel}</span>}
-              {pi.email && <span>{pi.email}</span>}
-              {pi.phone && <span>{pi.phone}</span>}
-              {pi.wechat && <span>{pi.wechat}</span>}
-              {pi.location && <span>{pi.location}</span>}
-              {pi.website && <span>{pi.website}</span>}
-              {pi.linkedin && <span className="break-all">{pi.linkedin}</span>}
-              {pi.github && <span className="break-all">{pi.github}</span>}
-            </div>
+            <ContactInfo pi={pi} iconColor="#a1a1aa" style={{ color: '#a1a1aa' }} align="left" />
           </div>
         </div>
       </div>

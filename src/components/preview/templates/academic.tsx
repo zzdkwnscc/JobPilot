@@ -15,13 +15,12 @@ import type {
 } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
 import { degreeField, isSectionEmpty, md } from '../utils';
+import { ContactInfo } from '../contact-info';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 export function AcademicTemplate({ resume }: { resume: Resume }) {
   const personalInfo = resume.sections.find((s) => s.type === 'personal_info');
   const pi = (personalInfo?.content || {}) as PersonalInfoContent;
-
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
 
   return (
     <div className="mx-auto max-w-[210mm] bg-white shadow-lg" style={{ fontFamily: '"Computer Modern", "CMU Serif", Georgia, "Times New Roman", serif' }}>
@@ -43,15 +42,7 @@ export function AcademicTemplate({ resume }: { resume: Resume }) {
             {pi.jobTitle && (
               <p className="mt-0.5 text-base text-zinc-700 italic">{pi.jobTitle}</p>
             )}
-            {contacts.length > 0 && (
-              <p className="mt-1.5 text-xs text-zinc-600">
-                {contacts.map((c, i) => (
-                  <span key={i}>
-                    {c}{i < contacts.length - 1 ? ' \u00B7 ' : ''}
-                  </span>
-                ))}
-              </p>
-            )}
+            <ContactInfo pi={pi} iconColor="#71717a" style={{ color: '#52525b' }} />
           </div>
         </div>
         <div className="mt-3 border-b-2 border-zinc-800" />

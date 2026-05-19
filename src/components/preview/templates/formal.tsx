@@ -4,6 +4,7 @@ import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent
 import { degreeField, isSectionEmpty, md } from '../utils';
 import { AvatarImage } from '../avatar-image';
 import { QrCodesPreview } from '../qr-codes-preview';
+import { ContactInfo } from '../contact-info';
 
 const DARK_GREEN = '#004d40';
 
@@ -24,23 +25,7 @@ export function FormalTemplate({ resume }: { resume: Resume }) {
             {pi.jobTitle && <p className="mt-0.5 text-base text-zinc-500">{pi.jobTitle}</p>}
           </div>
         </div>
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-sm text-zinc-500">
-          {pi.age && <span>{pi.age}</span>}
-          {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
-          {pi.gender && <span>{pi.gender}</span>}
-          {pi.ethnicity && <span>{pi.ethnicity}</span>}
-          {pi.hometown && <span>{pi.hometown}</span>}
-          {pi.maritalStatus && <span>{pi.maritalStatus}</span>}
-          {pi.yearsOfExperience && <span>{pi.yearsOfExperience}</span>}
-          {pi.educationLevel && <span>{pi.educationLevel}</span>}
-          {pi.email && <span>{pi.email}</span>}
-          {pi.phone && <span>{pi.phone}</span>}
-          {pi.wechat && <span>{pi.wechat}</span>}
-          {pi.location && <span>{pi.location}</span>}
-          {pi.website && <span>{pi.website}</span>}
-          {pi.linkedin && <span>LinkedIn: {pi.linkedin}</span>}
-          {pi.github && <span>GitHub: {pi.github}</span>}
-        </div>
+        <ContactInfo pi={pi} iconColor="#71717a" style={{ color: '#6b7280' }} />
       </div>
 
       {/* Sections */}

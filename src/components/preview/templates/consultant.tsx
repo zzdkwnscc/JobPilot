@@ -4,6 +4,7 @@ import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent
 import { AvatarImage } from '../avatar-image';
 import { degreeField, isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
+import { ContactInfo } from '../contact-info';
 
 const GRAY_700 = '#374151';
 const BLUE_600 = '#2563eb';
@@ -34,23 +35,7 @@ export function ConsultantTemplate({ resume }: { resume: Resume }) {
             {pi.jobTitle && <p className="mt-0.5 text-sm font-medium" style={{ color: BLUE_600 }}>{pi.jobTitle}</p>}
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-500">
-          {pi.age && <span>{pi.age}</span>}
-          {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
-          {pi.gender && <span>{pi.gender}</span>}
-          {pi.ethnicity && <span>{pi.ethnicity}</span>}
-          {pi.hometown && <span>{pi.hometown}</span>}
-          {pi.maritalStatus && <span>{pi.maritalStatus}</span>}
-          {pi.yearsOfExperience && <span>{pi.yearsOfExperience}</span>}
-          {pi.educationLevel && <span>{pi.educationLevel}</span>}
-          {pi.email && <span>{pi.email}</span>}
-          {pi.phone && <span>{pi.phone}</span>}
-          {pi.wechat && <span>{pi.wechat}</span>}
-          {pi.location && <span>{pi.location}</span>}
-          {pi.website && <span>{pi.website}</span>}
-          {pi.linkedin && <span className="break-all">{pi.linkedin}</span>}
-          {pi.github && <span className="break-all">{pi.github}</span>}
-        </div>
+        <ContactInfo pi={pi} iconColor="#6b7280" style={{ color: '#6b7280' }} align="left" />
       </div>
 
       {/* Sections */}

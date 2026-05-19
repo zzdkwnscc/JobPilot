@@ -4,6 +4,7 @@ import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent
 import { AvatarImage } from '../avatar-image';
 import { degreeField, isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
+import { ContactInfo } from '../contact-info';
 
 const SLATE_800 = '#1e293b';
 const GOLD = '#c4a747';
@@ -29,21 +30,7 @@ export function FinanceTemplate({ resume }: { resume: Resume }) {
           <div className="flex-1">
             <h1 className="text-3xl font-bold tracking-tight text-white">{pi.fullName || 'Your Name'}</h1>
             {pi.jobTitle && <p className="mt-1 text-base font-light" style={{ color: GOLD }}>{pi.jobTitle}</p>}
-            <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-400">
-              {pi.age && <span>{pi.age}</span>}
-              {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
-              {pi.gender && <span>{pi.gender}</span>}
-              {pi.ethnicity && <span>{pi.ethnicity}</span>}
-              {pi.hometown && <span>{pi.hometown}</span>}
-              {pi.maritalStatus && <span>{pi.maritalStatus}</span>}
-              {pi.yearsOfExperience && <span>{pi.yearsOfExperience}</span>}
-              {pi.educationLevel && <span>{pi.educationLevel}</span>}
-              {pi.email && <span>{pi.email}</span>}
-              {pi.phone && <span>{pi.phone}</span>}
-              {pi.wechat && <span>{pi.wechat}</span>}
-              {pi.location && <span>{pi.location}</span>}
-              {pi.website && <span>{pi.website}</span>}
-            </div>
+            <ContactInfo pi={pi} iconColor="#94a3b8" style={{ color: '#94a3b8' }} align="left" />
           </div>
         </div>
         {/* Gold accent line at bottom */}

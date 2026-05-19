@@ -4,6 +4,7 @@ import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent
 import { AvatarImage } from '../avatar-image';
 import { degreeField, isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
+import { ContactInfo } from '../contact-info';
 
 const BLUE_GRAY = '#475569';
 const ACCENT = '#3b82f6';
@@ -21,23 +22,7 @@ export function TimelineTemplate({ resume }: { resume: Resume }) {
         )}
         <h1 className="text-2xl font-bold" style={{ color: BLUE_GRAY }}>{pi.fullName || 'Your Name'}</h1>
         {pi.jobTitle && <p className="mt-0.5 text-base" style={{ color: ACCENT }}>{pi.jobTitle}</p>}
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-sm text-zinc-500">
-          {pi.age && <span>{pi.age}</span>}
-          {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
-          {pi.gender && <span>{pi.gender}</span>}
-          {pi.ethnicity && <span>{pi.ethnicity}</span>}
-          {pi.hometown && <span>{pi.hometown}</span>}
-          {pi.maritalStatus && <span>{pi.maritalStatus}</span>}
-          {pi.yearsOfExperience && <span>{pi.yearsOfExperience}</span>}
-          {pi.educationLevel && <span>{pi.educationLevel}</span>}
-          {pi.email && <span>{pi.email}</span>}
-          {pi.phone && <span>{pi.phone}</span>}
-          {pi.wechat && <span>{pi.wechat}</span>}
-          {pi.location && <span>{pi.location}</span>}
-          {pi.website && <span>{pi.website}</span>}
-          {pi.linkedin && <span>{pi.linkedin}</span>}
-          {pi.github && <span>{pi.github}</span>}
-        </div>
+        <ContactInfo pi={pi} iconColor="#71717a" style={{ color: '#6b7280' }} />
       </div>
 
       {/* Sections */}

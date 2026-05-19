@@ -4,6 +4,7 @@ import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent
 import { AvatarImage } from '../avatar-image';
 import { degreeField, isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
+import { ContactInfo } from '../contact-info';
 
 const PURPLE = '#6366f1';
 const CYAN = '#06b6d4';
@@ -24,21 +25,7 @@ export function StartupTemplate({ resume }: { resume: Resume }) {
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">{pi.fullName || 'Your Name'}</h1>
             {pi.jobTitle && <p className="mt-1 text-base font-light text-white/80">{pi.jobTitle}</p>}
-            <div className="mt-2 flex flex-wrap gap-2 text-sm text-white/70">
-              {pi.age && <span>{pi.age}</span>}
-              {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
-              {pi.gender && <span>{pi.gender}</span>}
-              {pi.ethnicity && <span>{pi.ethnicity}</span>}
-              {pi.hometown && <span>{pi.hometown}</span>}
-              {pi.maritalStatus && <span>{pi.maritalStatus}</span>}
-              {pi.yearsOfExperience && <span>{pi.yearsOfExperience}</span>}
-              {pi.educationLevel && <span>{pi.educationLevel}</span>}
-              {pi.email && <span>{pi.email}</span>}
-              {pi.phone && <span>{pi.phone}</span>}
-              {pi.wechat && <span>{pi.wechat}</span>}
-              {pi.location && <span>{pi.location}</span>}
-              {pi.website && <span>{pi.website}</span>}
-            </div>
+            <ContactInfo pi={pi} iconColor="rgba(255,255,255,0.6)" style={{ color: 'rgba(255,255,255,0.8)' }} align="left" />
           </div>
         </div>
       </div>

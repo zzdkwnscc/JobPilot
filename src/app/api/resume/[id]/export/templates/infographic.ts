@@ -10,6 +10,7 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { esc, md, degreeField, getPersonalInfo, visibleSections, buildHighlights, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 
 function buildInfographicSectionContent(section: Section, color: string, colorIndex: number, lang: string): string {
   const c = section.content as any;
@@ -80,8 +81,16 @@ function buildInfographicSectionContent(section: Section, color: string, colorIn
 export function buildInfographicHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const { row1, row2 } = buildContactEntries(pi);
   const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
+  const iconColor = 'rgba(255,255,255,0.5)';
+
+  const renderRow = (entries: typeof row1) =>
+    entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 8px 2px 0"><span style="color:${iconColor}">${c.htmlIcon}</span><span style="color:rgba(255,255,255,0.7)">${esc(c.value)}</span></span>`).join('');
+
+  const contactHtml = (row1.length > 0 || row2.length > 0)
+    ? `<div style="margin-top:8px;font-size:13px">${renderRow(row1)}${row2.length > 0 ? `</div><div style="margin-top:4px;font-size:13px">${renderRow(row2)}` : ''}</div>`
+    : '';
 
   return `<div class="mx-auto max-w-[210mm] bg-white shadow-lg" style="font-family:Inter,sans-serif">
     <div class="relative overflow-hidden px-8 py-8" style="background:linear-gradient(135deg,#1e40af,#7c3aed)">
@@ -90,7 +99,7 @@ export function buildInfographicHtml(resume: ResumeWithSections): string {
         <div>
           <h1 class="text-3xl font-bold text-white">${esc(pi.fullName || 'Your Name')}</h1>
           ${pi.jobTitle ? `<p class="mt-1 text-base text-white/70">${esc(pi.jobTitle)}</p>` : ''}
-          ${contacts.length || pi.linkedin || pi.github ? `<div class="mt-2 flex flex-wrap gap-3 text-sm text-white/60">${contacts.map(c => `<span>${esc(c)}</span>`).join('')}${pi.linkedin ? `<span class="break-all">${esc(pi.linkedin)}</span>` : ''}${pi.github ? `<span class="break-all">${esc(pi.github)}</span>` : ''}</div>` : ''}
+          ${contactHtml}
         </div>
       </div>
     </div>

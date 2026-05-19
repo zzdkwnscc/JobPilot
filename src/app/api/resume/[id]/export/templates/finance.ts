@@ -10,6 +10,7 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { esc, md, degreeField, getPersonalInfo, visibleSections, buildHighlights, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 
 const SLATE_800 = '#1e293b';
 const GOLD = '#c4a747';
@@ -93,7 +94,15 @@ function buildFinanceSectionContent(section: Section, lang: string): string {
 export function buildFinanceHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const { row1, row2 } = buildContactEntries(pi);
+  const iconColor = '#94a3b8';
+
+  const renderRow = (entries: typeof row1) =>
+    entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 10px 2px 0"><span style="color:${iconColor}">${c.htmlIcon}</span><span style="color:#94a3b8">${esc(c.value)}</span></span>`).join('');
+
+  const contactHtml = (row1.length > 0 || row2.length > 0)
+    ? `<div style="margin-top:8px;font-size:13px">${renderRow(row1)}${row2.length > 0 ? `</div><div style="margin-top:4px;font-size:13px">${renderRow(row2)}` : ''}</div>`
+    : '';
 
   return `<div class="mx-auto max-w-[210mm] bg-white shadow-lg" style="font-family:Georgia,'Times New Roman',serif">
     <div class="px-8 py-8" style="background:${SLATE_800}">
@@ -102,15 +111,14 @@ export function buildFinanceHtml(resume: ResumeWithSections): string {
         <div class="flex-1">
           <h1 class="text-3xl font-bold tracking-tight text-white">${esc(pi.fullName || 'Your Name')}</h1>
           ${pi.jobTitle ? `<p class="mt-1 text-base font-light" style="color:${GOLD}">${esc(pi.jobTitle)}</p>` : ''}
-          ${contacts.length ? `<div class="mt-2 flex flex-wrap gap-4 text-sm text-slate-400">${contacts.map(ct => `<span>${esc(ct)}</span>`).join('')}</div>` : ''}
+          ${contactHtml}
         </div>
       </div>
       <div class="mt-6 h-[2px] w-full" style="background-color:${GOLD}"></div>
     </div>
     <div class="p-8">
       ${sections.map(s => `<div class="mb-6" data-section>
-        <h2 class="mb-3 text-sm font-bold uppercase tracking-wider" style="color:${SLATE_800}">${esc(s.title)}</h2>
-        <div class="mb-3 border-t border-b py-px" style="border-color:${SLATE_800}"></div>
+        <h2 class="mb-3 border-b-2 pb-1.5 text-sm font-bold uppercase tracking-wider" style="color:${SLATE_800};border-color:${GOLD}">${esc(s.title)}</h2>
         ${buildFinanceSectionContent(s, resume.language || 'en')}
       </div>`).join('')}
     </div>

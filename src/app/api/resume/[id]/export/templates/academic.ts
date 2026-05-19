@@ -10,6 +10,7 @@ import type {
   CustomContent,
 } from '@/types/resume';
 import { esc, md, degreeField, getPersonalInfo, visibleSections, buildHighlights, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 
 function buildAcademicSectionContent(section: Section, lang: string): string {
   const c = section.content as any;
@@ -77,7 +78,15 @@ export function buildAcademicHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
   const lang = resume.language || 'en';
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const { row1, row2 } = buildContactEntries(pi);
+  const iconColor = '#71717a';
+
+  const renderRow = (entries: typeof row1) =>
+    entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 6px"><span style="color:${iconColor}">${c.htmlIcon}</span><span style="color:#52525b">${esc(c.value)}</span></span>`).join('');
+
+  const contactHtml = (row1.length > 0 || row2.length > 0)
+    ? `<div style="margin-top:6px;font-size:12px">${renderRow(row1)}${row2.length > 0 ? `</div><div style="margin-top:4px;font-size:12px">${renderRow(row2)}` : ''}</div>`
+    : '';
 
   return `<div class="mx-auto max-w-[210mm] bg-white shadow-lg" style="font-family:'Computer Modern','CMU Serif',Georgia,'Times New Roman',serif">
     <div class="mb-6">
@@ -86,7 +95,7 @@ export function buildAcademicHtml(resume: ResumeWithSections): string {
         <div>
           <h1 class="text-2xl font-bold text-zinc-900" style="letter-spacing:0.02em">${esc(pi.fullName || 'Your Name')}</h1>
           ${pi.jobTitle ? `<p class="mt-0.5 text-base text-zinc-500 italic">${esc(pi.jobTitle)}</p>` : ''}
-          ${contacts.length ? `<p class="mt-1.5 text-xs text-zinc-500">${contacts.map((c, i) => `${esc(c)}${i < contacts.length - 1 ? ' \u00B7 ' : ''}`).join('')}</p>` : ''}
+          ${contactHtml}
         </div>
       </div>
       <div class="mt-3 border-b-2 border-zinc-800"></div>

@@ -4,6 +4,7 @@ import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent
 import { AvatarImage } from '../avatar-image';
 import { degreeField, isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
+import { ContactInfo } from '../contact-info';
 
 const CORAL = '#ff6b6b';
 
@@ -18,21 +19,7 @@ export function DesignerTemplate({ resume }: { resume: Resume }) {
         <div className="flex-1 px-8 py-8">
           <h1 className="text-4xl font-black tracking-tight text-black">{pi.fullName || 'Your Name'}</h1>
           {pi.jobTitle && <p className="mt-1 text-lg font-light" style={{ color: CORAL }}>{pi.jobTitle}</p>}
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
-            {pi.age && <span>{pi.age}</span>}
-            {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
-            {pi.gender && <span>{pi.gender}</span>}
-            {pi.ethnicity && <span>{pi.ethnicity}</span>}
-            {pi.hometown && <span>{pi.hometown}</span>}
-            {pi.maritalStatus && <span>{pi.maritalStatus}</span>}
-            {pi.yearsOfExperience && <span>{pi.yearsOfExperience}</span>}
-            {pi.educationLevel && <span>{pi.educationLevel}</span>}
-            {pi.email && <span>{pi.email}</span>}
-            {pi.phone && <span>{pi.phone}</span>}
-            {pi.wechat && <span>{pi.wechat}</span>}
-            {pi.location && <span>{pi.location}</span>}
-            {pi.website && <span>{pi.website}</span>}
-          </div>
+          <ContactInfo pi={pi} iconColor="#71717a" style={{ color: '#6b7280' }} align="left" />
         </div>
         {pi.avatar && (
           <AvatarImage src={pi.avatar} avatarStyle={resume.themeConfig?.avatarStyle} size={128} wrapperClassName="w-32 shrink-0" />

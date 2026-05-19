@@ -10,6 +10,7 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { esc, md, degreeField, getPersonalInfo, visibleSections, buildHighlights, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 
 const GRADIENT = 'linear-gradient(135deg,#ec4899 0%,#8b5cf6 100%)';
 const ACCENT = '#a855f7';
@@ -96,7 +97,15 @@ function buildGradientSectionContent(section: Section, lang: string): string {
 export function buildGradientHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const { row1, row2 } = buildContactEntries(pi);
+  const iconColor = 'rgba(255,255,255,0.6)';
+
+  const renderRow = (entries: typeof row1) =>
+    entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 8px 2px 0"><span style="color:${iconColor}">${c.htmlIcon}</span><span style="color:rgba(255,255,255,0.8)">${esc(c.value)}</span></span>`).join('');
+
+  const contactHtml = (row1.length > 0 || row2.length > 0)
+    ? `<div style="margin-top:12px;font-size:13px">${renderRow(row1)}${row2.length > 0 ? `</div><div style="margin-top:4px;font-size:13px">${renderRow(row2)}` : ''}</div>`
+    : '';
 
   return `<div class="mx-auto max-w-[210mm] overflow-hidden bg-white shadow-lg" style="font-family:Inter,sans-serif">
     <div class="relative px-10 py-8 text-white" style="background:${GRADIENT}">
@@ -108,7 +117,7 @@ export function buildGradientHtml(resume: ResumeWithSections): string {
         <div class="min-w-0 flex-1">
           <h1 class="text-3xl font-bold tracking-tight">${esc(pi.fullName || 'Your Name')}</h1>
           ${pi.jobTitle ? `<p class="mt-1.5 text-base font-light tracking-wide text-white/80">${esc(pi.jobTitle)}</p>` : ''}
-          ${contacts.length ? `<div class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-white/70">${contacts.map((c, i) => `<span class="flex items-center gap-2">${esc(c)}${i < contacts.length - 1 ? '<span class="text-white/30">|</span>' : ''}</span>`).join('')}</div>` : ''}
+          ${contactHtml}
         </div>
       </div>
       <div class="absolute bottom-0 left-0 h-1 w-full" style="background:linear-gradient(90deg,#ec4899 0%,#8b5cf6 50%,transparent 100%)"></div>

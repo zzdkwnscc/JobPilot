@@ -10,6 +10,7 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { esc, md, degreeField, getPersonalInfo, visibleSections, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 
 const GRAY_700 = '#374151';
 const BLUE_600 = '#2563eb';
@@ -93,7 +94,15 @@ function buildConsultantSectionContent(section: Section, lang: string): string {
 export function buildConsultantHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const { row1, row2 } = buildContactEntries(pi);
+  const iconColor = '#6b7280';
+
+  const renderRow = (entries: typeof row1) =>
+    entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 10px 2px 0"><span style="color:${iconColor}">${c.htmlIcon}</span><span style="color:#6b7280">${esc(c.value)}</span></span>`).join('');
+
+  const contactHtml = (row1.length > 0 || row2.length > 0)
+    ? `<div style="margin-top:12px;font-size:13px">${renderRow(row1)}${row2.length > 0 ? `</div><div style="margin-top:4px;font-size:13px">${renderRow(row2)}` : ''}</div>`
+    : '';
 
   return `<div class="mx-auto max-w-[210mm] bg-white shadow-lg" style="font-family:Inter,sans-serif">
     <div class="mb-6 h-1 w-full rounded" style="background-color:${BLUE_600}"></div>
@@ -105,7 +114,16 @@ export function buildConsultantHtml(resume: ResumeWithSections): string {
           ${pi.jobTitle ? `<p class="mt-0.5 text-sm font-medium" style="color:${BLUE_600}">${esc(pi.jobTitle)}</p>` : ''}
         </div>
       </div>
-      ${contacts.length || pi.linkedin || pi.github ? `<div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-500">${contacts.map(ct => `<span>${esc(ct)}</span>`).join('')}${pi.linkedin ? `<span class="break-all">${esc(pi.linkedin)}</span>` : ''}${pi.github ? `<span class="break-all">${esc(pi.github)}</span>` : ''}</div>` : ''}
+      ${contactHtml}
+    </div>
+      <div class="flex items-center gap-4">
+        ${pi.avatar ? `<img src="${esc(pi.avatar)}" alt="" class="h-16 w-16 shrink-0 rounded-full object-cover" style="border:2px solid ${BLUE_600}"/>` : ''}
+        <div>
+          <h1 class="text-2xl font-bold" style="color:${GRAY_700}">${esc(pi.fullName || 'Your Name')}</h1>
+          ${pi.jobTitle ? `<p class="mt-0.5 text-sm font-medium" style="color:${BLUE_600}">${esc(pi.jobTitle)}</p>` : ''}
+        </div>
+      </div>
+      ${contactHtml}
     </div>
     ${sections.map(s => `<div class="mb-6" data-section>
       <h2 class="mb-3 border-l-[3px] pl-3 text-sm font-bold uppercase tracking-wider" style="color:${GRAY_700};border-color:${BLUE_600}">${esc(s.title)}</h2>
