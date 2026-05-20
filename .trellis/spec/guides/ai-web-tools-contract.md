@@ -1,6 +1,6 @@
 # AI Web Tools Contract
 
-> Purpose: Define the executable cross-layer contract for JadeAI local web tools powered by the local MCP sidecar.
+> Purpose: Define the executable cross-layer contract for JobPilot local web tools powered by the local MCP sidecar.
 
 ## Scope
 

@@ -6,7 +6,7 @@
 
 ## Overview
 
-Components in JadeAI are primarily function components with explicit prop types,
+Components in JobPilot are primarily function components with explicit prop types,
 Tailwind-first styling, and named exports.
 
 Use server components by default in `src/app/`. Add `'use client';` only when a

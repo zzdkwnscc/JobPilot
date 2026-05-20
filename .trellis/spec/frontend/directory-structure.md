@@ -6,7 +6,7 @@
 
 ## Overview
 
-JadeAI uses a route-first Next.js App Router structure and keeps reusable UI
+JobPilot uses a route-first Next.js App Router structure and keeps reusable UI
 code outside `src/app/`.
 
 The high-level rule is:

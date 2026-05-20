@@ -6,7 +6,7 @@
 
 ## Overview
 
-The baseline frontend quality bar in JadeAI is:
+The baseline frontend quality bar in JobPilot is:
 
 - `pnpm lint`
 - `pnpm type-check`
@@ -99,7 +99,7 @@ were performed.
 - If shared state changed, are autosave, hydration, and cleanup paths still correct?
 - If interaction patterns changed, do keyboard/focus behavior and nested click
   handling still work?
-- If visual styling changed, does it still match JadeAI's current neutral + pink
+- If visual styling changed, does it still match JobPilot's current neutral + pink
   design language and the correct page-type intensity?
 - Were the blocking verification commands run (repo default or task-defined hard gate), and was the distinction between desktop blocking lint and web-reference observation kept clear?
 - If the work stayed in pure web-reference code, was that scope called out so

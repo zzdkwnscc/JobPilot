@@ -1,12 +1,12 @@
 # Frontend Development Guidelines
 
-> Project-specific frontend conventions for JadeAI.
+> Project-specific frontend conventions for JobPilot.
 
 ---
 
 ## Overview
 
-JadeAI is a Next.js 16 App Router application with React 19, Tailwind CSS 4,
+JobPilot is a Next.js 16 App Router application with React 19, Tailwind CSS 4,
 shadcn/ui, Zustand, next-intl, and Zod.
 
 The documents in this directory describe the conventions that already exist in

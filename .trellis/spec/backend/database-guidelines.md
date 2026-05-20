@@ -1,12 +1,12 @@
 # Database Guidelines
 
-> How the database layer is structured in JadeAI.
+> How the database layer is structured in JobPilot.
 
 ---
 
 ## Overview
 
-JadeAI uses Drizzle ORM with two database backends:
+JobPilot uses Drizzle ORM with two database backends:
 
 - **SQLite** (development default) — schema in `src/lib/db/schema.ts`
 - **PostgreSQL** (production) — schema in `src/lib/db/pg-schema.ts`

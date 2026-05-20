@@ -1,12 +1,14 @@
-# Frontend Development Guidelines
+# Desktop Frontend Development Guidelines
 
-> Best practices for frontend development in this project.
+> Best practices for the desktop frontend (Tauri + React + Vite).
 
 ---
 
 ## Overview
 
-This directory contains guidelines for frontend development. Fill in each file with your project's specific conventions.
+This directory contains guidelines for the **desktop frontend** at `desktop/src/`. The desktop app is built with Vite, React 19, TanStack Router, Zustand 5, and Tailwind CSS 4. It communicates with a Rust/Tauri backend via `invoke()` commands.
+
+For the shared web frontend (Next.js), see `../frontend/`. For the Rust backend contract, see `../guides/desktop-runtime-boundary.md`.
 
 ---
 
@@ -14,25 +16,22 @@ This directory contains guidelines for frontend development. Fill in each file w
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
-| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
-| [State Management](./state-management.md) | Local state, global state, server state | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
+| [Directory Structure](./directory-structure.md) | Module organization, file layout, `@/` alias | Customized |
+| [Component Guidelines](./component-guidelines.md) | Component patterns, shared vs desktop components, styling | Customized |
+| [Hook Guidelines](./hook-guidelines.md) | Data fetching via desktop-api, no custom hooks | Customized |
+| [State Management](./state-management.md) | Zustand stores, autosave, undo/redo | Customized |
+| [Quality Guidelines](./quality-guidelines.md) | Lint, build, forbidden patterns, review checklist | Customized |
+| [Type Safety](./type-safety.md) | Type organization, date/string divergence, API types | Customized |
 
 ---
 
-## How to Fill These Guidelines
+## How to Use These Guidelines
 
-For each guideline file:
-
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
-
-The goal is to help AI assistants and new team members understand how YOUR project works.
+1. Read this index before starting desktop frontend work.
+2. Open the specific guide that matches the change you are about to make.
+3. If working with the Rust backend, also read the `desktop-runtime-boundary.md` guide.
+4. If modifying shared UI components, read the shared `frontend/component-guidelines.md`.
+5. Follow the documented examples before introducing a new pattern.
 
 ---
 

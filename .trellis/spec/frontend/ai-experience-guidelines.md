@@ -1,12 +1,12 @@
 # AI Experience Guidelines
 
-> How AI chat, specialist AI dialogs, and resume-writing interactions work together in JadeAI.
+> How AI chat, specialist AI dialogs, and resume-writing interactions work together in JobPilot.
 
 ---
 
 ## Overview
 
-JadeAI's AI frontend is not one component. It is a coordinated system made of:
+JobPilot's AI frontend is not one component. It is a coordinated system made of:
 
 - a persistent resume-bound chat surface
 - specialist AI dialogs for focused workflows
@@ -138,7 +138,7 @@ Rules:
 
 ### Tool transparency
 
-JadeAI currently exposes tool execution through collapsible blocks.
+JobPilot currently exposes tool execution through collapsible blocks.
 
 Keep this behavior when adding new tool-driven experiences:
 
@@ -178,7 +178,7 @@ unless the experience truly needs a local override.
 
 ## Bridge Pattern: Specialist Result -> Chat Follow-Up
 
-One of JadeAI's most important current patterns is the bridge from specialist AI
+One of JobPilot's most important current patterns is the bridge from specialist AI
 workflows back into the main chat.
 
 Current examples:

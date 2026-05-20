@@ -6,7 +6,7 @@
 
 ## Overview
 
-Custom hooks in JadeAI live in `src/hooks/` and are used to encapsulate client
+Custom hooks in JobPilot live in `src/hooks/` and are used to encapsulate client
 behavior that would otherwise be duplicated across route components.
 
 Hooks are responsible for orchestration, not rendering. They return state and

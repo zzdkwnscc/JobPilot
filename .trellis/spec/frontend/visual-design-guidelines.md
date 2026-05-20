@@ -1,12 +1,12 @@
 # Visual Design Guidelines
 
-> How JadeAI's current visual language stays coordinated across landing pages, productivity screens, and AI surfaces.
+> How JobPilot's current visual language stays coordinated across landing pages, productivity screens, and AI surfaces.
 
 ---
 
 ## Overview
 
-JadeAI's current UI is best described as:
+JobPilot's current UI is best described as:
 
 - editorial-neutral productivity UI at the core
 - accent-led AI/product emphasis
@@ -113,7 +113,7 @@ Rules:
 
 ### Coordination principle
 
-JadeAI currently behaves like a product-first UI, not a fashion/editorial site.
+JobPilot currently behaves like a product-first UI, not a fashion/editorial site.
 That means:
 
 - dashboard/editor/dialogs should remain sans-led and highly legible
@@ -174,7 +174,7 @@ Don't:
 
 ### Current motion posture
 
-JadeAI already uses motion in three categories:
+JobPilot already uses motion in three categories:
 
 - hover lift / feedback on interactive controls
 - loading indicators and progress feedback
@@ -290,4 +290,4 @@ If you need a new visual pattern:
 - Are radius, border, and shadow choices compatible with nearby components?
 - Are hover and motion patterns subtle and performant?
 - If gradients are used, are they reserved for hero/AI/CTA emphasis?
-- Would this screen still feel like JadeAI if shown next to the dashboard and landing page?
+- Would this screen still feel like JobPilot if shown next to the dashboard and landing page?

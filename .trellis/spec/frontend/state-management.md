@@ -6,7 +6,7 @@
 
 ## Overview
 
-JadeAI uses three main state layers:
+JobPilot uses three main state layers:
 
 - Local component state for short-lived UI concerns
 - Zustand stores for shared client state and persistence-sensitive flows

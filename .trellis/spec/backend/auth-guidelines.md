@@ -1,12 +1,12 @@
 # Auth Guidelines
 
-> How authentication and authorization work in JadeAI.
+> How authentication and authorization work in JobPilot.
 
 ---
 
 ## Overview
 
-JadeAI supports two authentication modes controlled by the `NEXT_PUBLIC_AUTH_ENABLED`
+JobPilot supports two authentication modes controlled by the `NEXT_PUBLIC_AUTH_ENABLED`
 environment variable:
 
 - **OAuth mode** (`NEXT_PUBLIC_AUTH_ENABLED=true`): Full NextAuth.js with Google

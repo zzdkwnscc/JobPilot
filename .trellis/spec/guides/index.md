@@ -1,32 +1,32 @@
-# Thinking Guides
+# Guides & Contracts
 
-> **Purpose**: Expand your thinking to catch things you might not have considered.
-
----
-
-## Why Thinking Guides?
-
-**Most bugs and tech debt come from "didn't think of that"**, not from lack of skill:
-
-- Didn't think about what happens at layer boundaries → cross-layer bugs
-- Didn't think about code patterns repeating → duplicated code everywhere
-- Didn't think about edge cases → runtime errors
-- Didn't think about future maintainers → unreadable code
-
-These guides help you **ask the right questions before coding**.
+> Cross-layer contracts, operational checklists, and thinking guides.
 
 ---
 
-## Available Guides
+## Overview
 
-| Guide | Purpose | When to Use |
-|-------|---------|-------------|
-| [Code Reuse Thinking Guide](./code-reuse-thinking-guide.md) | Identify patterns and reduce duplication | When you notice repeated patterns |
-| [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md) | Think through data flow across layers | Features spanning multiple layers |
+This directory contains three kinds of documents:
+
+- **Contracts** — executable cross-layer specifications with concrete payloads, error matrices, and validation rules.
+- **Checklists** — operational verification steps for releases and smoke testing.
+- **Thinking Guides** — meta-guides for catching issues before they become bugs.
 
 ---
 
-## Quick Reference: Thinking Triggers
+## Directory
+
+| Document | Type | Purpose | When to Use |
+|----------|------|---------|-------------|
+| [Desktop Runtime Boundary](./desktop-runtime-boundary.md) | Contract | Cross-layer contract for Tauri/Rust desktop shell | Any work touching desktop ↔ Rust boundary |
+| [AI Web Tools Contract](./ai-web-tools-contract.md) | Contract | MCP sidecar web tools contract for AI chat | Modifying AI tool execution or MCP integration |
+| [Windows Release Smoke Checklist](./windows-release-smoke-checklist.md) | Checklist | Windows desktop release verification | Before any Windows release |
+| [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md) | Thinking Guide | Think through data flow across layers | Features spanning multiple layers |
+| [Code Reuse Thinking Guide](./code-reuse-thinking-guide.md) | Thinking Guide | Identify patterns and reduce duplication | When you notice repeated patterns |
+
+---
+
+## Thinking Triggers
 
 ### When to Think About Cross-Layer Issues
 
@@ -54,7 +54,6 @@ These guides help you **ask the right questions before coding**.
 > **Before changing ANY value, ALWAYS search first!**
 
 ```bash
-# Search for the value you're about to change
 grep -r "value_to_change" .
 ```
 
@@ -62,18 +61,4 @@ This single habit prevents most "forgot to update X" bugs.
 
 ---
 
-## How to Use This Directory
-
-1. **Before coding**: Skim the relevant thinking guide
-2. **During coding**: If something feels repetitive or complex, check the guides
-3. **After bugs**: Add new insights to the relevant guide (learn from mistakes)
-
----
-
-## Contributing
-
-Found a new "didn't think of that" moment? Add it to the relevant guide.
-
----
-
-**Core Principle**: 30 minutes of thinking saves 3 hours of debugging.
+**Language**: All documentation should be written in **English**.

@@ -1,12 +1,12 @@
 # AI Backend Guidelines
 
-> Executable contracts for JadeAI AI route handlers, provider setup, tool execution, and persistence.
+> Executable contracts for JobPilot AI route handlers, provider setup, tool execution, and persistence.
 
 ---
 
 ## Overview
 
-JadeAI's AI backend is built around Next.js Route Handlers in `src/app/api/ai/`
+JobPilot's AI backend is built around Next.js Route Handlers in `src/app/api/ai/`
 plus a shared provider/tool layer in `src/lib/ai/`.
 
 These routes are not simple wrappers around a model API. They combine:

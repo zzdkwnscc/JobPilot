@@ -1,12 +1,12 @@
 # Backend Development Guidelines
 
-> Project-specific backend conventions for JadeAI.
+> Project-specific backend conventions for JobPilot.
 
 ---
 
 ## Overview
 
-JadeAI is a Next.js 16 App Router application with a Node.js backend layer
+JobPilot is a Next.js 16 App Router application with a Node.js backend layer
 implemented as Next.js Route Handlers (`src/app/api/`). The backend handles:
 
 - Resume CRUD and persistence (SQLite via Drizzle ORM, PostgreSQL via separate
