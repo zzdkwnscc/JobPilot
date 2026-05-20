@@ -109,21 +109,24 @@ function RetroSectionContent({ section, resume }: { section: any; resume: Resume
               </span>
             </div>
             {item.company && <p className="text-sm italic" style={{ color: ACCENT }}>{item.company}</p>}
-            {item.description && <p className="mt-1 text-sm" style={{ color: '#57534e' }} dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
+            {item.description && <p className="mt-1 text-sm" style={{ color: '#57534e' }}><span className="font-medium" style={{ color: PRIMARY }}>{resume.language === 'zh' ? '\u804c\u8d23' : 'Responsibilities'}:</span> <span dangerouslySetInnerHTML={{ __html: md(item.description) }} /></p>}
             {item.technologies?.length > 0 && (
               <p className="mt-1 text-xs italic" style={{ color: ACCENT }}>
                 Technologies: {item.technologies.join(', ')}
               </p>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1.5 space-y-0.5">
-                {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#57534e' }}>
-                    <span className="mt-1 shrink-0 text-xs" style={{ color: PRIMARY }}>{'\u2022'}</span>
-                    <span dangerouslySetInnerHTML={{ __html: md(h) }} />
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-1.5">
+                <p className="text-xs font-medium mb-0.5" style={{ color: PRIMARY }}>{resume.language === 'zh' ? '\u4e3b\u8981\u6210\u5c31' : 'Key Achievements'}:</p>
+                <ul className="space-y-0.5">
+                  {item.highlights.map((h: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#57534e' }}>
+                      <span className="mt-1 shrink-0 text-xs" style={{ color: PRIMARY }}>{'\u2022'}</span>
+                      <span dangerouslySetInnerHTML={{ __html: md(h) }} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         ))}

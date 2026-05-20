@@ -88,19 +88,22 @@ function JapaneseSectionContent({ section, lang }: { section: any; lang?: string
               <span className="shrink-0 text-[10px] font-light" style={{ color: ACCENT }}>{item.startDate} &ndash; {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</span>
             </div>
             {item.company && <p className="mt-0.5 text-xs font-light" style={{ color: ACCENT }}>{item.company}{item.location ? `, ${item.location}` : ''}</p>}
-            {item.description && <p className="mt-2 text-sm font-light leading-relaxed" style={{ color: PRIMARY }} dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
+            {item.description && <p className="mt-2 text-sm font-light leading-relaxed" style={{ color: PRIMARY }}><span className="font-medium">{lang === 'zh' ? '职责' : 'Responsibilities'}:</span> <span dangerouslySetInnerHTML={{ __html: md(item.description) }} /></p>}
             {item.technologies?.length > 0 && (
               <p className="mt-1 text-xs font-light" style={{ color: ACCENT }}>{item.technologies.join(' \u00b7 ')}</p>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-2 space-y-1">
-                {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="flex items-start gap-3 text-sm font-light" style={{ color: PRIMARY }}>
-                    <span className="mt-2 inline-block h-px w-3 shrink-0" style={{ backgroundColor: ACCENT }} />
-                    <span dangerouslySetInnerHTML={{ __html: md(h) }} />
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-2">
+                <p className="text-xs font-medium mb-1" style={{ color: ACCENT }}>{lang === 'zh' ? '\u4e3b\u8981\u6210\u5c31' : 'Key Achievements'}:</p>
+                <ul className="space-y-1">
+                  {item.highlights.map((h: string, i: number) => (
+                    <li key={i} className="flex items-start gap-3 text-sm font-light" style={{ color: PRIMARY }}>
+                      <span className="mt-2 inline-block h-px w-3 shrink-0" style={{ backgroundColor: ACCENT }} />
+                      <span dangerouslySetInnerHTML={{ __html: md(h) }} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             <div className="mt-4 h-px" style={{ backgroundColor: ACCENT, opacity: 0.2 }} />
           </div>

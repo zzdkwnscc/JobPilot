@@ -109,7 +109,7 @@ function MetroSectionContent({ section, resume }: { section: any; resume: Resume
               </span>
             </div>
             {item.company && <p className="text-sm font-semibold" style={{ color: AMBER }}>{item.company}</p>}
-            {item.description && <p className="mt-1 text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
+            {item.description && <p className="mt-1 text-sm text-zinc-600"><span className="font-medium text-zinc-700">{resume.language === 'zh' ? '职责' : 'Responsibilities'}:</span> <span dangerouslySetInnerHTML={{ __html: md(item.description) }} /></p>}
             {item.technologies?.length > 0 && (
               <div className="mt-1 flex flex-wrap gap-1">
                 {item.technologies.map((t: string, i: number) => (
@@ -120,11 +120,14 @@ function MetroSectionContent({ section, resume }: { section: any; resume: Resume
               </div>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1 list-disc pl-4">
-                {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
-                ))}
-              </ul>
+              <div className="mt-1">
+                <p className="text-xs font-medium text-zinc-500 mb-0.5">{resume.language === 'zh' ? '主要成就' : 'Key Achievements'}:</p>
+                <ul className="list-disc pl-4">
+                  {item.highlights.map((h: string, i: number) => (
+                    <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         ))}

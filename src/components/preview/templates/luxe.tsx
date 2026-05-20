@@ -98,19 +98,22 @@ function LuxeSectionContent({ section, lang }: { section: any; lang?: string }) 
               <span className="shrink-0 text-xs italic" style={{ color: '#a8a29e' }}>{item.startDate} &ndash; {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</span>
             </div>
             {item.company && <p className="text-sm" style={{ color: GOLD }}>{item.company}{item.location ? `, ${item.location}` : ''}</p>}
-            {item.description && <p className="mt-1 text-sm" style={{ color: '#44403c' }} dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
+            {item.description && <p className="mt-1 text-sm" style={{ color: '#44403c' }}><span className="font-medium" style={{ color: TEXT }}>{lang === 'zh' ? '职责' : 'Responsibilities'}:</span> <span dangerouslySetInnerHTML={{ __html: md(item.description) }} /></p>}
             {item.technologies?.length > 0 && (
               <p className="mt-0.5 text-xs italic" style={{ color: '#a8a29e' }}>{lang === 'zh' ? '技术栈' : 'Tech'}: {item.technologies.join(', ')}</p>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1.5 list-none space-y-0.5">
-                {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#44403c' }}>
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45" style={{ backgroundColor: GOLD }} />
-                    <span dangerouslySetInnerHTML={{ __html: md(h) }} />
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-1.5">
+                <p className="text-xs font-medium mb-0.5" style={{ color: '#a8a29e' }}>{lang === 'zh' ? '主要成就' : 'Key Achievements'}:</p>
+                <ul className="list-none space-y-0.5">
+                  {item.highlights.map((h: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#44403c' }}>
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45" style={{ backgroundColor: GOLD }} />
+                      <span dangerouslySetInnerHTML={{ __html: md(h) }} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         ))}

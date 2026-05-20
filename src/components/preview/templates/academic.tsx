@@ -84,16 +84,19 @@ function AcademicSectionContent({ section, resume }: { section: any; resume: Res
               </div>
               <span className="shrink-0 text-xs text-zinc-500">{item.startDate} – {item.endDate || (item.current ? (resume.language === 'zh' ? '至今' : 'Present') : '')}</span>
             </div>
-            {item.description && <p className="mt-0.5 text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
+            {item.description && <p className="mt-0.5 text-sm text-zinc-600"><span className="font-medium text-zinc-700">{resume.language === 'zh' ? '职责' : 'Responsibilities'}:</span> <span dangerouslySetInnerHTML={{ __html: md(item.description) }} /></p>}
             {item.technologies?.length > 0 && (
               <p className="text-xs text-zinc-500 italic">{resume.language === 'zh' ? '技术栈' : 'Technologies'}: {item.technologies.join(', ')}</p>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-0.5 list-disc pl-5">
-                {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
-                ))}
-              </ul>
+              <div className="mt-0.5">
+                <p className="text-xs font-medium text-zinc-500 mb-0.5">{resume.language === 'zh' ? '主要成就' : 'Key Achievements'}:</p>
+                <ul className="list-disc pl-5">
+                  {item.highlights.map((h: string, i: number) => (
+                    <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         ))}

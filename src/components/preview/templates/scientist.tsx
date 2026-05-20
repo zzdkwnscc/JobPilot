@@ -100,19 +100,22 @@ function ScientistSectionContent({ section, resume }: { section: any; resume: Re
                 {item.startDate} - {item.endDate || (item.current ? (resume.language === 'zh' ? '至今' : 'Present') : '')}
               </span>
             </div>
-            {item.description && <p className="mt-1 pl-6 text-sm" style={{ color: BODY_TEXT }} dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
+            {item.description && <p className="mt-1 pl-6 text-sm" style={{ color: BODY_TEXT }}><span className="font-medium" style={{ color: PRIMARY }}>{resume.language === 'zh' ? '职责' : 'Responsibilities'}:</span> <span dangerouslySetInnerHTML={{ __html: md(item.description) }} /></p>}
             {item.technologies?.length > 0 && (
               <p className="pl-6 text-xs italic" style={{ color: MUTED }}>{resume.language === 'zh' ? '技术栈' : 'Methods/Tools'}: {item.technologies.join(', ')}</p>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1 pl-6 space-y-0.5">
-                {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm" style={{ color: BODY_TEXT }}>
-                    <span className="mt-1.5 shrink-0 text-xs" style={{ color: ACCENT }}>-</span>
-                    <span dangerouslySetInnerHTML={{ __html: md(h) }} />
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-1 pl-6">
+                <p className="text-xs font-medium mb-0.5" style={{ color: MUTED }}>{resume.language === 'zh' ? '主要成就' : 'Key Achievements'}:</p>
+                <ul className="space-y-0.5">
+                  {item.highlights.map((h: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: BODY_TEXT }}>
+                      <span className="mt-1.5 shrink-0 text-xs" style={{ color: ACCENT }}>-</span>
+                      <span dangerouslySetInnerHTML={{ __html: md(h) }} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         ))}

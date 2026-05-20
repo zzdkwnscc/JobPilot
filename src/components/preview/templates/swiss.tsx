@@ -90,19 +90,22 @@ function SwissSectionContent({ section, lang }: { section: any; lang?: string })
             <div>
               <h3 className="text-sm font-bold" style={{ color: TEXT }}>{item.position}</h3>
               {item.company && <p className="text-sm" style={{ color: RED }}>{item.company}</p>}
-              {item.description && <p className="mt-1 text-sm" style={{ color: '#3f3f46' }} dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
+              {item.description && <p className="mt-1 text-sm" style={{ color: '#3f3f46' }}><span className="font-medium" style={{ color: TEXT }}>{lang === 'zh' ? '职责' : 'Responsibilities'}:</span> <span dangerouslySetInnerHTML={{ __html: md(item.description) }} /></p>}
               {item.technologies?.length > 0 && (
                 <p className="mt-0.5 text-xs" style={{ color: '#52525b' }}>{lang === 'zh' ? '技术栈' : 'Tech'}: {item.technologies.join(', ')}</p>
               )}
               {item.highlights?.length > 0 && (
-                <ul className="mt-1 list-none space-y-0.5">
-                  {item.highlights.map((h: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#3f3f46' }}>
-                      <span className="mt-1.5 inline-block h-1 w-1 shrink-0" style={{ backgroundColor: RED }} />
-                      <span dangerouslySetInnerHTML={{ __html: md(h) }} />
-                    </li>
-                  ))}
-                </ul>
+                <div className="mt-1">
+                  <p className="text-xs font-medium mb-0.5" style={{ color: '#52525b' }}>{lang === 'zh' ? '主要成就' : 'Key Achievements'}:</p>
+                  <ul className="list-none space-y-0.5">
+                    {item.highlights.map((h: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#3f3f46' }}>
+                        <span className="mt-1.5 inline-block h-1 w-1 shrink-0" style={{ backgroundColor: RED }} />
+                        <span dangerouslySetInnerHTML={{ __html: md(h) }} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           </div>

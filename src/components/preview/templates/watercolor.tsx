@@ -107,7 +107,7 @@ function WatercolorSectionContent({ section, lang }: { section: any; lang?: stri
               </span>
             </div>
             {item.company && <p className="text-sm font-medium" style={{ color: ACCENT }}>{item.company}</p>}
-            {item.description && <p className="mt-1 text-sm" style={{ color: TEXT }} dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
+            {item.description && <p className="mt-1 text-sm" style={{ color: TEXT }}><span className="font-medium" style={{ color: TEXT_DARK }}>{lang === 'zh' ? '职责' : 'Responsibilities'}:</span> <span dangerouslySetInnerHTML={{ __html: md(item.description) }} /></p>}
             {item.technologies?.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
                 {item.technologies.map((t: string, i: number) => (
@@ -118,14 +118,17 @@ function WatercolorSectionContent({ section, lang }: { section: any; lang?: stri
               </div>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1.5 space-y-0.5">
-                {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm" style={{ color: TEXT }}>
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: ACCENT }} />
-                    <span dangerouslySetInnerHTML={{ __html: md(h) }} />
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-1.5">
+                <p className="text-xs font-medium mb-0.5" style={{ color: TEXT }}>{lang === 'zh' ? '主要成就' : 'Key Achievements'}:</p>
+                <ul className="space-y-0.5">
+                  {item.highlights.map((h: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: TEXT }}>
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: ACCENT }} />
+                      <span dangerouslySetInnerHTML={{ __html: md(h) }} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         ))}

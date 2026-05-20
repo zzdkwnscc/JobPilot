@@ -107,7 +107,7 @@ function EngineerSectionContent({ section, resume }: { section: any; resume: Res
                 {item.startDate} - {item.endDate || (item.current ? (resume.language === 'zh' ? '至今' : 'Present') : '')}
               </span>
             </div>
-            {item.description && <p className="mt-1 text-sm" style={{ color: BODY_TEXT }} dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
+            {item.description && <p className="mt-1 text-sm" style={{ color: BODY_TEXT }}><span className="font-medium" style={{ color: PRIMARY }}>{resume.language === 'zh' ? '职责' : 'Responsibilities'}:</span> <span dangerouslySetInnerHTML={{ __html: md(item.description) }} /></p>}
             {item.technologies?.length > 0 && (
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {item.technologies.map((t: string, i: number) => (
@@ -122,14 +122,17 @@ function EngineerSectionContent({ section, resume }: { section: any; resume: Res
               </div>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1.5 space-y-0.5">
-                {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm" style={{ color: BODY_TEXT }}>
-                    <span className="mt-1.5 h-1 w-1 shrink-0" style={{ backgroundColor: ACCENT }} />
-                    <span dangerouslySetInnerHTML={{ __html: md(h) }} />
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-1.5">
+                <p className="text-xs font-medium mb-0.5" style={{ color: SECONDARY }}>{resume.language === 'zh' ? '主要成就' : 'Key Achievements'}:</p>
+                <ul className="space-y-0.5">
+                  {item.highlights.map((h: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: BODY_TEXT }}>
+                      <span className="mt-1.5 h-1 w-1 shrink-0" style={{ backgroundColor: ACCENT }} />
+                      <span dangerouslySetInnerHTML={{ __html: md(h) }} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             <div className="mt-2 h-px" style={{ backgroundColor: RULE_COLOR }} />
           </div>
