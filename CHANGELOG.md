@@ -5,6 +5,18 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.5] - 2025-05-21
+
+### 新增
+
+- 工作经历标签 — 为所有模板的工作经历模块添加标签区分，描述前显示"职责/Responsibilities:"，成就列表前显示"主要成就/Key Achievements:"
+
+### 修复
+
+- 字体主题 — 修复个人简介模块字体不跟随主题设置的问题
+- macOS 更新重启 — 修复 macOS 版本更新安装后不自动重启的问题
+- 学术模板 — 移除个人简介模块的首行缩进
+
 ## [1.1.4] - 2025-05-20
 
 ### 新增
@@ -95,7 +107,8 @@
 - 中英双语 — 完整的国际化支持
 - 本地优先 — 数据存储在本地，隐私安全有保障
 
-[Unreleased]: https://github.com/jlifeng/JobPilot/compare/v1.1.4...HEAD
+[Unreleased]: https://github.com/jlifeng/JobPilot/compare/v1.1.5...HEAD
+[1.1.5]: https://github.com/jlifeng/JobPilot/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/jlifeng/JobPilot/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/jlifeng/JobPilot/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/jlifeng/JobPilot/compare/v1.1.1...v1.1.2
