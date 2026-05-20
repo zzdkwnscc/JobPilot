@@ -176,6 +176,7 @@ function buildThemeCSS(scopeId: string, theme: ThemeConfig, template: string): s
       --base-margin-left: ${m.left}px;
     }
     ${s} p, ${s} li, ${s} span, ${s} td, ${s} a, ${s} div {
+      font-family: ${theme.fontFamily}, 'Noto Sans SC', sans-serif !important;
       font-size: ${fs.body} !important;
       line-height: ${theme.lineSpacing} !important;
     }
