@@ -213,11 +213,10 @@ function ModernMinimalSectionContent({
                 <p className="text-xs" style={{ color: TEXT_SECONDARY }}>{item.location}</p>
               )}
               {item.description && (
-                <p
-                  className="mt-1 text-sm"
-                  style={{ color: TEXT_SECONDARY }}
-                  dangerouslySetInnerHTML={{ __html: md(item.description) }}
-                />
+                <p className="mt-1 text-sm" style={{ color: TEXT_SECONDARY }}>
+                  <span className="font-medium" style={{ color: TEXT_PRIMARY }}>{lang === 'zh' ? '职责' : 'Responsibilities'}:</span>{' '}
+                  <span dangerouslySetInnerHTML={{ __html: md(item.description) }} />
+                </p>
               )}
               {item.technologies?.length > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -233,16 +232,21 @@ function ModernMinimalSectionContent({
                 </div>
               )}
               {item.highlights?.length > 0 && (
-                <ul className="mt-1.5 list-disc pl-4">
-                  {item.highlights.map((h, i) => (
-                    <li
-                      key={i}
-                      className="text-sm"
-                      style={{ color: TEXT_SECONDARY }}
-                      dangerouslySetInnerHTML={{ __html: md(h) }}
-                    />
-                  ))}
-                </ul>
+                <div className="mt-1.5">
+                  <p className="text-xs font-medium mb-0.5" style={{ color: TEXT_PRIMARY }}>
+                    {lang === 'zh' ? '主要成就' : 'Key Achievements'}:
+                  </p>
+                  <ul className="list-disc pl-4">
+                    {item.highlights.map((h, i) => (
+                      <li
+                        key={i}
+                        className="text-sm"
+                        style={{ color: TEXT_SECONDARY }}
+                        dangerouslySetInnerHTML={{ __html: md(h) }}
+                      />
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           </div>
@@ -560,7 +564,7 @@ function buildModernMinimalSectionHtml(
         ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${it.technologies.map((t) => `<span style="background:${TECH_BG};color:${ACCENT};border:1px solid ${TECH_BORDER};border-radius:9999px;padding:2px 8px;font-size:11px">${esc(t)}</span>`).join('')}</div>`
         : '';
       const highlights = it.highlights?.length
-        ? `<ul style="margin:6px 0 0 16px;padding:0">${buildHighlights(it.highlights, `font-size:13px;color:${TEXT_SECONDARY}`)}</ul>`
+        ? `<div style="margin-top:6px"><p style="font-size:11px;font-weight:500;color:${TEXT_PRIMARY};margin:0 0 2px">${lang === 'zh' ? '主要成就' : 'Key Achievements'}:</p><ul style="margin:0 0 0 16px;padding:0">${buildHighlights(it.highlights, `font-size:13px;color:${TEXT_SECONDARY}`)}</ul></div>`
         : '';
       const marginBottom = idx < items.length - 1 ? 'margin-bottom:16px' : '';
       return `<div style="position:relative;display:flex;gap:16px;${marginBottom}">
@@ -574,7 +578,7 @@ function buildModernMinimalSectionHtml(
             ${it.company ? `<span style="font-size:13px;color:${ACCENT}">${esc(it.company)}</span>` : ''}
           </div>
           ${it.location ? `<p style="font-size:11px;color:${TEXT_SECONDARY};margin:2px 0 0">${esc(it.location)}</p>` : ''}
-          ${it.description ? `<p style="font-size:13px;color:${TEXT_SECONDARY};margin:4px 0 0">${md(it.description)}</p>` : ''}
+          ${it.description ? `<p style="font-size:13px;color:${TEXT_SECONDARY};margin:4px 0 0"><span style="font-weight:500;color:${TEXT_PRIMARY}">${lang === 'zh' ? '职责' : 'Responsibilities'}:</span> ${md(it.description)}</p>` : ''}
           ${techs}${highlights}
         </div>
       </div>`;

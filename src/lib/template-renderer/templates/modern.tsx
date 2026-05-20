@@ -155,10 +155,10 @@ function ModernSectionContent({
               </p>
             )}
             {item.description && (
-              <p
-                className="mt-1 text-sm text-zinc-600"
-                dangerouslySetInnerHTML={{ __html: md(item.description) }}
-              />
+              <p className="mt-1 text-sm text-zinc-600">
+                <span className="font-medium text-zinc-700">{lang === 'zh' ? '职责' : 'Responsibilities'}:</span>{' '}
+                <span dangerouslySetInnerHTML={{ __html: md(item.description) }} />
+              </p>
             )}
             {item.technologies?.length > 0 && (
               <div className="mt-1 flex flex-wrap gap-1.5">
@@ -173,15 +173,20 @@ function ModernSectionContent({
               </div>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1 list-disc pl-4">
-                {item.highlights.map((h, i) => (
-                  <li
-                    key={i}
-                    className="text-sm text-zinc-600"
-                    dangerouslySetInnerHTML={{ __html: md(h) }}
-                  />
-                ))}
-              </ul>
+              <div className="mt-1">
+                <p className="text-xs font-medium text-zinc-500 mb-0.5">
+                  {lang === 'zh' ? '主要成就' : 'Key Achievements'}:
+                </p>
+                <ul className="list-disc pl-4">
+                  {item.highlights.map((h, i) => (
+                    <li
+                      key={i}
+                      className="text-sm text-zinc-600"
+                      dangerouslySetInnerHTML={{ __html: md(h) }}
+                    />
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         ))}
@@ -427,9 +432,9 @@ function buildModernSectionContentHtml(
         <span class="shrink-0 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-500">${formatDate(it.startDate, it.endDate, it.current, lang)}</span>
       </div>
       ${it.company ? `<p class="text-sm" style="color:${ACCENT_COLOR}">${esc(it.company)}</p>` : ''}
-      ${it.description ? `<div class="mt-1 text-sm text-zinc-600">${md(it.description)}</div>` : ''}
+      ${it.description ? `<p class="mt-1 text-sm text-zinc-600"><span class="font-medium text-zinc-700">${lang === 'zh' ? '职责' : 'Responsibilities'}:</span> ${md(it.description)}</p>` : ''}
       ${it.technologies?.length ? `<div class="mt-1 flex flex-wrap gap-1.5">${it.technologies.map((t) => `<span class="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">${esc(t)}</span>`).join('')}</div>` : ''}
-      ${it.highlights?.length ? `<ul class="mt-1 list-disc pl-4">${it.highlights.map((h) => `<li class="text-sm text-zinc-600">${md(h)}</li>`).join('')}</ul>` : ''}
+      ${it.highlights?.length ? `<div class="mt-1"><p class="text-xs font-medium text-zinc-500 mb-0.5">${lang === 'zh' ? '主要成就' : 'Key Achievements'}:</p><ul class="list-disc pl-4">${it.highlights.map((h) => `<li class="text-sm text-zinc-600">${md(h)}</li>`).join('')}</ul></div>` : ''}
     </div>`
       )
       .join('')}</div>`;
