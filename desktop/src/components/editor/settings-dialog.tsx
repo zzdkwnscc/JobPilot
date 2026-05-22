@@ -121,6 +121,25 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const [aiTesting, setAiTesting] = useState(false);
   const [exaTestResult, setExaTestResult] = useState<ConnectivityTestResult | null>(null);
   const [exaTesting, setExaTesting] = useState(false);
+  const [aiSaving, setAiSaving] = useState(false);
+
+  // Load AI settings
+  const loadAiSettings = useCallback(async () => {
+    const settings = await getWorkspaceSettingsSnapshot();
+    const provider = (settings.ai?.defaultProvider as AiProvider) || "openai";
+    setAIProvider(provider);
+    const config = settings.ai?.providerConfigs?.[provider];
+    setAIBaseURL(config?.baseUrl || "");
+    setAIModel(config?.model || "");
+    setResumeImportVisionModel(settings.ai?.resumeImportVisionModel || "");
+    const apiKey = await readSecretValue(`provider.${provider}.api_key`);
+    setAIApiKey(apiKey || "");
+    setExaPoolBaseURL(settings.ai?.exaPoolBaseUrl || "https://api.exa.ai");
+    const exaApiKey = await readSecretValue("provider.exa_pool.api_key");
+    setExaPoolApiKey(exaApiKey || "");
+    setAiTestResult(null);
+    setExaTestResult(null);
+  }, []);
 
   // Load settings on open
   useEffect(() => {
@@ -132,31 +151,12 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         setLanguage(settings.locale || "zh");
         setAutoSave(settings.editor?.autoSave ?? true);
         setAutoSaveInterval(settings.editor?.autoSaveIntervalMs ?? 500);
-
-        const provider = (settings.ai?.defaultProvider as AiProvider) || "openai";
-        setAIProvider(provider);
-        const config = settings.ai?.providerConfigs?.[provider];
-        setAIBaseURL(config?.baseUrl || "");
-        setAIModel(config?.model || "");
-        setResumeImportVisionModel(settings.ai?.resumeImportVisionModel || "");
-
-        // Load saved API keys
-        const apiKey = await readSecretValue(`provider.${provider}.api_key`);
-        if (apiKey) {
-          setAIApiKey(apiKey);
-        }
-
-        // Exa
-        setExaPoolBaseURL(settings.ai?.exaPoolBaseUrl || "https://api.exa.ai");
-        const exaApiKey = await readSecretValue("provider.exa_pool.api_key");
-        if (exaApiKey) {
-          setExaPoolApiKey(exaApiKey);
-        }
+        await loadAiSettings();
       } catch (error) {
         console.error("Failed to load settings:", error);
       }
     })();
-  }, [open]);
+  }, [open, loadAiSettings]);
 
   // Focus model search input when popover opens
   useEffect(() => {
@@ -257,6 +257,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         exaPoolBaseUrl: updates.exaPoolBaseUrl ?? exaPoolBaseURL,
       };
       await updateAiProviderSettings(payload);
+      window.dispatchEvent(new Event("ai-settings-changed"));
     } catch (error) {
       console.error("Failed to save AI settings:", error);
     }
@@ -416,8 +417,53 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     }
   }, [exaPoolApiKey, exaPoolBaseURL, saveAIConfig]);
 
-  return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+  const handleManualSave = useCallback(async () => {
+    setAiSaving(true);
+    try {
+      // Save AI provider config
+      const payload: ProviderConfigUpdateInput = {
+        provider: aiProvider,
+        baseUrl: aiBaseURL,
+        model: aiModel,
+        setAsDefault: true,
+        resumeImportVisionModel,
+        exaPoolBaseUrl: exaPoolBaseURL,
+      };
+      await updateAiProviderSettings(payload);
+
+      // Save API key
+      if (aiApiKey.trim()) {
+        await writeSecretValue({
+          key: `provider.${aiProvider}.api_key`,
+          provider: aiProvider,
+          value: aiApiKey.trim(),
+        });
+      }
+
+      // Save Exa API key
+      if (exaPoolApiKey.trim()) {
+        await writeSecretValue({
+          key: "provider.exa_pool.api_key",
+          provider: "openai",
+          value: exaPoolApiKey.trim(),
+        });
+      }
+
+      window.dispatchEvent(new Event("ai-settings-changed"));
+      onClose();
+    } catch (error) {
+      console.error("Failed to save AI settings:", error);
+    } finally {
+      setAiSaving(false);
+    }
+  }, [aiProvider, aiBaseURL, aiModel, resumeImportVisionModel, exaPoolBaseURL, aiApiKey, exaPoolApiKey, onClose]);
+
+  const handleCancelAi = useCallback(() => {
+    void loadAiSettings();
+    onClose();
+  }, [loadAiSettings, onClose]);
+
+  return (    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <SheetContent side="right" className="w-[420px] sm:max-w-[420px] p-0 flex flex-col" showCloseButton>
         {/* Header */}
         <SheetHeader className="px-6 py-4 border-b dark:border-zinc-800">
@@ -454,7 +500,8 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4">
           {/* AI Configuration Tab */}
           {settingsTab === "ai" && (
             <div className="space-y-4">
@@ -840,6 +887,33 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                   <span>0.3s</span>
                   <span>5.0s</span>
                 </div>
+              </div>
+            </div>
+          )}
+          </div>
+
+          {/* Sticky Footer for AI tab */}
+          {settingsTab === "ai" && (
+            <div className="border-t border-zinc-200 bg-white px-6 py-3 dark:border-zinc-800 dark:bg-zinc-950">
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={handleCancelAi}
+                >
+                  {t("settings.ai.cancel", { defaultValue: "Cancel" })}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="cursor-pointer"
+                  disabled={aiSaving}
+                  onClick={() => void handleManualSave()}
+                >
+                  {t("settings.ai.save")}
+                </Button>
               </div>
             </div>
           )}

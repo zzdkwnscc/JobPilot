@@ -390,7 +390,9 @@
       "exaPoolBaseURLPlaceholder": "https://api.exa.ai (default), or a third-party proxy URL",
       "exaPoolApiKey": "Exa API Key",
       "exaPoolApiKeyPlaceholder": "Enter your Exa API Key...",
-      "exaPoolApiKeyHint": "Exa config is stored locally and used for web search and content fetching."
+      "exaPoolApiKeyHint": "Exa config is stored locally and used for web search and content fetching.",
+      "save": "Save",
+      "cancel": "Cancel"
     },
     "appearance": {
       "title": "Appearance",

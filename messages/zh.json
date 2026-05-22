@@ -390,7 +390,9 @@
       "exaPoolBaseURLPlaceholder": "https://api.exa.ai（默认），或填第三方中转站地址",
       "exaPoolApiKey": "Exa API Key",
       "exaPoolApiKeyPlaceholder": "输入你的 Exa API Key...",
-      "exaPoolApiKeyHint": "Exa 配置仅保存在本地，用于网页搜索和内容抓取。"
+      "exaPoolApiKeyHint": "Exa 配置仅保存在本地，用于网页搜索和内容抓取。",
+      "save": "保存",
+      "cancel": "取消"
     },
     "appearance": {
       "title": "外观",

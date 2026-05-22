@@ -383,6 +383,7 @@ export interface StartAiPromptStreamInput {
   systemPrompt?: string;
   images?: string[];
   conversation?: DesktopAiConversationMessage[];
+  thinkingEnabled?: boolean;
 }
 
 export interface DesktopAiConversationMessage {
@@ -401,6 +402,7 @@ export interface AiStreamStartReceipt {
 export type DesktopAiStreamEventKind =
   | "started"
   | "delta"
+  | "delta_thinking"
   | "completed"
   | "error"
   | "tool";
@@ -430,6 +432,7 @@ export interface DesktopAiStreamEvent {
   chunkIndex?: number | null;
   deltaText?: string | null;
   accumulatedText?: string | null;
+  accumulatedThinking?: string | null;
   errorMessage?: string | null;
   toolCall?: DesktopAiToolCallPayload | null;
 }

@@ -31,6 +31,8 @@ pub struct StartAiPromptStreamInput {
     pub images: Vec<String>,
     #[serde(default)]
     pub conversation: Vec<DesktopAiConversationMessage>,
+    #[serde(default)]
+    pub thinking_enabled: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -108,6 +110,7 @@ pub struct AiStreamStartReceipt {
 pub enum DesktopAiStreamEventKind {
     Started,
     Delta,
+    DeltaThinking,
     Completed,
     Error,
     Tool,
@@ -145,6 +148,7 @@ pub struct DesktopAiStreamEvent {
     pub chunk_index: Option<u32>,
     pub delta_text: Option<String>,
     pub accumulated_text: Option<String>,
+    pub accumulated_thinking: Option<String>,
     pub error_message: Option<String>,
     pub tool_call: Option<DesktopAiToolCallPayload>,
 }
@@ -308,6 +312,8 @@ pub fn start_ai_prompt_stream(
         started_at_epoch_ms,
     };
 
+    let thinking_enabled = input.thinking_enabled;
+
     tauri::async_runtime::spawn(async move {
         let run_result = match resolved.provider.as_str() {
             "openai" => {
@@ -322,11 +328,28 @@ pub fn start_ai_prompt_stream(
                     &images,
                     &resolved,
                     started_at_epoch_ms,
+                    thinking_enabled,
+                )
+                .await
+            }
+            "anthropic" => {
+                run_anthropic_stream(
+                    &app_handle,
+                    &workspace_root,
+                    &request_id,
+                    &prompt,
+                    system_prompt.as_deref(),
+                    document_id.as_deref(),
+                    &conversation,
+                    &images,
+                    &resolved,
+                    started_at_epoch_ms,
+                    thinking_enabled,
                 )
                 .await
             }
             unsupported => Err(format!(
-                "provider '{unsupported}' is not wired for native desktop streaming yet; PR5 validates the OpenAI-compatible path first."
+                "provider '{unsupported}' is not wired for native desktop streaming yet."
             )),
         };
 
@@ -344,6 +367,7 @@ pub fn start_ai_prompt_stream(
                     chunk_index: None,
                     delta_text: None,
                     accumulated_text: None,
+                    accumulated_thinking: None,
                     error_message: Some(error),
                     tool_call: None,
                 },
@@ -425,6 +449,7 @@ pub fn start_interview_turn_stream(
                     chunk_index: None,
                     delta_text: None,
                     accumulated_text: None,
+                    accumulated_thinking: None,
                     error_message: Some(error),
                     tool_call: None,
                 },
@@ -469,24 +494,43 @@ pub async fn generate_interview_report(
         input.model.as_deref(),
         input.base_url.as_deref(),
     )?;
-    if resolved.provider != "openai" {
-        return Err(format!(
-            "provider '{}' is not wired for native interview report generation yet; MVP supports the OpenAI-compatible path first.",
-            resolved.provider
-        ));
-    }
-
     let locale = normalize_interview_locale(input.locale.as_deref());
     let client = reqwest::Client::new();
-    let endpoint = format!("{}/chat/completions", resolved.base_url.trim_end_matches('/'));
-    let response_json = request_openai_json_completion(
-        &client,
-        &endpoint,
-        &resolved,
-        &build_interview_report_system_prompt(&locale),
-        &build_interview_report_user_prompt(&session, &locale),
-    )
-    .await?;
+    let response_json = match resolved.provider.as_str() {
+        "openai" => {
+            let endpoint = format!(
+                "{}/chat/completions",
+                resolved.base_url.trim_end_matches('/')
+            );
+            request_openai_json_completion(
+                &client,
+                &endpoint,
+                &resolved,
+                &build_interview_report_system_prompt(&locale),
+                &build_interview_report_user_prompt(&session, &locale),
+            )
+            .await?
+        }
+        "anthropic" => {
+            let endpoint = format!(
+                "{}/v1/messages",
+                resolved.base_url.trim_end_matches('/')
+            );
+            request_anthropic_json_completion(
+                &client,
+                &endpoint,
+                &resolved,
+                &build_interview_report_system_prompt(&locale),
+                &build_interview_report_user_prompt(&session, &locale),
+            )
+            .await?
+        }
+        other => {
+            return Err(format!(
+                "provider '{other}' is not supported for interview report generation."
+            ));
+        }
+    };
     let parsed: InterviewReportModelOutput = serde_json::from_value(response_json)
         .map_err(|error| format!("failed to parse interview report JSON response: {error}"))?;
 
@@ -568,6 +612,7 @@ async fn run_interview_turn_stream(
             chunk_index: Some(0),
             delta_text: None,
             accumulated_text: Some(String::new()),
+            accumulated_thinking: None,
             error_message: None,
             tool_call: None,
         },
@@ -576,6 +621,7 @@ async fn run_interview_turn_stream(
     let client = reqwest::Client::new();
     let endpoint = format!("{}/chat/completions", config.base_url.trim_end_matches('/'));
     let mut accumulated_text = String::new();
+    let mut accumulated_thinking = String::new();
     let mut chunk_index = 0u32;
     let outcome = stream_openai_round(
         app,
@@ -587,7 +633,9 @@ async fn run_interview_turn_stream(
         &messages,
         None,
         &mut accumulated_text,
+        &mut accumulated_thinking,
         &mut chunk_index,
+        false,
     )
     .await?;
 
@@ -645,6 +693,7 @@ async fn run_interview_turn_stream(
             } else {
                 cleaned_text
             }),
+            accumulated_thinking: Some(accumulated_thinking),
             error_message: None,
             tool_call: None,
         },
@@ -724,6 +773,7 @@ async fn run_openai_compatible_stream(
     images: &[String],
     config: &ResolvedProviderConfig,
     started_at_epoch_ms: u64,
+    thinking_enabled: bool,
 ) -> Result<(), String> {
     emit_stream_event(
         app,
@@ -738,6 +788,7 @@ async fn run_openai_compatible_stream(
             chunk_index: Some(0),
             delta_text: None,
             accumulated_text: Some(String::new()),
+            accumulated_thinking: None,
             error_message: None,
             tool_call: None,
         },
@@ -788,6 +839,7 @@ async fn run_openai_compatible_stream(
     }));
 
     let mut accumulated_text = String::new();
+    let mut accumulated_thinking = String::new();
     let mut chunk_index = 0u32;
     let mut tool_rounds = 0usize;
 
@@ -802,7 +854,9 @@ async fn run_openai_compatible_stream(
             &messages,
             tools.as_ref(),
             &mut accumulated_text,
+            &mut accumulated_thinking,
             &mut chunk_index,
+            thinking_enabled,
         )
         .await?;
 
@@ -934,6 +988,7 @@ async fn run_openai_compatible_stream(
             chunk_index: Some(chunk_index),
             delta_text: None,
             accumulated_text: Some(accumulated_text),
+            accumulated_thinking: Some(accumulated_thinking),
             error_message: None,
             tool_call: None,
         },
@@ -952,7 +1007,9 @@ async fn stream_openai_round(
     messages: &[serde_json::Value],
     tools: Option<&serde_json::Value>,
     accumulated_text: &mut String,
+    accumulated_thinking: &mut String,
     chunk_index: &mut u32,
+    thinking_enabled: bool,
 ) -> Result<OpenAiRoundOutcome, String> {
     let mut payload = json!({
         "model": config.model,
@@ -962,6 +1019,10 @@ async fn stream_openai_round(
 
     if let Some(tools) = tools {
         payload["tools"] = tools.clone();
+    }
+
+    if thinking_enabled {
+        payload["thinking"] = json!({"type": "enabled"});
     }
 
     let response = client
@@ -1020,6 +1081,32 @@ async fn stream_openai_round(
                             chunk_index: Some(*chunk_index),
                             delta_text: Some(delta_text),
                             accumulated_text: Some(accumulated_text.clone()),
+                            accumulated_thinking: None,
+                            error_message: None,
+                            tool_call: None,
+                        },
+                    )?;
+                }
+            }
+
+            if let Some(thinking_text) = extract_openai_reasoning_content(&data_payload) {
+                if !thinking_text.is_empty() {
+                    *chunk_index += 1;
+                    accumulated_thinking.push_str(&thinking_text);
+                    emit_stream_event(
+                        app,
+                        DesktopAiStreamEvent {
+                            request_id: request_id.to_string(),
+                            provider: config.provider.clone(),
+                            model: config.model.clone(),
+                            kind: DesktopAiStreamEventKind::DeltaThinking,
+                            started_at_epoch_ms,
+                            emitted_at_epoch_ms: now_epoch_ms()?,
+                            finished_at_epoch_ms: None,
+                            chunk_index: Some(*chunk_index),
+                            delta_text: Some(thinking_text),
+                            accumulated_text: None,
+                            accumulated_thinking: Some(accumulated_thinking.clone()),
                             error_message: None,
                             tool_call: None,
                         },
@@ -1036,6 +1123,290 @@ async fn stream_openai_round(
     Ok(OpenAiRoundOutcome {
         assistant_text: round_text,
         tool_calls: finalize_tool_calls(tool_calls)?,
+    })
+}
+
+async fn run_anthropic_stream(
+    app: &AppHandle,
+    workspace_root: &std::path::Path,
+    request_id: &str,
+    prompt: &str,
+    system_prompt: Option<&str>,
+    _document_id: Option<&str>,
+    conversation: &[DesktopAiConversationMessage],
+    images: &[String],
+    config: &ResolvedProviderConfig,
+    started_at_epoch_ms: u64,
+    thinking_enabled: bool,
+) -> Result<(), String> {
+    emit_stream_event(
+        app,
+        DesktopAiStreamEvent {
+            request_id: request_id.to_string(),
+            provider: config.provider.clone(),
+            model: config.model.clone(),
+            kind: DesktopAiStreamEventKind::Started,
+            started_at_epoch_ms,
+            emitted_at_epoch_ms: now_epoch_ms()?,
+            finished_at_epoch_ms: None,
+            chunk_index: Some(0),
+            delta_text: None,
+            accumulated_text: Some(String::new()),
+            accumulated_thinking: None,
+            error_message: None,
+            tool_call: None,
+        },
+    )?;
+
+    let client = reqwest::Client::new();
+    let endpoint = format!(
+        "{}/v1/messages",
+        config.base_url.trim_end_matches('/')
+    );
+    let mut messages = Vec::new();
+    for msg in conversation {
+        let content = msg.content.trim();
+        if content.is_empty() {
+            continue;
+        }
+        messages.push(json!({
+            "role": msg.role.as_str(),
+            "content": content,
+        }));
+    }
+
+    let prompt_with_web_context = enrich_prompt_with_exa_context(
+        app,
+        request_id,
+        config,
+        started_at_epoch_ms,
+        &client,
+        workspace_root,
+        prompt,
+    )
+    .await;
+
+    let user_content = if images.is_empty() {
+        json!(prompt_with_web_context)
+    } else {
+        let mut content_parts = Vec::with_capacity(images.len() + 1);
+        for image_url in images {
+            if let Some(data_url) = image_url.strip_prefix("data:") {
+                let (media_part, raw) = data_url.split_once(',').unwrap_or(("", data_url));
+                let media_type = media_part
+                    .split_once(';')
+                    .map(|(mt, _)| mt)
+                    .unwrap_or("image/png");
+                content_parts.push(json!({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": raw,
+                    }
+                }));
+            } else {
+                content_parts.push(json!({
+                    "type": "image",
+                    "source": {
+                        "type": "url",
+                        "url": image_url,
+                    }
+                }));
+            }
+        }
+        content_parts.push(json!({
+            "type": "text",
+            "text": prompt_with_web_context,
+        }));
+        json!(content_parts)
+    };
+    messages.push(json!({
+        "role": "user",
+        "content": user_content,
+    }));
+
+    let mut accumulated_text = String::new();
+    let mut accumulated_thinking = String::new();
+    let mut chunk_index = 0u32;
+
+    let round_outcome = stream_anthropic_round(
+        app,
+        &client,
+        &endpoint,
+        request_id,
+        config,
+        started_at_epoch_ms,
+        &messages,
+        system_prompt,
+        &mut accumulated_text,
+        &mut accumulated_thinking,
+        &mut chunk_index,
+        thinking_enabled,
+    )
+    .await?;
+
+    if !round_outcome.tool_calls.is_empty() {
+        eprintln!(
+            "Anthropic path received tool calls but tool execution is not yet supported; ignoring {} tool call(s)",
+            round_outcome.tool_calls.len()
+        );
+    }
+
+    emit_stream_event(
+        app,
+        DesktopAiStreamEvent {
+            request_id: request_id.to_string(),
+            provider: config.provider.clone(),
+            model: config.model.clone(),
+            kind: DesktopAiStreamEventKind::Completed,
+            started_at_epoch_ms,
+            emitted_at_epoch_ms: now_epoch_ms()?,
+            finished_at_epoch_ms: Some(now_epoch_ms()?),
+            chunk_index: Some(chunk_index),
+            delta_text: None,
+            accumulated_text: Some(accumulated_text.clone()),
+            accumulated_thinking: Some(accumulated_thinking),
+            error_message: None,
+            tool_call: None,
+        },
+    )?;
+
+    Ok(())
+}
+
+async fn stream_anthropic_round(
+    app: &AppHandle,
+    client: &reqwest::Client,
+    endpoint: &str,
+    request_id: &str,
+    config: &ResolvedProviderConfig,
+    started_at_epoch_ms: u64,
+    messages: &[serde_json::Value],
+    system_prompt: Option<&str>,
+    accumulated_text: &mut String,
+    accumulated_thinking: &mut String,
+    chunk_index: &mut u32,
+    thinking_enabled: bool,
+) -> Result<OpenAiRoundOutcome, String> {
+    let mut payload = json!({
+        "model": config.model,
+        "stream": true,
+        "messages": messages,
+        "max_tokens": if thinking_enabled { 16384 } else { 8192 },
+    });
+
+    if let Some(system) = system_prompt.filter(|s| !s.trim().is_empty()) {
+        payload["system"] = json!(system);
+    }
+
+    if thinking_enabled {
+        payload["thinking"] = json!({
+            "type": "enabled",
+            "budget_tokens": 10000,
+        });
+    }
+
+    let response = client
+        .post(endpoint)
+        .header("x-api-key", &config.api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("Content-Type", "application/json")
+        .json(&payload)
+        .send()
+        .await
+        .map_err(|error| format!("failed to call Anthropic {endpoint}: {error}"))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response
+            .text()
+            .await
+            .unwrap_or_else(|_| String::from("failed to read upstream error body"));
+        return Err(format!("Anthropic returned {status}: {body}"));
+    }
+
+    let mut event_buffer = SseEventBuffer::default();
+    let mut round_text = String::new();
+    let mut response_stream = response.bytes_stream();
+    let mut anthropic_state = AnthropicStreamingState::default();
+
+    while let Some(chunk_result) = response_stream.next().await {
+        let chunk =
+            chunk_result.map_err(|error| format!("failed to read stream chunk: {error}"))?;
+        for event_payload in event_buffer.push(chunk.as_ref()) {
+            let Some((event_type, data_payload)) =
+                extract_anthropic_sse_event(&event_payload)
+            else {
+                continue;
+            };
+
+            let (delta_text, delta_thinking) =
+                handle_anthropic_sse_event(&event_type, &data_payload, &mut anthropic_state)?;
+
+            if let Some(text) = delta_text {
+                if !text.is_empty() {
+                    *chunk_index += 1;
+                    round_text.push_str(&text);
+                    accumulated_text.push_str(&text);
+                    emit_stream_event(
+                        app,
+                        DesktopAiStreamEvent {
+                            request_id: request_id.to_string(),
+                            provider: config.provider.clone(),
+                            model: config.model.clone(),
+                            kind: DesktopAiStreamEventKind::Delta,
+                            started_at_epoch_ms,
+                            emitted_at_epoch_ms: now_epoch_ms()?,
+                            finished_at_epoch_ms: None,
+                            chunk_index: Some(*chunk_index),
+                            delta_text: Some(text),
+                            accumulated_text: Some(accumulated_text.clone()),
+                            accumulated_thinking: None,
+                            error_message: None,
+                            tool_call: None,
+                        },
+                    )?;
+                }
+            }
+
+            if let Some(thinking) = delta_thinking {
+                if !thinking.is_empty() {
+                    *chunk_index += 1;
+                    accumulated_thinking.push_str(&thinking);
+                    emit_stream_event(
+                        app,
+                        DesktopAiStreamEvent {
+                            request_id: request_id.to_string(),
+                            provider: config.provider.clone(),
+                            model: config.model.clone(),
+                            kind: DesktopAiStreamEventKind::DeltaThinking,
+                            started_at_epoch_ms,
+                            emitted_at_epoch_ms: now_epoch_ms()?,
+                            finished_at_epoch_ms: None,
+                            chunk_index: Some(*chunk_index),
+                            delta_text: Some(thinking),
+                            accumulated_text: None,
+                            accumulated_thinking: Some(accumulated_thinking.clone()),
+                            error_message: None,
+                            tool_call: None,
+                        },
+                    )?;
+                }
+            }
+
+            if event_type == "message_stop" {
+                return Ok(OpenAiRoundOutcome {
+                    assistant_text: round_text,
+                    tool_calls: vec![],
+                });
+            }
+        }
+    }
+
+    Ok(OpenAiRoundOutcome {
+        assistant_text: round_text,
+        tool_calls: vec![],
     })
 }
 
@@ -2327,6 +2698,53 @@ fn extract_openai_completion_text(body: &Value) -> Option<String> {
     }
 }
 
+async fn request_anthropic_json_completion(
+    client: &reqwest::Client,
+    endpoint: &str,
+    config: &ResolvedProviderConfig,
+    system_prompt: &str,
+    user_prompt: &str,
+) -> Result<Value, String> {
+    let response = client
+        .post(endpoint)
+        .header("x-api-key", &config.api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("Content-Type", "application/json")
+        .json(&json!({
+            "model": config.model,
+            "max_tokens": 4096,
+            "system": system_prompt,
+            "messages": [
+                { "role": "user", "content": user_prompt }
+            ]
+        }))
+        .send()
+        .await
+        .map_err(|error| format!("failed to call Anthropic {endpoint}: {error}"))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "failed to read upstream error body".into());
+        return Err(format!("Anthropic returned {status}: {body}"));
+    }
+
+    let body: Value = response
+        .json()
+        .await
+        .map_err(|error| format!("failed to parse Anthropic JSON response: {error}"))?;
+    let text = body
+        .get("content")
+        .and_then(|c| c.as_array())
+        .and_then(|arr| arr.iter().find(|block| block.get("type").and_then(|t| t.as_str()) == Some("text")))
+        .and_then(|block| block.get("text"))
+        .and_then(|t| t.as_str())
+        .ok_or_else(|| "Anthropic response missing text content".to_string())?;
+    parse_json_value_from_text(text)
+}
+
 fn parse_json_value_from_text(content: &str) -> Result<Value, String> {
     let trimmed = content.trim();
     if let Ok(value) = serde_json::from_str::<Value>(trimmed) {
@@ -2381,6 +2799,7 @@ fn emit_tool_call_event(
             chunk_index: None,
             delta_text: None,
             accumulated_text: None,
+            accumulated_thinking: None,
             error_message: None,
             tool_call: Some(tool_call),
         },
@@ -2422,6 +2841,108 @@ fn extract_openai_delta_text(data_payload: &str) -> Option<String> {
         None
     } else {
         Some(aggregated)
+    }
+}
+
+fn extract_openai_reasoning_content(data_payload: &str) -> Option<String> {
+    let payload = serde_json::from_str::<serde_json::Value>(data_payload).ok()?;
+    let choice = payload.get("choices")?.as_array()?.first()?;
+    let content = choice.get("delta")?.get("reasoning_content")?;
+    content.as_str().map(ToString::to_string)
+}
+
+fn extract_anthropic_sse_event(event_payload: &str) -> Option<(String, String)> {
+    let mut event_type = String::new();
+    let mut data_lines = Vec::new();
+
+    for line in event_payload.lines() {
+        if let Some(content) = line.strip_prefix("event:") {
+            event_type = content.trim().to_string();
+        } else if let Some(content) = line.strip_prefix("data:") {
+            data_lines.push(content.trim_start().to_string());
+        }
+    }
+
+    if data_lines.is_empty() {
+        return None;
+    }
+
+    Some((event_type, data_lines.join("\n")))
+}
+
+#[derive(Debug, Clone)]
+enum AnthropicBlockType {
+    Thinking,
+    Text,
+    ToolUse,
+}
+
+#[derive(Debug, Clone, Default)]
+struct AnthropicStreamingState {
+    blocks: BTreeMap<usize, (AnthropicBlockType, String)>,
+}
+
+/// Returns (delta_text, delta_thinking)
+fn handle_anthropic_sse_event(
+    event_type: &str,
+    data_payload: &str,
+    state: &mut AnthropicStreamingState,
+) -> Result<(Option<String>, Option<String>), String> {
+    let value: serde_json::Value = serde_json::from_str(data_payload)
+        .map_err(|e| format!("failed to parse Anthropic SSE data: {e}"))?;
+
+    match event_type {
+        "content_block_start" => {
+            let index = value.get("index").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+            let block_type = value
+                .get("content_block")
+                .and_then(|b| b.get("type"))
+                .and_then(|t| t.as_str())
+                .unwrap_or("text");
+            let bt = match block_type {
+                "thinking" => AnthropicBlockType::Thinking,
+                "tool_use" => AnthropicBlockType::ToolUse,
+                _ => AnthropicBlockType::Text,
+            };
+            state.blocks.insert(index, (bt, String::new()));
+            Ok((None, None))
+        }
+        "content_block_delta" => {
+            let index = value.get("index").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+            let delta = value.get("delta");
+            let delta_type = delta
+                .and_then(|d| d.get("type"))
+                .and_then(|t| t.as_str())
+                .unwrap_or("");
+
+            match delta_type {
+                "thinking_delta" => {
+                    let thinking = delta
+                        .and_then(|d| d.get("thinking"))
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("");
+                    if let Some((_, ref mut acc)) = state.blocks.get_mut(&index) {
+                        acc.push_str(thinking);
+                    }
+                    Ok((None, Some(thinking.to_string())))
+                }
+                "text_delta" => {
+                    let text = delta
+                        .and_then(|d| d.get("text"))
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("");
+                    if let Some((_, ref mut acc)) = state.blocks.get_mut(&index) {
+                        acc.push_str(text);
+                    }
+                    Ok((Some(text.to_string()), None))
+                }
+                _ => Ok((None, None)),
+            }
+        }
+        "message_stop" | "message_start" | "content_block_stop" | "message_delta" => {
+            Ok((None, None))
+        }
+        _ => Ok((None, None)),
     }
 }
 

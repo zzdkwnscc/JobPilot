@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
   Bot,
+  Brain,
   Clock,
   MessageSquare,
   Plus,
@@ -66,6 +67,7 @@ interface ChatMessage {
   id: string;
   role: ChatRole;
   content: string;
+  thinkingContent?: string;
   createdAt: number;
   error?: boolean;
   toolCalls?: DesktopAiToolCallPayload[];
@@ -363,6 +365,10 @@ export function AIChatContent({
     "Something went wrong. Please try again.",
   );
   const reasoningLabel = translate("ai.reasoning", "Thought process");
+  const thinkingToggleLabel = translate(
+    "ai.thinkingToggle",
+    "Enable deep thinking",
+  );
   const toolCallingLabel = translate("ai.toolCalling", "Calling:");
   const toolResultLabel = translate("ai.toolResult", "Result");
   const toolCallErrorLabel = translate("ai.toolCallError", "Failed");
@@ -390,11 +396,14 @@ export function AIChatContent({
   const [streamingToolCalls, setStreamingToolCalls] = useState<
     DesktopAiToolCallPayload[]
   >([]);
+  const [streamingThinkingText, setStreamingThinkingText] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [thinkingEnabled, setThinkingEnabled] = useState(false);
 
   const activeSessionIdRef = useRef<string | null>(null);
   const requestIdRef = useRef<string | null>(null);
   const streamingTextRef = useRef("");
+  const streamingThinkingTextRef = useRef("");
   const streamingToolCallsRef = useRef<DesktopAiToolCallPayload[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
@@ -507,6 +516,17 @@ export function AIChatContent({
   }, [refreshRuntimeSettings]);
 
   useEffect(() => {
+    const handleSettingsChanged = () => {
+      void refreshRuntimeSettings();
+    };
+
+    window.addEventListener("ai-settings-changed", handleSettingsChanged);
+    return () => {
+      window.removeEventListener("ai-settings-changed", handleSettingsChanged);
+    };
+  }, [refreshRuntimeSettings]);
+
+  useEffect(() => {
     activeSessionIdRef.current = activeSessionId;
   }, [activeSessionId]);
 
@@ -537,6 +557,12 @@ export function AIChatContent({
           return;
         }
 
+        if (event.kind === "delta_thinking" && event.deltaText) {
+          streamingThinkingTextRef.current += event.deltaText;
+          setStreamingThinkingText(streamingThinkingTextRef.current);
+          return;
+        }
+
         if (event.kind === "tool" && event.toolCall) {
           setStreamingToolCalls((previous) =>
             upsertToolCall(previous, event.toolCall as DesktopAiToolCallPayload),
@@ -555,6 +581,10 @@ export function AIChatContent({
           );
           if (sessionId) {
             const content = event.accumulatedText || streamingTextRef.current;
+            const thinkingContent =
+              event.accumulatedThinking ||
+              streamingThinkingTextRef.current ||
+              undefined;
             setSessions((previous) =>
               orderSessions(
                 previous.map((session) =>
@@ -569,6 +599,7 @@ export function AIChatContent({
                                 id: createId("assistant"),
                                 role: "assistant",
                                 content,
+                                thinkingContent,
                                 createdAt: Date.now(),
                                 toolCalls:
                                   toolCalls.length > 0 ? toolCalls : undefined,
@@ -589,6 +620,8 @@ export function AIChatContent({
           setIsThinking(false);
           setStreamingText("");
           streamingTextRef.current = "";
+          setStreamingThinkingText("");
+          streamingThinkingTextRef.current = "";
           setStreamingToolCalls([]);
           streamingToolCallsRef.current = [];
           setErrorMessage("");
@@ -604,6 +637,8 @@ export function AIChatContent({
           setIsThinking(false);
           setStreamingText("");
           streamingTextRef.current = "";
+          setStreamingThinkingText("");
+          streamingThinkingTextRef.current = "";
           setErrorMessage(friendly);
           requestIdRef.current = null;
         }
@@ -653,6 +688,8 @@ export function AIChatContent({
     setIsThinking(false);
     setStreamingText("");
     streamingTextRef.current = "";
+    setStreamingThinkingText("");
+    streamingThinkingTextRef.current = "";
     setStreamingToolCalls([]);
     streamingToolCallsRef.current = [];
     setErrorMessage("");
@@ -681,6 +718,8 @@ export function AIChatContent({
         setIsThinking(false);
         setStreamingText("");
         streamingTextRef.current = "";
+        setStreamingThinkingText("");
+        streamingThinkingTextRef.current = "";
         setStreamingToolCalls([]);
         streamingToolCallsRef.current = [];
         setErrorMessage("");
@@ -747,6 +786,8 @@ export function AIChatContent({
       setIsThinking(true);
       setStreamingText("");
       streamingTextRef.current = "";
+      setStreamingThinkingText("");
+      streamingThinkingTextRef.current = "";
       setStreamingToolCalls([]);
       streamingToolCallsRef.current = [];
 
@@ -795,11 +836,14 @@ export function AIChatContent({
             2,
           )}`,
           conversation,
+          thinkingEnabled,
         });
       } catch (error) {
         setIsThinking(false);
         setStreamingText("");
         streamingTextRef.current = "";
+        setStreamingThinkingText("");
+        streamingThinkingTextRef.current = "";
         setErrorMessage(
           buildFriendlyError(
             error instanceof Error ? error.message : String(error),
@@ -846,6 +890,19 @@ export function AIChatContent({
           </div>
         )}
         <div className="flex items-center gap-1">
+          {/* Thinking toggle */}
+          <button
+            type="button"
+            onClick={() => setThinkingEnabled((prev) => !prev)}
+            className={`h-7 w-7 cursor-pointer rounded-md flex items-center justify-center transition-colors ${
+              thinkingEnabled
+                ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+            }`}
+            title={thinkingToggleLabel}
+          >
+            <Brain className="h-4 w-4" />
+          </button>
           {/* History popover */}
           <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
             <PopoverTrigger asChild>
@@ -992,7 +1049,12 @@ export function AIChatContent({
                           resultErrorLabel={toolCallErrorLabel}
                         />
                       ))}
-                      {parsedAssistantContent?.reasoningText ? (
+                      {message.thinkingContent ? (
+                        <ReasoningBlock
+                          label={reasoningLabel}
+                          content={message.thinkingContent}
+                        />
+                      ) : parsedAssistantContent?.reasoningText ? (
                         <ReasoningBlock
                           label={reasoningLabel}
                           content={parsedAssistantContent.reasoningText}
@@ -1030,7 +1092,12 @@ export function AIChatContent({
                       resultErrorLabel={toolCallErrorLabel}
                     />
                   ))}
-                  {parsedStreamingContent.reasoningText ? (
+                  {streamingThinkingText ? (
+                    <ReasoningBlock
+                      label={reasoningLabel}
+                      content={streamingThinkingText}
+                    />
+                  ) : parsedStreamingContent.reasoningText ? (
                     <ReasoningBlock
                       label={reasoningLabel}
                       content={parsedStreamingContent.reasoningText}
