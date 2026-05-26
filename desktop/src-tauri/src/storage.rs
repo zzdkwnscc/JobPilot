@@ -6,9 +6,12 @@ use std::{
     fs,
     path::{Path, PathBuf},
     process::Command,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
-use tauri::{AppHandle, Manager};
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+use tauri::{AppHandle, Manager, Url};
 use uuid::Uuid;
 
 const STORAGE_SCHEMA_VERSION: u32 = 2;
@@ -22,6 +25,9 @@ const MAX_WINDOW_WIDTH: i64 = 4096;
 const MAX_WINDOW_HEIGHT: i64 = 2160;
 const MIN_WINDOW_COORDINATE: i64 = -16_384;
 const MAX_WINDOW_COORDINATE: i64 = 16_384;
+const PDF_EXPORT_OUTPUT_TIMEOUT_MS: u64 = 8_000;
+const PDF_EXPORT_STABLE_POLL_MS: u64 = 150;
+const PDF_EXPORT_STABLE_POLLS: usize = 3;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -288,6 +294,14 @@ pub fn write_pdf_export(
 ) -> Result<TemplateValidationExportWriteResult, String> {
     let resolved_output_path = normalize_requested_output_path_with_extension(&output_path, "pdf")?;
     ensure_parent_directory(&resolved_output_path)?;
+    if resolved_output_path.exists() {
+        fs::remove_file(&resolved_output_path).map_err(|error| {
+            format!(
+                "failed to remove existing pdf export {}: {error}",
+                resolved_output_path.display()
+            )
+        })?;
+    }
 
     let cache_dir = app
         .path()
@@ -306,14 +320,20 @@ pub fn write_pdf_export(
     })?;
 
     let browser_path = resolve_pdf_browser_path()?;
-    let print_argument = format!(
-        "--print-to-pdf={}",
-        resolved_output_path.to_string_lossy()
-    );
+    let pdf_path_str = path_to_string(&resolved_output_path);
+    let print_argument = format!("--print-to-pdf={}", pdf_path_str);
+
+    let user_data_dir = cache_dir.join(format!("pdf-render-profile-{timestamp}"));
+    ensure_storage_directory(&user_data_dir)?;
+
+    let html_url = file_url_from_path(&temp_html_path)?;
+    let user_data_dir_str = path_to_string(&user_data_dir);
 
     let mut command = Command::new(&browser_path);
+    #[cfg(target_os = "windows")]
+    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
     command
-        .arg("--headless")
+        .arg("--headless=new")
         .arg("--disable-gpu")
         .arg("--allow-file-access-from-files")
         .arg("--run-all-compositor-stages-before-draw")
@@ -321,8 +341,9 @@ pub fn write_pdf_export(
         .arg("--no-first-run")
         .arg("--no-default-browser-check")
         .arg("--no-pdf-header-footer")
+        .arg(format!("--user-data-dir={}", user_data_dir_str))
         .arg(print_argument)
-        .arg(path_to_string(&temp_html_path));
+        .arg(html_url);
 
     #[cfg(target_os = "linux")]
     command.arg("--no-sandbox");
@@ -334,11 +355,10 @@ pub fn write_pdf_export(
         )
     })?;
 
-    let _ = fs::remove_file(&temp_html_path);
+    let stdout_text = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let stderr_text = String::from_utf8_lossy(&output.stderr).trim().to_string();
 
     if !output.status.success() {
-        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         return Err(format!(
             "pdf export browser command failed (status: {}). stdout: {} stderr: {}",
             output
@@ -346,22 +366,30 @@ pub fn write_pdf_export(
                 .code()
                 .map(|code| code.to_string())
                 .unwrap_or_else(|| "terminated".into()),
-            if stdout.is_empty() { "<empty>" } else { &stdout },
-            if stderr.is_empty() { "<empty>" } else { &stderr },
+            if stdout_text.is_empty() {
+                "<empty>"
+            } else {
+                &stdout_text
+            },
+            if stderr_text.is_empty() {
+                "<empty>"
+            } else {
+                &stderr_text
+            },
         ));
     }
 
-    let metadata = fs::metadata(&resolved_output_path).map_err(|error| {
-        format!(
-            "pdf export did not produce {}: {error}",
-            resolved_output_path.display()
-        )
-    })?;
+    let bytes_written = wait_for_pdf_export_output(&resolved_output_path)?;
+    validate_pdf_export_output(&resolved_output_path)?;
+
+    // Clean up temporary files after the PDF has been produced and validated.
+    let _ = fs::remove_file(&temp_html_path);
+    let _ = fs::remove_dir_all(&user_data_dir);
 
     Ok(TemplateValidationExportWriteResult {
         file_name: file_name_from_path(&resolved_output_path)?,
         output_path: path_to_string(&resolved_output_path),
-        bytes_written: metadata.len() as usize,
+        bytes_written,
     })
 }
 
@@ -1215,6 +1243,68 @@ fn now_epoch_ms() -> Result<u64, String> {
 
 fn path_to_string(path: &Path) -> String {
     path.to_string_lossy().replace('\\', "/")
+}
+
+fn file_url_from_path(path: &Path) -> Result<String, String> {
+    Url::from_file_path(path)
+        .map(|url| url.to_string())
+        .map_err(|()| format!("failed to convert {} to a file URL", path.display()))
+}
+
+fn wait_for_pdf_export_output(path: &Path) -> Result<usize, String> {
+    let started_at = Instant::now();
+    let timeout = Duration::from_millis(PDF_EXPORT_OUTPUT_TIMEOUT_MS);
+    let poll_interval = Duration::from_millis(PDF_EXPORT_STABLE_POLL_MS);
+    let mut last_size = None;
+    let mut stable_polls = 0;
+
+    while started_at.elapsed() < timeout {
+        if let Ok(metadata) = fs::metadata(path) {
+            let size = metadata.len();
+            if size > 0 {
+                if last_size == Some(size) {
+                    stable_polls += 1;
+                    if stable_polls >= PDF_EXPORT_STABLE_POLLS {
+                        return Ok(size as usize);
+                    }
+                } else {
+                    last_size = Some(size);
+                    stable_polls = 0;
+                }
+            }
+        }
+
+        std::thread::sleep(poll_interval);
+    }
+
+    Err(format!(
+        "pdf export did not produce a stable output file at {} within {}ms",
+        path.display(),
+        PDF_EXPORT_OUTPUT_TIMEOUT_MS
+    ))
+}
+
+fn validate_pdf_export_output(path: &Path) -> Result<(), String> {
+    let bytes = fs::read(path)
+        .map_err(|error| format!("failed to read generated pdf {}: {error}", path.display()))?;
+
+    if !bytes.starts_with(b"%PDF-") {
+        return Err(format!(
+            "pdf export produced a non-PDF file at {}",
+            path.display()
+        ));
+    }
+
+    if let Ok(text) = pdf_extract::extract_text_from_mem(&bytes) {
+        if text.contains("ERR_FILE_NOT_FOUND") {
+            return Err(format!(
+                "pdf export rendered Chrome's file-not-found error page for {}",
+                path.display()
+            ));
+        }
+    }
+
+    Ok(())
 }
 
 // =====================================================
