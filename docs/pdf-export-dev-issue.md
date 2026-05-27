@@ -206,3 +206,46 @@ If the issue appears again, first inspect the new error message:
 - `pdf export rendered Chrome's file-not-found error page...` means Chrome still loaded an error page; check whether another cleanup path removed the temporary HTML before validation completed.
 
 Only after those checks should we investigate browser selection, environment diffs, or replacing external `--print-to-pdf` with another rendering pipeline.
+
+## 中文笔记：以后遇到同类问题怎么排查
+
+这类问题最容易误判的地方是：外部程序返回 `exit code 0`，并不代表业务结果正确。像 Chrome `--print-to-pdf` 这种命令，失败时也可能成功写出一个 PDF，只是里面打印的是浏览器错误页，例如 `ERR_FILE_NOT_FOUND`。所以第一步不要盯着退出码，要先确认输出文件的真实内容。
+
+推荐排查顺序：
+
+1. 先确认“失败产物”是什么
+   - 检查 PDF 是否真的以 `%PDF-` 开头。
+   - 尝试提取 PDF 文本，搜索 `ERR_FILE_NOT_FOUND`、`This site can't be reached`、`404` 等浏览器错误页文本。
+   - 如果输出是错误页，说明浏览器启动成功了，但页面加载失败，不是 PDF 写入本身失败。
+
+2. 复现时保留中间文件
+   - 不要在失败路径上立刻删除临时 HTML、临时 profile、日志文件。
+   - 手动用同一份 HTML 文件跑一次浏览器命令，确认 HTML 本身是否可打开。
+   - 如果手动命令成功、程序内调用失败，重点看调用方是否更早清理了输入文件，或是否传了不同格式的路径。
+
+3. 所有本地文件路径都不要手工拼 `file:///`
+   - Windows 路径有盘符、空格、中文、反斜杠和特殊字符，手工拼接很容易只在部分机器上成功。
+   - 在 Rust/Tauri 中优先用 `tauri::Url::from_file_path(...)`。
+   - 在 JS/TS 中优先用 `new URL(...)` 或平台 API，而不是字符串替换。
+
+4. 处理外部 GUI/浏览器进程时，要假设存在“父进程先返回，子进程还在工作”
+   - `command.output()` 返回，只能说明这个进程结束了，不一定说明它启动的所有渲染/写文件工作都完成了。
+   - 不要在进程返回后立刻删除输入文件。
+   - 应该等目标文件出现，并等待文件大小连续稳定几次，再做读取和清理。
+
+5. 导出前清理旧输出，避免读到上一次结果
+   - 如果目标 PDF 已存在，先删除旧文件。
+   - 否则浏览器没写出新文件时，程序可能误把旧文件当成本次成功结果。
+
+6. 成功前必须做业务级校验
+   - 文件存在只是第一层。
+   - 文件格式正确是第二层。
+   - 内容不是错误页才是第三层。
+   - 只有三层都通过，才能返回“导出成功”。
+
+7. 错误信息要让下次排查有方向
+   - “未生成稳定输出文件”：优先查浏览器写文件、权限、超时。
+   - “生成了非 PDF 文件”：优先查输出路径、浏览器参数、文件被其他程序覆盖。
+   - “PDF 中包含 `ERR_FILE_NOT_FOUND`”：优先查输入 HTML 是否被提前删除、`file:` URL 是否正确、临时目录是否可访问。
+
+这次的关键经验是：不要被“同一条命令在终端可行、在程序里不可行”带偏。程序调用和终端调用的差别不只有参数，还包括临时文件生命周期、当前进程退出时机、清理逻辑、工作目录、环境变量、已有输出文件等。先把这些差别逐个收窄，通常比一开始就换浏览器、换库、换架构更快。

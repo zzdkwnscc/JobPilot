@@ -163,15 +163,16 @@ export function buildExportThemeCSS(theme: typeof DEFAULT_THEME, template: strin
       --needs-padding: ${needsPadding ? '1' : '0'};
     }
     ${sel} p, ${sel} li, ${sel} span, ${sel} td, ${sel} a, ${sel} div {
+      font-family: ${theme.fontFamily}, 'Noto Sans SC', sans-serif !important;
       font-size: ${fs.body} !important;
       line-height: ${theme.lineSpacing} !important;
     }
-    ${sel} h1:not([style*="color"]) { color: ${theme.primaryColor} !important; font-size: ${fs.h1} !important; line-height: ${theme.lineSpacing} !important; }
-    ${sel} h1[style*="color"] { font-size: ${fs.h1} !important; line-height: ${theme.lineSpacing} !important; }
-    ${sel} h2:not([style*="color"]) { color: ${theme.primaryColor} !important; font-size: ${fs.h2} !important; line-height: ${theme.lineSpacing} !important; border-color: ${theme.accentColor} !important; }
-    ${sel} h2[style*="color"] { font-size: ${fs.h2} !important; line-height: ${theme.lineSpacing} !important; border-color: ${theme.accentColor} !important; }
-    ${sel} h3:not([style*="color"]) { color: ${theme.primaryColor} !important; font-size: ${fs.h3} !important; line-height: ${theme.lineSpacing} !important; }
-    ${sel} h3[style*="color"] { font-size: ${fs.h3} !important; line-height: ${theme.lineSpacing} !important; }
+    ${sel} h1:not([style*="color"]) { font-family: ${theme.fontFamily}, 'Noto Sans SC', sans-serif !important; color: ${theme.primaryColor} !important; font-size: ${fs.h1} !important; line-height: ${theme.lineSpacing} !important; }
+    ${sel} h1[style*="color"] { font-family: ${theme.fontFamily}, 'Noto Sans SC', sans-serif !important; font-size: ${fs.h1} !important; line-height: ${theme.lineSpacing} !important; }
+    ${sel} h2:not([style*="color"]) { font-family: ${theme.fontFamily}, 'Noto Sans SC', sans-serif !important; color: ${theme.primaryColor} !important; font-size: ${fs.h2} !important; line-height: ${theme.lineSpacing} !important; border-color: ${theme.accentColor} !important; }
+    ${sel} h2[style*="color"] { font-family: ${theme.fontFamily}, 'Noto Sans SC', sans-serif !important; font-size: ${fs.h2} !important; line-height: ${theme.lineSpacing} !important; border-color: ${theme.accentColor} !important; }
+    ${sel} h3:not([style*="color"]) { font-family: ${theme.fontFamily}, 'Noto Sans SC', sans-serif !important; color: ${theme.primaryColor} !important; font-size: ${fs.h3} !important; line-height: ${theme.lineSpacing} !important; }
+    ${sel} h3[style*="color"] { font-family: ${theme.fontFamily}, 'Noto Sans SC', sans-serif !important; font-size: ${fs.h3} !important; line-height: ${theme.lineSpacing} !important; }
     ${sel} [class*="border-b-2"], ${sel} [class*="border-b-"] { border-color: ${theme.accentColor} !important; }
     ${sel} [class*="bg-blue-"], ${sel} [class*="bg-indigo-"],
     ${sel} [class*="bg-slate-800"], ${sel} [class*="bg-zinc-800"],
