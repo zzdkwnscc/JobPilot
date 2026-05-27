@@ -197,11 +197,15 @@ function ClassicSectionContent({
     return (
       <div className="space-y-1">
         {categories.map((cat) => (
-          <div key={cat.id} className="flex text-sm">
-            <span className="font-medium text-zinc-700 w-28 shrink-0">
-              {cat.name}:
-            </span>
-            <span className="text-zinc-600">{cat.skills?.join(', ')}</span>
+          <div key={cat.id}>
+            <p className="text-sm font-medium text-zinc-700">{cat.name}</p>
+            {cat.skills?.length > 0 && (
+              <ul className="mt-0.5 list-disc pl-4">
+                {cat.skills.map((skill, i) => (
+                  <li key={i} className="text-sm text-zinc-600">{skill}</li>
+                ))}
+              </ul>
+            )}
           </div>
         ))}
       </div>
@@ -433,7 +437,7 @@ function buildClassicSectionContentHtml(
     return `<div class="space-y-1">${categories
       .map(
         (cat) =>
-          `<div class="flex text-sm"><span class="font-medium text-zinc-700 w-28 shrink-0">${esc(cat.name)}:</span><span class="text-zinc-600">${esc((cat.skills || []).join(', '))}</span></div>`
+          `<div><p class="text-sm font-medium text-zinc-700">${esc(cat.name)}</p>${cat.skills?.length ? `<ul class="mt-0.5 list-disc pl-4">${cat.skills.map((skill) => `<li class="text-sm text-zinc-600">${esc(skill)}</li>`).join('')}</ul>` : ''}</div>`
       )
       .join('')}</div>`;
   }

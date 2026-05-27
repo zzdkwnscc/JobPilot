@@ -178,8 +178,47 @@ function testProfessionalSkillsRenderAsListItems(): void {
   assert.doesNotMatch(exportMarkup, /Accessibility,\s*Design Systems,\s*Tauri/);
 }
 
+function testConsultantSkillsRenderAsListItems(): void {
+  const unifiedTemplate = getUnifiedTemplate('consultant');
+  assert.ok(unifiedTemplate, 'Expected "consultant" to be registered');
+
+  const canonical = toCanonicalResume(createSampleResume('consultant'));
+  const previewMarkup = renderToStaticMarkup(
+    React.createElement(unifiedTemplate.PreviewComponent, { resume: canonical }),
+  );
+  const exportMarkup = unifiedTemplate.buildHtml(canonical);
+
+  for (const skill of ['Accessibility', 'Design Systems', 'Tauri']) {
+    assert.match(previewMarkup, new RegExp(`<li[^>]*>${skill}</li>`));
+    assert.match(exportMarkup, new RegExp(`<li[^>]*>${skill}</li>`));
+  }
+
+  assert.doesNotMatch(exportMarkup, /Accessibility,\s*Design Systems,\s*Tauri/);
+}
+
+function testClassicSkillsRenderAsListItems(): void {
+  const unifiedTemplate = getUnifiedTemplate('classic');
+  assert.ok(unifiedTemplate, 'Expected "classic" to be registered');
+
+  const canonical = toCanonicalResume(createSampleResume('classic'));
+  const previewMarkup = renderToStaticMarkup(
+    React.createElement(unifiedTemplate.PreviewComponent, { resume: canonical }),
+  );
+  const exportMarkup = unifiedTemplate.buildHtml(canonical);
+
+  for (const skill of ['Accessibility', 'Design Systems', 'Tauri']) {
+    assert.match(previewMarkup, new RegExp(`<li[^>]*>${skill}</li>`));
+    assert.match(exportMarkup, new RegExp(`<li[^>]*>${skill}</li>`));
+  }
+
+  assert.doesNotMatch(exportMarkup, /Accessibility,\s*Design Systems,\s*Tauri/);
+}
+
 testCanonicalResumeMetadata();
 testTemplateParity('classic');
 testTemplateParity('modern');
+testTemplateParity('consultant');
 testTemplateParity('professional');
 testProfessionalSkillsRenderAsListItems();
+testConsultantSkillsRenderAsListItems();
+testClassicSkillsRenderAsListItems();

@@ -198,7 +198,7 @@ function ProfessionalSectionContent({
           <div key={cat.id}>
             <p className="text-sm font-semibold" style={{ color: BLUE }}>{cat.name}</p>
             {cat.skills?.length > 0 && (
-              <ul className="mt-0.5 list-disc pl-4">
+              <ul className="mt-0.5 list-disc pl-5">
                 {cat.skills.map((skill, i) => (
                   <li key={i} className="text-sm text-zinc-600">{skill}</li>
                 ))}
@@ -385,7 +385,7 @@ function buildProfessionalSectionHtml(section: CanonicalResume['sections'][numbe
     const categories = (content as unknown as SkillsContent).categories || [];
     return `<div class="space-y-2">${categories.map((cat) => `<div>
       <p class="text-sm font-semibold" style="color:${BLUE}">${esc(cat.name)}</p>
-      ${cat.skills?.length ? `<ul class="mt-0.5 list-disc pl-4">${cat.skills.map((skill) => `<li class="text-sm text-zinc-600">${esc(skill)}</li>`).join('')}</ul>` : ''}
+      ${cat.skills?.length ? `<ul class="mt-0.5 list-disc pl-5">${cat.skills.map((skill) => `<li class="text-sm text-zinc-600">${esc(skill)}</li>`).join('')}</ul>` : ''}
     </div>`).join('')}</div>`;
   }
 

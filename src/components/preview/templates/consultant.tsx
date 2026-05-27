@@ -82,7 +82,7 @@ function ConsultantSectionContent({ section, resume }: { section: any; resume: R
             {item.highlights?.length > 0 && (
               <div className="mt-1.5">
                 <p className="text-xs font-semibold" style={{ color: GRAY_700 }}>{resume.language === 'zh' ? '主要成就' : 'Key Achievements'}:</p>
-                <ul className="mt-0.5 space-y-0.5" style={{ paddingLeft: '1.5em', listStyleType: 'disc' }}>
+                <ul className="mt-0.5 space-y-0.5" style={{ paddingLeft: '1.25rem', listStyleType: 'disc' }}>
                   {item.highlights.map((h: string, i: number) => (
                     <li key={i} className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
                   ))}
@@ -110,7 +110,7 @@ function ConsultantSectionContent({ section, resume }: { section: any; resume: R
             </div>
             {item.gpa && <p className="text-sm text-gray-500">GPA: {item.gpa}</p>}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1.5 space-y-0.5" style={{ paddingLeft: '1.5em', listStyleType: 'disc' }}>
+              <ul className="mt-1.5 space-y-0.5" style={{ paddingLeft: '1.25rem', listStyleType: 'disc' }}>
                 {item.highlights.map((h: string, i: number) => (
                   <li key={i} className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
@@ -126,9 +126,15 @@ function ConsultantSectionContent({ section, resume }: { section: any; resume: R
     return (
       <div className="space-y-1.5">
         {((content as SkillsContent).categories || []).map((cat: any) => (
-          <div key={cat.id} className="flex text-sm">
-            <span className="w-32 shrink-0 font-semibold" style={{ color: GRAY_700 }}>{cat.name}:</span>
-            <span className="text-gray-600">{(cat.skills || []).join(', ')}</span>
+          <div key={cat.id}>
+            <p className="text-sm font-semibold" style={{ color: GRAY_700 }}>{cat.name}</p>
+            {cat.skills?.length > 0 && (
+              <ul className="mt-0.5" style={{ paddingLeft: '1.25rem', listStyleType: 'disc' }}>
+                {cat.skills.map((skill: string, i: number) => (
+                  <li key={i} className="text-sm text-gray-600">{skill}</li>
+                ))}
+              </ul>
+            )}
           </div>
         ))}
       </div>
@@ -151,7 +157,7 @@ function ConsultantSectionContent({ section, resume }: { section: any; resume: R
               <p className="mt-0.5 text-xs text-gray-400">{resume.language === 'zh' ? '技术栈' : 'Tech'}: {item.technologies.join(', ')}</p>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1.5 space-y-0.5" style={{ paddingLeft: '1.5em', listStyleType: 'disc' }}>
+              <ul className="mt-1.5 space-y-0.5" style={{ paddingLeft: '1.25rem', listStyleType: 'disc' }}>
                 {item.highlights.map((h: string, i: number) => (
                   <li key={i} className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}

@@ -123,7 +123,7 @@ function ConsultantSectionContent({
             {item.highlights?.length > 0 && (
               <div className="mt-1.5">
                 <p className="text-xs font-semibold" style={{ color: GRAY_700 }}>{lang === 'zh' ? '主要成就' : 'Key Achievements'}:</p>
-                <ul className="mt-0.5 space-y-0.5" style={{ paddingLeft: '1.5em', listStyleType: 'disc' }}>
+                <ul className="mt-0.5 space-y-0.5" style={{ paddingLeft: '1.25rem', listStyleType: 'disc' }}>
                   {item.highlights.map((h, i) => (
                     <li key={i} className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
                   ))}
@@ -152,7 +152,7 @@ function ConsultantSectionContent({
             </div>
             {item.gpa && <p className="text-sm text-gray-500">GPA: {item.gpa}</p>}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1.5 space-y-0.5" style={{ paddingLeft: '1.5em', listStyleType: 'disc' }}>
+              <ul className="mt-1.5 space-y-0.5" style={{ paddingLeft: '1.25rem', listStyleType: 'disc' }}>
                 {item.highlights.map((h, i) => (
                   <li key={i} className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
@@ -169,9 +169,15 @@ function ConsultantSectionContent({
     return (
       <div className="space-y-1.5">
         {categories.map((cat) => (
-          <div key={cat.id} className="flex text-sm">
-            <span className="w-32 shrink-0 font-semibold" style={{ color: GRAY_700 }}>{cat.name}:</span>
-            <span className="text-gray-600">{(cat.skills || []).join(', ')}</span>
+          <div key={cat.id}>
+            <p className="text-sm font-semibold" style={{ color: GRAY_700 }}>{cat.name}</p>
+            {cat.skills?.length > 0 && (
+              <ul className="mt-0.5" style={{ paddingLeft: '1.25rem', listStyleType: 'disc' }}>
+                {cat.skills.map((skill, i) => (
+                  <li key={i} className="text-sm text-gray-600">{skill}</li>
+                ))}
+              </ul>
+            )}
           </div>
         ))}
       </div>
@@ -195,7 +201,7 @@ function ConsultantSectionContent({
               <p className="mt-0.5 text-xs text-gray-400">{lang === 'zh' ? '技术栈' : 'Tech'}: {item.technologies.join(', ')}</p>
             )}
             {item.highlights?.length > 0 && (
-              <ul className="mt-1.5 space-y-0.5" style={{ paddingLeft: '1.5em', listStyleType: 'disc' }}>
+              <ul className="mt-1.5 space-y-0.5" style={{ paddingLeft: '1.25rem', listStyleType: 'disc' }}>
                 {item.highlights.map((h, i) => (
                   <li key={i} className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
@@ -333,7 +339,7 @@ function buildConsultantSectionHtml(
       <div class="flex items-baseline justify-between"><div><span class="text-sm font-bold" style="color:${GRAY_700}">${esc(it.position)}</span>${it.company ? `<span class="text-sm text-gray-500"> | ${esc(it.company)}</span>` : ''}${it.location ? `<span class="text-sm text-gray-400">, ${esc(it.location)}</span>` : ''}</div><span class="shrink-0 text-xs font-medium" style="color:${BLUE_600}">${esc(it.startDate)} - ${esc(it.endDate) || (it.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</span></div>
       ${it.description ? `<p class="mt-1 text-sm text-gray-600"><span class="font-semibold" style="color:${GRAY_700}">${lang === 'zh' ? '职责' : 'Responsibilities'}:</span> <span>${md(it.description)}</span></p>` : ''}
       ${it.technologies?.length ? `<p class="mt-0.5 text-xs text-gray-400">${lang === 'zh' ? '技术栈' : 'Tech'}: ${esc(it.technologies.join(', '))}</p>` : ''}
-      ${it.highlights?.length ? `<div class="mt-1.5"><p class="text-xs font-semibold" style="color:${GRAY_700}">${lang === 'zh' ? '主要成就' : 'Key Achievements'}:</p><ul class="mt-0.5 space-y-0.5" style="padding-left:1.5em;list-style-type:disc">${buildHighlights(it.highlights, 'text-sm text-gray-600')}</ul></div>` : ''}
+      ${it.highlights?.length ? `<div class="mt-1.5"><p class="text-xs font-semibold" style="color:${GRAY_700}">${lang === 'zh' ? '主要成就' : 'Key Achievements'}:</p><ul class="mt-0.5 space-y-0.5" style="padding-left:1.25rem;list-style-type:disc">${buildHighlights(it.highlights, 'text-sm text-gray-600')}</ul></div>` : ''}
     </div>`).join('')}</div>`;
   }
 
@@ -342,14 +348,14 @@ function buildConsultantSectionHtml(
     return `<div class="space-y-3">${items.map((it) => `<div>
       <div class="flex items-baseline justify-between"><div><span class="text-sm font-bold" style="color:${GRAY_700}">${esc(degreeField(it.degree, it.field))}</span>${it.institution ? `<span class="text-sm text-gray-500"> - ${esc(it.institution)}</span>` : ''}${it.location ? `<span class="text-sm text-gray-400">, ${esc(it.location)}</span>` : ''}</div><span class="shrink-0 text-xs font-medium" style="color:${BLUE_600}">${esc(it.startDate)} - ${esc(it.endDate) || (lang === 'zh' ? '至今' : 'Present')}</span></div>
       ${it.gpa ? `<p class="text-sm text-gray-500">GPA: ${esc(it.gpa)}</p>` : ''}
-      ${it.highlights?.length ? `<ul class="mt-1.5 space-y-0.5" style="padding-left:1.5em;list-style-type:disc">${buildHighlights(it.highlights, 'text-sm text-gray-600')}</ul>` : ''}
+      ${it.highlights?.length ? `<ul class="mt-1.5 space-y-0.5" style="padding-left:1.25rem;list-style-type:disc">${buildHighlights(it.highlights, 'text-sm text-gray-600')}</ul>` : ''}
     </div>`).join('')}</div>`;
   }
 
   if (section.type === 'skills') {
     const categories = (content as unknown as SkillsContent).categories || [];
     return `<div class="space-y-1.5">${categories.map((cat) =>
-      `<div class="flex text-sm"><span class="w-32 shrink-0 font-semibold" style="color:${GRAY_700}">${esc(cat.name)}:</span><span class="text-gray-600">${esc((cat.skills || []).join(', '))}</span></div>`
+      `<div><p class="text-sm font-semibold" style="color:${GRAY_700}">${esc(cat.name)}</p>${cat.skills?.length ? `<ul class="mt-0.5" style="padding-left:1.25rem;list-style-type:disc">${cat.skills.map((skill) => `<li class="text-sm text-gray-600">${esc(skill)}</li>`).join('')}</ul>` : ''}</div>`
     ).join('')}</div>`;
   }
 
@@ -359,7 +365,7 @@ function buildConsultantSectionHtml(
       <div class="flex items-baseline justify-between"><span class="text-sm font-bold" style="color:${GRAY_700}">${esc(it.name)}</span>${it.startDate ? `<span class="shrink-0 text-xs font-medium" style="color:${BLUE_600}">${esc(it.startDate)} - ${it.endDate ? esc(it.endDate) : (lang === 'zh' ? '至今' : 'Present')}</span>` : ''}</div>
       ${it.description ? `<p class="mt-1 text-sm text-gray-600">${md(it.description)}</p>` : ''}
       ${it.technologies?.length ? `<p class="mt-0.5 text-xs text-gray-400">${lang === 'zh' ? '技术栈' : 'Tech'}: ${esc(it.technologies.join(', '))}</p>` : ''}
-      ${it.highlights?.length ? `<ul class="mt-1.5 space-y-0.5" style="padding-left:1.5em;list-style-type:disc">${buildHighlights(it.highlights, 'text-sm text-gray-600')}</ul>` : ''}
+      ${it.highlights?.length ? `<ul class="mt-1.5 space-y-0.5" style="padding-left:1.25rem;list-style-type:disc">${buildHighlights(it.highlights, 'text-sm text-gray-600')}</ul>` : ''}
     </div>`).join('')}</div>`;
   }
 
