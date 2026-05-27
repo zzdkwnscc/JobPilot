@@ -79,7 +79,7 @@ function createSampleResume(template: string): Resume {
             {
               id: 'skills-1',
               name: 'Core',
-              skills: ['React', 'TypeScript', 'Tauri'],
+              skills: ['Accessibility', 'Design Systems', 'Tauri'],
             },
           ],
         },
@@ -160,6 +160,26 @@ function testTemplateParity(templateId: string): void {
   assert.match(exportMarkup, /<strong>shipping<\/strong>/);
 }
 
+function testProfessionalSkillsRenderAsListItems(): void {
+  const unifiedTemplate = getUnifiedTemplate('professional');
+  assert.ok(unifiedTemplate, 'Expected "professional" to be registered');
+
+  const canonical = toCanonicalResume(createSampleResume('professional'));
+  const previewMarkup = renderToStaticMarkup(
+    React.createElement(unifiedTemplate.PreviewComponent, { resume: canonical }),
+  );
+  const exportMarkup = unifiedTemplate.buildHtml(canonical);
+
+  for (const skill of ['Accessibility', 'Design Systems', 'Tauri']) {
+    assert.match(previewMarkup, new RegExp(`<li[^>]*>${skill}</li>`));
+    assert.match(exportMarkup, new RegExp(`<li[^>]*>${skill}</li>`));
+  }
+
+  assert.doesNotMatch(exportMarkup, /Accessibility,\s*Design Systems,\s*Tauri/);
+}
+
 testCanonicalResumeMetadata();
 testTemplateParity('classic');
 testTemplateParity('modern');
+testTemplateParity('professional');
+testProfessionalSkillsRenderAsListItems();

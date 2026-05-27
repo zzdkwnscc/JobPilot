@@ -88,8 +88,10 @@ import { classicTemplate } from './templates/classic';
 import { modernTemplate } from './templates/modern';
 import { modernMinimalTemplate } from './templates/modern-minimal';
 import { consultantTemplate } from './templates/consultant';
+import { professionalTemplate } from './templates/professional';
 
 registerTemplate(classicTemplate);
 registerTemplate(modernTemplate);
 registerTemplate(modernMinimalTemplate);
 registerTemplate(consultantTemplate);
+registerTemplate(professionalTemplate);

@@ -113,6 +113,7 @@ pnpm sync:desktop-version           # 同步 package.json 版本到 tauri.conf.j
 - `src/app/globals.css` 虽然在 `src/app/` 下，但 Desktop 也直接引用，不能删除
 - `desktop/src-tauri/src/storage.rs` 中的 `rolerover.db` 文件名是历史遗留，不要修改（影响数据迁移）
 - `pnpm-workspace.yaml` 定义了 `[., desktop]`，根 package 是共享代码容器
+- 如果要迁移简历模板到统一渲染体系，先参考 `docs/template-unified-renderer-migration-guide.md`，按文档中的分批策略、单模板步骤、测试命令和验收清单执行
 
 ## 发布流程
 

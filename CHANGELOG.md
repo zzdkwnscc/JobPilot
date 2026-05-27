@@ -5,6 +5,18 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.8] - 2026-05-27
+
+### 新增
+
+- 技能分类拖拽排序 — 简历编辑器支持拖拽调整技能分类顺序，Web 与桌面端保持一致
+- Professional 模板统一渲染 — 迁移到统一模板渲染系统，技能列表渲染为独立条目
+
+### 变更
+
+- 移除 DOCX 导出功能
+- 项目文档整合到 AGENTS.md
+
 ## [1.1.7] - 2026-05-26
 
 ### 新增
@@ -125,6 +137,7 @@
 - 本地优先 — 数据存储在本地，隐私安全有保障
 
 [Unreleased]: https://github.com/jlifeng/JobPilot/compare/v1.1.7...HEAD
+[1.1.8]: https://github.com/jlifeng/JobPilot/compare/v1.1.7...v1.1.8
 [1.1.7]: https://github.com/jlifeng/JobPilot/compare/v1.1.6...v1.1.7
 [1.1.6]: https://github.com/jlifeng/JobPilot/compare/v1.1.5...v1.1.6
 [1.1.5]: https://github.com/jlifeng/JobPilot/compare/v1.1.4...v1.1.5
