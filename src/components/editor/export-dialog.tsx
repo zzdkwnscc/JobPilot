@@ -16,7 +16,6 @@ import { downloadFromUrl } from '@/lib/utils/download';
 import { useResumeStore } from '@/stores/resume-store';
 import {
   FileDown,
-  FileText,
   Globe,
   AlignLeft,
   Braces,
@@ -32,7 +31,7 @@ interface ExportDialogProps {
   resumeId: string;
 }
 
-type ExportFormat = 'pdf' | 'pdf-one-page' | 'docx' | 'html' | 'txt' | 'json';
+type ExportFormat = 'pdf' | 'pdf-one-page' | 'html' | 'txt' | 'json';
 type ExportState = 'idle' | 'exporting' | 'success' | 'error';
 
 const FORMAT_OPTIONS: {
@@ -44,7 +43,6 @@ const FORMAT_OPTIONS: {
 }[] = [
   { value: 'pdf', icon: FileDown, labelKey: 'pdf', descKey: 'pdfDescription' },
   { value: 'pdf-one-page', icon: Sparkles, labelKey: 'pdfOnePage', descKey: 'pdfOnePageDescription', tooltipKey: 'pdfOnePageTooltip' },
-  { value: 'docx', icon: FileText, labelKey: 'docx', descKey: 'docxDescription' },
   { value: 'html', icon: Globe, labelKey: 'html', descKey: 'htmlDescription' },
   { value: 'txt', icon: AlignLeft, labelKey: 'txt', descKey: 'txtDescription' },
   { value: 'json', icon: Braces, labelKey: 'json', descKey: 'jsonDescription' },
@@ -83,7 +81,6 @@ export function ExportDialog({ open, onOpenChange, resumeId }: ExportDialogProps
       const extMap: Record<ExportFormat, string> = {
         'pdf': 'pdf',
         'pdf-one-page': 'pdf',
-        'docx': 'docx',
         'html': 'html',
         'txt': 'txt',
         'json': 'json',

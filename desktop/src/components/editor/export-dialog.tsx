@@ -6,7 +6,6 @@ import {
   Braces,
   CheckCircle2,
   FileDown,
-  FileText,
   Globe,
   Info,
   Loader2,
@@ -15,7 +14,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  generateDocxBuffer,
   generateHtml,
   generatePlainText,
 } from "@/lib/export";
@@ -33,7 +31,7 @@ interface ExportDialogProps {
   resumeId: string;
 }
 
-type ExportFormat = "pdf" | "pdf-one-page" | "docx" | "html" | "txt" | "json";
+type ExportFormat = "pdf" | "pdf-one-page" | "html" | "txt" | "json";
 type ExportState = "idle" | "exporting" | "success" | "error" | "cancelled";
 
 interface NativeDialogSaveOptions {
@@ -79,16 +77,6 @@ const FORMAT_OPTIONS: FormatOption[] = [
     tooltipFallback: "Very long resumes may fail to fit on one page",
     supported: true,
     extension: "pdf",
-  },
-  {
-    value: "docx",
-    icon: FileText,
-    labelKey: "docx",
-    descKey: "docxDescription",
-    fallbackLabel: "Word",
-    fallbackDescription: "Editable document",
-    supported: true,
-    extension: "docx",
   },
   {
     value: "html",
@@ -291,13 +279,11 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
               outputPath: resolvedOutputPath,
               expectedExtension: selectedOption.extension,
               bytes:
-                selectedFormat === "docx"
-                  ? Array.from(await generateDocxBuffer(resume))
-                  : selectedFormat === "html"
-                    ? encodeText(await generateHtml(resume))
-                    : selectedFormat === "json"
-                      ? encodeText(JSON.stringify(resume, null, 2))
-                      : encodeText(generatePlainText(resume)),
+                selectedFormat === "html"
+                  ? encodeText(await generateHtml(resume))
+                  : selectedFormat === "json"
+                    ? encodeText(JSON.stringify(resume, null, 2))
+                    : encodeText(generatePlainText(resume)),
             });
 
       setState("success");
