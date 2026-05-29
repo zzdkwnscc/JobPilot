@@ -34,7 +34,6 @@ import {
   degreeField,
   formatDate,
   getPersonalInfo,
-  buildHighlights,
   visibleSections,
 } from '../template-contract';
 import { ContactInfo, buildContactEntries } from '../contact-info';
@@ -48,7 +47,6 @@ const TEXT_PRIMARY = '#111827';
 const TEXT_SECONDARY = '#6B7280';
 const DIVIDER = '#E5E7EB';
 const BG_PAGE = '#F3F4F6';
-const SKILL_BG = '#F3F4F6';
 const TECH_BG = '#EFF6FF';
 const TECH_BORDER = '#BFDBFE';
 
@@ -89,6 +87,7 @@ export function ModernMinimalPreview({ resume }: TemplateProps): React.ReactElem
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume.sections);
   const lang = resume.language || 'en';
+  const hasAvatar = Boolean(pi.avatar);
 
   return (
     <div
@@ -105,18 +104,13 @@ export function ModernMinimalPreview({ resume }: TemplateProps): React.ReactElem
       >
         {/* Header */}
         <div className="px-8 pt-8 pb-6">
-          <div className="flex items-start justify-between">
+          <div className={hasAvatar ? 'flex items-start justify-between' : undefined}>
             <div>
               <h1 className="text-3xl font-bold" style={{ color: TEXT_PRIMARY }}>
                 {pi.fullName || 'Your Name'}
               </h1>
-              {pi.jobTitle && (
-                <p className="mt-1 text-base" style={{ color: TEXT_SECONDARY }}>
-                  {pi.jobTitle}
-                </p>
-              )}
             </div>
-            {pi.avatar && (
+            {hasAvatar && pi.avatar && (
               <img
                 src={pi.avatar}
                 alt=""
@@ -124,7 +118,12 @@ export function ModernMinimalPreview({ resume }: TemplateProps): React.ReactElem
               />
             )}
           </div>
-          <ContactInfo pi={pi} iconColor={ACCENT} align="left" />
+          <ContactInfo
+            pi={pi}
+            iconColor={ACCENT}
+            align="left"
+            variant="profile"
+          />
         </div>
 
         {/* Sections */}
@@ -184,7 +183,7 @@ function ModernMinimalSectionContent({
       <div className="relative">
         {/* Vertical timeline line */}
         <div className="absolute left-[88px] top-2 bottom-2 w-[2px]" style={{ background: DIVIDER }} />
-        {items.map((item, idx) => (
+        {items.map((item) => (
           <div key={item.id} className="relative flex gap-4 mb-4 last:mb-0">
             {/* Timeline dot */}
             <div
@@ -266,27 +265,29 @@ function ModernMinimalSectionContent({
             className="rounded-xl border p-4"
             style={{ borderColor: DIVIDER, background: 'white' }}
           >
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-sm font-semibold" style={{ color: TEXT_PRIMARY }}>
-                {item.name}
-              </span>
-              {item.url && (
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0"
-                  style={{ color: ACCENT }}
-                >
-                  <LinkIcon size={12} />
-                </a>
+            <div className="flex w-full items-baseline justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate text-sm font-semibold" style={{ color: TEXT_PRIMARY }}>
+                  {item.name}
+                </span>
+                {item.url && (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0"
+                    style={{ color: ACCENT }}
+                  >
+                    <LinkIcon size={12} />
+                  </a>
+                )}
+              </div>
+              {item.startDate && (
+                <span className="shrink-0 text-right text-xs" style={{ color: TEXT_SECONDARY }}>
+                  {formatDate(item.startDate, item.endDate || null, false, lang)}
+                </span>
               )}
             </div>
-            {item.startDate && (
-              <p className="mt-0.5 text-xs" style={{ color: TEXT_SECONDARY }}>
-                {formatDate(item.startDate, item.endDate || null, false, lang)}
-              </p>
-            )}
             {item.description && (
               <p
                 className="mt-1.5 text-sm leading-relaxed"
@@ -543,6 +544,18 @@ function buildModernMinimalSectionHtml(
   const icon = SECTION_ICON_SVG[section.type] || SECTION_ICON_SVG.summary;
 
   const sectionHeader = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">${icon}<h2 style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:${TEXT_PRIMARY};margin:0">${esc(section.title)}</h2></div>`;
+  const renderHighlightList = (highlights: string[] | undefined, marginTop: number) => {
+    const items = (highlights || [])
+      .filter(Boolean)
+      .map((h) => `<li class="text-sm" style="color:${TEXT_SECONDARY}">${md(h)}</li>`)
+      .join('');
+
+    if (!items) {
+      return '';
+    }
+
+    return `<ul class="list-disc pl-4" style="margin:${marginTop}px 0 0 0;padding-left:16px;padding-inline-start:16px;list-style-type:disc">${items}</ul>`;
+  };
 
   // Summary
   if (section.type === 'summary') {
@@ -595,16 +608,16 @@ function buildModernMinimalSectionHtml(
       const techs = it.technologies?.length
         ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${it.technologies.map((t) => `<span style="background:${TECH_BG};color:${ACCENT};border:1px solid ${TECH_BORDER};border-radius:9999px;padding:2px 8px;font-size:11px">${esc(t)}</span>`).join('')}</div>`
         : '';
-      const highlights = it.highlights?.length
-        ? `<ul style="margin:8px 0 0 16px;padding:0">${buildHighlights(it.highlights, `font-size:13px;color:${TEXT_SECONDARY}`)}</ul>`
-        : '';
+      const highlights = renderHighlightList(it.highlights, 8);
       const linkHtml = it.url ? `<a href="${esc(it.url)}" style="color:${ACCENT};text-decoration:none;font-size:12px">↗</a>` : '';
       return `<div style="border:1px solid ${DIVIDER};border-radius:12px;padding:16px;background:white;break-inside:avoid">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-          <span style="font-size:14px;font-weight:600;color:${TEXT_PRIMARY}">${esc(it.name)}</span>
-          ${linkHtml}
+        <div style="display:flex;width:100%;justify-content:space-between;align-items:baseline;gap:12px">
+          <div style="display:flex;min-width:0;align-items:center;gap:6px">
+            <span style="font-size:14px;font-weight:600;color:${TEXT_PRIMARY};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.name)}</span>
+            ${linkHtml}
+          </div>
+          ${it.startDate ? `<span style="flex-shrink:0;font-size:11px;color:${TEXT_SECONDARY};text-align:right">${formatDate(it.startDate, it.endDate || null, false, lang)}</span>` : ''}
         </div>
-        ${it.startDate ? `<p style="font-size:11px;color:${TEXT_SECONDARY};margin:2px 0 0">${formatDate(it.startDate, it.endDate || null, false, lang)}</p>` : ''}
         ${it.description ? `<p style="font-size:13px;line-height:1.5;color:${TEXT_SECONDARY};margin:6px 0 0">${md(it.description)}</p>` : ''}
         ${techs}${highlights}
       </div>`;
@@ -646,7 +659,7 @@ function buildModernMinimalSectionHtml(
         <span style="font-size:11px;color:${TEXT_SECONDARY}">${formatDate(it.startDate, it.endDate, false, lang)}</span>
       </div>
       ${it.gpa ? `<p style="font-size:11px;color:${TEXT_SECONDARY};margin:2px 0 0">GPA: ${esc(it.gpa)}</p>` : ''}
-      ${it.highlights?.length ? `<ul style="margin:4px 0 0 16px;padding:0">${buildHighlights(it.highlights, `font-size:13px;color:${TEXT_SECONDARY}`)}</ul>` : ''}
+      ${renderHighlightList(it.highlights, 4)}
     </div>`).join('');
     return `<div data-section style="padding:0 32px 24px">
       <div style="border-top:1px solid ${DIVIDER};margin-bottom:16px"></div>
@@ -745,24 +758,24 @@ export function buildModernMinimalHtml(resume: CanonicalResume): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume.sections);
   const lang = resume.language || 'en';
-  const { row1, row2 } = buildContactEntries(pi);
+  const hasAvatar = Boolean(pi.avatar);
+  const { row1, row2 } = buildContactEntries(pi, { variant: 'profile' });
 
   const renderRow = (entries: typeof row1, accent: string) =>
     entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:6px;margin:2px 16px 2px 0"><span style="color:${accent};font-size:13px;flex-shrink:0">${c.htmlIcon}</span><span>${esc(c.value)}</span></span>`).join('');
 
   const contactR1 = row1.length > 0
-    ? `<div style="margin-top:4px;font-size:13px;color:${TEXT_SECONDARY}">${renderRow(row1, ACCENT)}</div>`
+    ? `<div style="margin-top:4px;font-size:13px;color:${TEXT_SECONDARY};text-align:left">${renderRow(row1, ACCENT)}</div>`
     : '';
   const contactR2 = row2.length > 0
-    ? `<div style="margin-top:${row1.length > 0 ? '2px' : '4px'};font-size:13px;color:${TEXT_SECONDARY}">${renderRow(row2, ACCENT)}</div>`
+    ? `<div style="margin-top:${row1.length > 0 ? '2px' : '4px'};font-size:13px;color:${TEXT_SECONDARY};text-align:left">${renderRow(row2, ACCENT)}</div>`
     : '';
 
   return `<div data-no-theme-padding style="font-family:Inter,sans-serif;background:white">
     <div style="padding:32px 32px 24px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div style="${hasAvatar ? 'display:flex;align-items:flex-start;justify-content:space-between' : 'text-align:left'}">
         <div>
           <h1 style="font-size:28px;font-weight:700;color:${TEXT_PRIMARY};margin:0">${esc(pi.fullName || 'Your Name')}</h1>
-          ${pi.jobTitle ? `<p style="font-size:16px;color:${TEXT_SECONDARY};margin:4px 0 0">${esc(pi.jobTitle)}</p>` : ''}
         </div>
         ${pi.avatar ? `<img src="${esc(pi.avatar)}" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;flex-shrink:0"/>` : ''}
       </div>

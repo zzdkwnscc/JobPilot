@@ -61,10 +61,9 @@ export function ConsultantPreview({ resume }: TemplateProps): React.ReactElement
           )}
           <div className={!pi.avatar ? 'text-center' : ''}>
             <h1 className="text-2xl font-bold" style={{ color: GRAY_700 }}>{pi.fullName || 'Your Name'}</h1>
-            {pi.jobTitle && <p className="mt-0.5 text-sm font-medium" style={{ color: BLUE_600 }}>{pi.jobTitle}</p>}
           </div>
         </div>
-        <ContactInfo pi={pi} iconColor="#6b7280" style={{ color: '#6b7280' }} align={pi.avatar ? 'left' : 'center'} />
+        <ContactInfo pi={pi} iconColor="#6b7280" style={{ color: '#6b7280' }} align={pi.avatar ? 'left' : 'center'} variant="profile" />
       </div>
 
       {/* Sections */}
@@ -420,7 +419,7 @@ function buildConsultantSectionHtml(
 }
 
 function buildContactHtml(pi: PersonalInfoContent): string {
-  const { row1, row2 } = buildContactEntries(pi);
+  const { row1, row2 } = buildContactEntries(pi, { variant: 'profile' });
   if (row1.length === 0 && row2.length === 0) return '';
 
   const textAlign = pi.avatar ? 'left' : 'center';
@@ -451,7 +450,6 @@ export function buildConsultantHtml(resume: CanonicalResume): string {
         ${pi.avatar ? `<img src="${esc(pi.avatar)}" alt="" class="h-16 w-16 shrink-0 rounded-full object-cover" style="border:2px solid ${BLUE_600}"/>` : ''}
         <div${pi.avatar ? '' : ' style="text-align:center"'}>
           <h1 class="text-2xl font-bold" style="color:${GRAY_700}">${esc(pi.fullName || 'Your Name')}</h1>
-          ${pi.jobTitle ? `<p class="mt-0.5 text-sm font-medium" style="color:${BLUE_600}">${esc(pi.jobTitle)}</p>` : ''}
         </div>
       </div>
       ${buildContactHtml(pi)}

@@ -4,6 +4,7 @@
 
 `ContactInfo` 是共享的个人信息渲染组件，统一了所有模板的联系方式排版：
 - 两行布局：第一行短字段（phone、location、linkedin、github 等），第二行长字段（email、wechat、website、customLinks）
+- `variant="profile"` 可用于个人信息更完整的模板：第一行优先展示岗位匹配和主联系方式（jobTitle、yearsOfExperience、location、phone、email），第二行展示补充联系方式和身份信息（wechat、website、gender、age、hometown、politicalStatus）
 - 每个字段带语义 Lucide icon
 - 支持 `align`（center/left）和 `iconColor` 自定义
 
@@ -61,6 +62,7 @@ import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 | `align` | `"center"` 居中（默认），`"left"` 左对齐 | Classic → center, Modern → left |
 | `iconColor` | icon 颜色，默认 `#71717a`（zinc-500） | Professional → `#1e3a5f`, Creative → `rgba(255,255,255,0.6)` |
 | `iconSize` | icon 尺寸，默认 13 | Minimal → 12（更紧凑） |
+| `variant` | 字段分组顺序，默认 `"default"`，个人资料密集布局用 `"profile"` | Modern Minimal → profile |
 | `style` | 覆盖容器样式，常用于深色背景文字颜色 | `{ color: '#d4d4d8' }` |
 | `className` | 额外 CSS class | — |
 
@@ -69,6 +71,7 @@ import { buildContactEntries } from '@/lib/template-renderer/contact-info';
 - 白色背景 + 居中：`<ContactInfo pi={pi} />`
 - 白色背景 + 左对齐：`<ContactInfo pi={pi} align="left" />`
 - 白色背景 + 主题色 icon：`<ContactInfo pi={pi} iconColor="#1e40af" />`
+- 个人资料密集布局：`<ContactInfo pi={pi} variant="profile" />`
 - 深色背景 + 左对齐：`<ContactInfo pi={pi} align="left" iconColor="rgba(255,255,255,0.6)" style={{ color: 'rgba(255,255,255,0.7)' }} />`
 
 ### 4. 替换 Legacy Export（无 Unified 版本的模板）

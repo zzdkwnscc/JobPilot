@@ -82,12 +82,7 @@ export function ModernPreview({ resume }: TemplateProps): React.ReactElement {
             <h1 className="text-3xl font-bold tracking-tight">
               {pi.fullName || 'Your Name'}
             </h1>
-            {pi.jobTitle && (
-              <p className="mt-1.5 text-base font-light tracking-wide" style={{ color: ACCENT_COLOR }}>
-                {pi.jobTitle}
-              </p>
-            )}
-            <ContactInfo pi={pi} align="left" iconColor={ACCENT_COLOR} style={{ color: '#d4d4d8' }} />
+            <ContactInfo pi={pi} align="left" iconColor={ACCENT_COLOR} style={{ color: '#d4d4d8' }} variant="profile" />
           </div>
         </div>
 
@@ -560,7 +555,7 @@ function buildModernSectionContentHtml(
 }
 
 function buildContactHtml(pi: PersonalInfoContent): string {
-  const { row1, row2 } = buildContactEntries(pi);
+  const { row1, row2 } = buildContactEntries(pi, { variant: 'profile' });
   if (row1.length === 0 && row2.length === 0) return '';
 
   const renderRow = (entries: typeof row1) =>
@@ -589,7 +584,6 @@ export function buildModernHtml(resume: CanonicalResume): string {
         ${pi.avatar ? `<div class="shrink-0 rounded-full p-[2px]" style="background:linear-gradient(135deg,#e94560,#0f3460)"><img src="${esc(pi.avatar)}" alt="" class="h-[80px] w-[80px] rounded-full border-2 border-white/10 object-cover"/></div>` : ''}
         <div class="min-w-0 flex-1">
           <h1 class="text-3xl font-bold tracking-tight">${esc(pi.fullName || 'Your Name')}</h1>
-          ${pi.jobTitle ? `<p class="mt-1.5 text-base font-light tracking-wide" style="color:${ACCENT_COLOR}">${esc(pi.jobTitle)}</p>` : ''}
           ${buildContactHtml(pi)}
         </div>
       </div>

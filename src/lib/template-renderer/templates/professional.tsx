@@ -69,14 +69,9 @@ export function ProfessionalPreview({ resume }: TemplateProps): React.ReactEleme
             <h1 className="text-3xl font-bold tracking-wide" style={{ color: BLUE }}>
               {pi.fullName || 'Your Name'}
             </h1>
-            {pi.jobTitle && (
-              <p className="mt-1 text-base font-light uppercase tracking-wider text-zinc-500">
-                {pi.jobTitle}
-              </p>
-            )}
           </div>
         </div>
-        <ContactInfo pi={pi} iconColor={BLUE} />
+        <ContactInfo pi={pi} iconColor={BLUE} variant="profile" />
         <div
           className="mt-4 h-[2px] w-full"
           style={{ background: `linear-gradient(90deg, transparent 0%, ${BLUE} 20%, ${BLUE} 80%, transparent 100%)` }}
@@ -449,7 +444,7 @@ function buildProfessionalSectionHtml(section: CanonicalResume['sections'][numbe
 }
 
 function buildContactHtml(pi: PersonalInfoContent): string {
-  const { row1, row2 } = buildContactEntries(pi);
+  const { row1, row2 } = buildContactEntries(pi, { variant: 'profile' });
   if (row1.length === 0 && row2.length === 0) return '';
 
   const renderRow = (entries: typeof row1) =>
@@ -476,7 +471,6 @@ export function buildProfessionalHtml(resume: CanonicalResume): string {
         ${pi.avatar ? `<img src="${esc(pi.avatar)}" alt="" class="h-[72px] w-[72px] shrink-0 rounded-full border-2 object-cover" style="border-color:${BLUE}"/>` : ''}
         <div>
           <h1 class="text-3xl font-bold tracking-wide" style="color:${BLUE}">${esc(pi.fullName || 'Your Name')}</h1>
-          ${pi.jobTitle ? `<p class="mt-1 text-base font-light tracking-wider text-zinc-500 uppercase">${esc(pi.jobTitle)}</p>` : ''}
         </div>
       </div>
       ${buildContactHtml(pi)}

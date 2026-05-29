@@ -20,11 +20,11 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { EditableText } from '../fields/editable-text';
 import { EditableDate } from '../fields/editable-date';
 import { EditableRichText } from '../fields/editable-rich-text';
-import { EditableList } from '../fields/editable-list';
 import { FieldWrapper } from '../fields/field-wrapper';
 import { generateId } from '@/lib/utils';
 import type { ResumeSection, ProjectsContent, ProjectItem } from '@/types/resume';
@@ -62,6 +62,148 @@ function SortableProjectItem({ id, children }: SortableProjectItemProps) {
   return (
     <div ref={setNodeRef} style={style}>
       {children({ attributes, listeners })}
+    </div>
+  );
+}
+
+interface SortableStringItemProps {
+  id: string;
+  value: string;
+  placeholder?: string;
+  dragLabel: string;
+  onChange: (value: string) => void;
+  onRemove: () => void;
+}
+
+function SortableStringItem({
+  id,
+  value,
+  placeholder,
+  dragLabel,
+  onChange,
+  onRemove,
+}: SortableStringItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.55 : 1,
+    zIndex: isDragging ? 1 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-1">
+      <button
+        type="button"
+        className="flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-md text-zinc-300 transition-colors hover:bg-zinc-100 hover:text-zinc-500 active:cursor-grabbing dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+        aria-label={dragLabel}
+        title={dragLabel}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
+      <Input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="h-8 text-sm"
+      />
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 shrink-0 cursor-pointer p-0 text-zinc-400 hover:text-red-500"
+        onClick={onRemove}
+      >
+        <X className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
+
+interface SortableStringListProps {
+  idPrefix: string;
+  label: string;
+  items: string[];
+  onChange: (items: string[]) => void;
+  addLabel: string;
+  reorderLabel: string;
+  placeholder?: string;
+}
+
+function SortableStringList({
+  idPrefix,
+  label,
+  items,
+  onChange,
+  addLabel,
+  reorderLabel,
+  placeholder,
+}: SortableStringListProps) {
+  const values = items || [];
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const sortableIds = values.map((_, index) => `${idPrefix}-${index}`);
+
+  const addItem = () => onChange([...values, '']);
+  const updateItem = (index: number, value: string) => {
+    const updated = [...values];
+    updated[index] = value;
+    onChange(updated);
+  };
+  const removeItem = (index: number) => {
+    onChange(values.filter((_, itemIndex) => itemIndex !== index));
+  };
+  const reorderItems = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sortableIds.indexOf(String(active.id));
+    const newIndex = sortableIds.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    onChange(arrayMove(values, oldIndex, newIndex));
+  };
+
+  return (
+    <div className="space-y-1">
+      <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{label}</label>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorderItems}>
+        <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-1.5">
+            {values.map((value, index) => (
+              <SortableStringItem
+                key={sortableIds[index]}
+                id={sortableIds[index]}
+                value={value}
+                placeholder={placeholder}
+                dragLabel={reorderLabel}
+                onChange={(nextValue) => updateItem(index, nextValue)}
+                onRemove={() => removeItem(index)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={addItem}
+        className="h-7 cursor-pointer gap-1 text-xs"
+      >
+        <Plus className="h-3 w-3" />
+        {addLabel}
+      </Button>
     </div>
   );
 }
@@ -151,8 +293,22 @@ export function ProjectsSection({ section, onUpdate }: Props) {
                         <EditableDate label={t('endDate')} value={item.endDate || ''} onChange={(v) => updateItem(index, { endDate: v })} />
                       </FieldWrapper>
                       <EditableRichText label={t('description')} value={item.description} onChange={(v) => updateItem(index, { description: v })} />
-                      <EditableList label={t('technologies')} items={item.technologies} onChange={(v) => updateItem(index, { technologies: v })} />
-                      <EditableList label={t('highlights')} items={item.highlights} onChange={(v) => updateItem(index, { highlights: v })} />
+                      <SortableStringList
+                        idPrefix={`${item.id}-technologies`}
+                        label={t('technologies')}
+                        items={item.technologies || []}
+                        onChange={(v) => updateItem(index, { technologies: v })}
+                        addLabel={t('addItem')}
+                        reorderLabel={t('reorderItem')}
+                      />
+                      <SortableStringList
+                        idPrefix={`${item.id}-highlights`}
+                        label={t('highlights')}
+                        items={item.highlights || []}
+                        onChange={(v) => updateItem(index, { highlights: v })}
+                        addLabel={t('addItem')}
+                        reorderLabel={t('reorderItem')}
+                      />
                     </div>
                   </div>
                 )}

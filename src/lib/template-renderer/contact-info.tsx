@@ -15,6 +15,7 @@ import {
   Github,
   Globe,
   MessageCircle,
+  Briefcase,
   Calendar,
   User,
   Clock,
@@ -49,6 +50,7 @@ const SVG_ICONS = {
   users: `<svg ${SVG_VIEWBOX} ${SVG_SIZE} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>`,
   mail: `<svg ${SVG_VIEWBOX} ${SVG_SIZE} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>`,
   messageCircle: `<svg ${SVG_VIEWBOX} ${SVG_SIZE} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>`,
+  briefcase: `<svg ${SVG_VIEWBOX} ${SVG_SIZE} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
   globe: `<svg ${SVG_VIEWBOX} ${SVG_SIZE} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`,
   link: `<svg ${SVG_VIEWBOX} ${SVG_SIZE} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
 } as const;
@@ -63,16 +65,49 @@ export interface ContactEntry {
   htmlIcon: string;
 }
 
+export type ContactInfoVariant = 'default' | 'profile';
+
+export interface ContactEntryOptions {
+  variant?: ContactInfoVariant;
+}
+
 /**
  * Build contact entries split into two rows:
  *   Row 1 (short): phone, location, linkedin, github, age, gender,
  *                  yearsOfExperience, educationLevel, hometown,
  *                  maritalStatus, politicalStatus, ethnicity
  *   Row 2 (long):  email, wechat, website, customLinks
+ *
+ * The profile variant prioritizes recruiter scanning: role fit first,
+ * primary contact next, then supplemental profile details.
  */
-export function buildContactEntries(pi: PersonalInfoContent): { row1: ContactEntry[]; row2: ContactEntry[] } {
+export function buildContactEntries(
+  pi: PersonalInfoContent,
+  options: ContactEntryOptions = {},
+): { row1: ContactEntry[]; row2: ContactEntry[] } {
   const row1: ContactEntry[] = [];
   const row2: ContactEntry[] = [];
+
+  if (options.variant === 'profile') {
+    if (pi.jobTitle) row1.push({ icon: Briefcase, value: pi.jobTitle, htmlIcon: SVG_ICONS.briefcase });
+    if (pi.yearsOfExperience) row1.push({ icon: Clock, value: pi.yearsOfExperience, htmlIcon: SVG_ICONS.clock });
+    if (pi.location) row1.push({ icon: MapPin, value: pi.location, htmlIcon: SVG_ICONS.mapPin });
+    if (pi.phone) row1.push({ icon: Phone, value: pi.phone, htmlIcon: SVG_ICONS.phone });
+    if (pi.email) row1.push({ icon: Mail, value: pi.email, htmlIcon: SVG_ICONS.mail });
+    if (pi.wechat) row2.push({ icon: MessageCircle, value: pi.wechat, htmlIcon: SVG_ICONS.messageCircle });
+    if (pi.website) row2.push({ icon: Globe, value: pi.website, htmlIcon: SVG_ICONS.globe });
+    if (pi.gender) row2.push({ icon: User, value: pi.gender, htmlIcon: SVG_ICONS.user });
+    if (pi.age) row2.push({ icon: Calendar, value: pi.age, htmlIcon: SVG_ICONS.calendar });
+    if (pi.hometown) row2.push({ icon: Home, value: pi.hometown, htmlIcon: SVG_ICONS.house });
+    if (pi.politicalStatus) row2.push({ icon: Flag, value: pi.politicalStatus, htmlIcon: SVG_ICONS.flag });
+    if (pi.customLinks) {
+      for (const link of pi.customLinks) {
+        row2.push({ icon: LinkIcon, value: `${link.label}: ${link.url}`, htmlIcon: SVG_ICONS.link });
+      }
+    }
+
+    return { row1, row2 };
+  }
 
   if (pi.phone) row1.push({ icon: Phone, value: pi.phone, htmlIcon: SVG_ICONS.phone });
   if (pi.location) row1.push({ icon: MapPin, value: pi.location, htmlIcon: SVG_ICONS.mapPin });
@@ -108,6 +143,7 @@ export function ContactInfo({
   iconColor = '#71717a',
   iconSize = 13,
   align = 'center',
+  variant = 'default',
   className,
   style,
 }: {
@@ -115,10 +151,11 @@ export function ContactInfo({
   iconColor?: string;
   iconSize?: number;
   align?: 'center' | 'left';
+  variant?: ContactInfoVariant;
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const { row1, row2 } = buildContactEntries(pi);
+  const { row1, row2 } = buildContactEntries(pi, { variant });
   if (row1.length === 0 && row2.length === 0) return null;
 
   const rowStyle: React.CSSProperties = {

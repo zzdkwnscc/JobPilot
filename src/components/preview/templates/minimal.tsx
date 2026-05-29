@@ -20,10 +20,7 @@ export function MinimalTemplate({ resume }: { resume: Resume }) {
           )}
           <div>
             <h1 className="text-xl font-medium text-zinc-900">{pi.fullName || 'Your Name'}</h1>
-            {pi.jobTitle && (
-              <p className="mt-1 text-sm text-zinc-500">{pi.jobTitle}</p>
-            )}
-            <ContactInfo pi={pi} align="left" iconSize={12} />
+            <ContactInfo pi={pi} align="left" iconSize={12} variant="profile" />
           </div>
         </div>
       </div>

@@ -57,12 +57,9 @@ export function ClassicPreview({ resume }: TemplateProps): React.ReactElement {
             <h1 className="text-2xl font-bold text-zinc-900">
               {pi.fullName || 'Your Name'}
             </h1>
-            {pi.jobTitle && (
-              <p className="mt-1 text-lg text-zinc-600">{pi.jobTitle}</p>
-            )}
           </div>
         </div>
-        <ContactInfo pi={pi} />
+        <ContactInfo pi={pi} variant="profile" />
       </div>
 
       {/* Sections */}
@@ -530,7 +527,7 @@ function buildClassicSectionContentHtml(
 }
 
 function buildContactHtml(pi: PersonalInfoContent): string {
-  const { row1, row2 } = buildContactEntries(pi);
+  const { row1, row2 } = buildContactEntries(pi, { variant: 'profile' });
   if (row1.length === 0 && row2.length === 0) return '';
 
   const renderRow = (entries: typeof row1) =>
@@ -557,7 +554,6 @@ export function buildClassicHtml(resume: CanonicalResume): string {
         ${pi.avatar ? `<img src="${esc(pi.avatar)}" alt="" class="h-16 w-16 shrink-0 rounded-full object-cover"/>` : ''}
         <div class="text-center">
           <h1 class="text-2xl font-bold text-zinc-900">${esc(pi.fullName || 'Your Name')}</h1>
-          ${pi.jobTitle ? `<p class="mt-1 text-lg text-zinc-600">${esc(pi.jobTitle)}</p>` : ''}
         </div>
       </div>
       ${buildContactHtml(pi)}

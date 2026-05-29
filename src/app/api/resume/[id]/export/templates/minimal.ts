@@ -79,7 +79,7 @@ function buildMinimalSectionContent(section: Section, lang: string = 'en'): stri
 export function buildMinimalHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
-  const { row1, row2 } = buildContactEntries(pi);
+  const { row1, row2 } = buildContactEntries(pi, { variant: 'profile' });
 
   const renderRow = (entries: typeof row1) =>
     entries.map((c) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 12px 2px 0"><span style="color:#71717a;font-size:12px">${c.htmlIcon}</span><span style="color:#6B7280">${esc(c.value)}</span></span>`).join('');
@@ -94,7 +94,6 @@ export function buildMinimalHtml(resume: ResumeWithSections): string {
         ${pi.avatar ? `<img src="${esc(pi.avatar)}" alt="" class="h-12 w-12 shrink-0 rounded-full object-cover"/>` : ''}
         <div>
           <h1 class="text-xl font-medium text-zinc-900">${esc(pi.fullName || 'Your Name')}</h1>
-          ${pi.jobTitle ? `<p class="mt-1 text-sm text-zinc-500">${esc(pi.jobTitle)}</p>` : ''}
           ${contactHtml}
         </div>
       </div>
