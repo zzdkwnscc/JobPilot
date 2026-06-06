@@ -5,6 +5,23 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.0] - 2026-06-06
+
+### 新增
+
+- **首页布局重构** — 仪表盘全新布局：header 增加"本地工作区"标签和最近编辑 pill，工具栏改为卡片容器，空状态增加快捷操作按钮，右侧增加快捷工具和工作区状态侧边栏
+  - 侧边栏只在 xl（1280px+）展开为两栏布局，小屏时自然堆叠
+  - 导入/新建、搜索框、视图切换按钮补齐 aria-label
+- **面试记录删除与重新开始** — 面试大厅和面试房间支持删除面试记录（含对话和报告），一键重新开始（自动继承 JD 和角色配置）
+- **Anthropic 面试流式对话** — 面试流式对话新增 Anthropic provider 支持（此前仅支持 OpenAI-compatible）
+- **编辑器预览面板优化** — 缩放控件改为胶囊样式，默认缩放从 80% 调整为 90%，增加缩放边界常量；预览区背景加深、简历页增加边框阴影和 A4 最小高度
+- **编辑器侧边栏视觉升级** — 选中区块改为深色高亮样式，拖拽手柄和图标透明度优化，重命名输入框增加 aria 标记
+
+### 修复
+
+- 修复面试轮次自动开始时 start 消息重复写入的问题（增加 turnKind=start 幂等检查）
+- 修复面试房间 stream 失败后的 start 消息残留问题（新增幂等插入函数 insert_interview_start_message）
+
 ## [1.2.2] - 2026-06-03
 
 ### 新增
@@ -174,7 +191,8 @@
 - 中英双语 — 完整的国际化支持
 - 本地优先 — 数据存储在本地，隐私安全有保障
 
-[Unreleased]: https://github.com/jlifeng/JobPilot/compare/v1.2.2...HEAD
+[Unreleased]: https://github.com/jlifeng/JobPilot/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/jlifeng/JobPilot/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/jlifeng/JobPilot/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/jlifeng/JobPilot/compare/v1.1.9...v1.2.1
 [1.1.8]: https://github.com/jlifeng/JobPilot/compare/v1.1.7...v1.1.8

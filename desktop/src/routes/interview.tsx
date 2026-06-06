@@ -1,18 +1,65 @@
-import { Link, createRoute } from "@tanstack/react-router";
+import { Link, createRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InterviewSessionCard } from "../components/interview/interview-session-card";
 import { loadInterviewLobbyRouteData } from "../lib/desktop-loaders";
-import { isBrowserFallbackRuntime } from "../lib/desktop-api";
+import {
+  buildInterviewRestartDraft,
+  deleteInterviewSession,
+  isBrowserFallbackRuntime,
+  saveInterviewRestartDraft,
+} from "../lib/desktop-api";
+import type { InterviewSession } from "../types/interview";
 import { rootRoute } from "./root";
 
 function InterviewLobbyRoute() {
+  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const context = rootRoute.useLoaderData();
-  const { sessions } = interviewRoute.useLoaderData();
+  const routeData = interviewRoute.useLoaderData();
+  const [deletedSessionIds, setDeletedSessionIds] = useState<Set<string>>(() => new Set());
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const runtimeIsFallback = isBrowserFallbackRuntime(context);
+  const sessions = routeData.sessions.filter(
+    (session) => !deletedSessionIds.has(session.id),
+  );
+
+  const handleRestart = (session: InterviewSession) => {
+    saveInterviewRestartDraft(buildInterviewRestartDraft(session));
+    void navigate({ to: "/interview/new" });
+  };
+
+  const handleDelete = async (session: InterviewSession) => {
+    const confirmed = window.confirm(
+      t("interview.actions.deleteConfirm", { title: session.jobTitle }),
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingSessionId(session.id);
+    setDeleteError(null);
+    try {
+      await deleteInterviewSession(session.id);
+      setDeletedSessionIds((current) => {
+        const next = new Set(current);
+        next.add(session.id);
+        return next;
+      });
+    } catch (caughtError) {
+      setDeleteError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : t("interview.actions.deleteError"),
+      );
+    } finally {
+      setDeletingSessionId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -41,6 +88,14 @@ function InterviewLobbyRoute() {
           </CardHeader>
           <CardContent className="text-sm leading-6 text-amber-700 dark:text-amber-200">
             {t("interview.fallback.body")}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {deleteError ? (
+        <Card className="rounded-3xl border-red-200 bg-red-50 shadow-none dark:border-red-900 dark:bg-red-950/40">
+          <CardContent className="pt-6 text-sm text-red-700 dark:text-red-200">
+            {deleteError}
           </CardContent>
         </Card>
       ) : null}
@@ -74,6 +129,9 @@ function InterviewLobbyRoute() {
               key={session.id}
               session={session}
               locale={i18n.language}
+              isDeleting={deletingSessionId === session.id}
+              onDelete={(targetSession) => void handleDelete(targetSession)}
+              onRestart={handleRestart}
             />
           ))}
         </div>

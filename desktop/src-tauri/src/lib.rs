@@ -340,6 +340,11 @@ fn get_interview_session(
 }
 
 #[tauri::command]
+fn delete_interview_session(app: tauri::AppHandle, session_id: String) -> Result<bool, String> {
+    storage::delete_interview_session(&app, &session_id)
+}
+
+#[tauri::command]
 fn create_interview_session(
     app: tauri::AppHandle,
     input: CreateInterviewSessionInput,
@@ -541,6 +546,7 @@ pub fn run() {
             start_ai_prompt_stream,
             list_interview_sessions,
             get_interview_session,
+            delete_interview_session,
             create_interview_session,
             update_interview_message_metadata,
             get_interview_report,

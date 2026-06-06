@@ -1617,6 +1617,70 @@ pub fn get_interview_session(
     load_interview_session_detail(&connection, session_id)
 }
 
+pub fn delete_interview_session(app: &AppHandle, session_id: &str) -> Result<bool, String> {
+    let session_id = session_id.trim();
+    if session_id.is_empty() {
+        return Err("sessionId is required".into());
+    }
+
+    let mut connection = open_initialized_connection(app)?;
+    let transaction = connection
+        .transaction()
+        .map_err(|error| format!("failed to start interview session delete transaction: {error}"))?;
+    let exists = transaction
+        .query_row(
+            "SELECT 1 FROM interview_sessions WHERE id = ?1",
+            params![session_id],
+            |_| Ok(true),
+        )
+        .optional()
+        .map_err(|error| format!("failed to validate interview session before delete: {error}"))?
+        .unwrap_or(false);
+
+    if !exists {
+        transaction
+            .commit()
+            .map_err(|error| format!("failed to close interview session delete transaction: {error}"))?;
+        return Ok(false);
+    }
+
+    transaction
+        .execute(
+            "DELETE FROM interview_reports WHERE session_id = ?1",
+            params![session_id],
+        )
+        .map_err(|error| format!("failed to delete interview report for {session_id}: {error}"))?;
+    transaction
+        .execute(
+            r#"
+            DELETE FROM interview_messages
+            WHERE round_id IN (
+              SELECT id FROM interview_rounds WHERE session_id = ?1
+            )
+            "#,
+            params![session_id],
+        )
+        .map_err(|error| format!("failed to delete interview messages for {session_id}: {error}"))?;
+    transaction
+        .execute(
+            "DELETE FROM interview_rounds WHERE session_id = ?1",
+            params![session_id],
+        )
+        .map_err(|error| format!("failed to delete interview rounds for {session_id}: {error}"))?;
+    transaction
+        .execute(
+            "DELETE FROM interview_sessions WHERE id = ?1",
+            params![session_id],
+        )
+        .map_err(|error| format!("failed to delete interview session {session_id}: {error}"))?;
+
+    transaction
+        .commit()
+        .map_err(|error| format!("failed to commit interview session delete transaction: {error}"))?;
+
+    Ok(true)
+}
+
 pub fn create_interview_session(
     app: &AppHandle,
     input: CreateInterviewSessionInput,
@@ -1880,6 +1944,98 @@ pub fn add_interview_message(
 
     load_interview_message(&connection, &message_id)?
         .ok_or_else(|| format!("interview message not found after insert: {message_id}"))
+}
+
+pub fn add_interview_start_message_once(
+    app: &AppHandle,
+    input: AddInterviewMessageInput,
+) -> Result<Option<InterviewMessageItem>, String> {
+    let round_id = input.round_id.trim().to_string();
+    if round_id.is_empty() {
+        return Err("roundId is required".into());
+    }
+
+    let role = normalize_interview_message_role(&input.role)?;
+    if role != "system" {
+        return Err("start message role must be system".into());
+    }
+
+    let content = input.content.trim().to_string();
+    if content.is_empty() {
+        return Err("content is required".into());
+    }
+
+    let metadata = normalize_metadata_value(input.metadata.unwrap_or_else(|| json!({})))?;
+    if metadata
+        .get("turnKind")
+        .and_then(|value| value.as_str())
+        != Some("start")
+    {
+        return Err("start message metadata must include turnKind=start".into());
+    }
+
+    let mut connection = open_initialized_connection(app)?;
+    let transaction = connection
+        .transaction()
+        .map_err(|error| format!("failed to start interview start-message transaction: {error}"))?;
+    let round_exists = transaction
+        .query_row(
+            "SELECT 1 FROM interview_rounds WHERE id = ?1",
+            params![&round_id],
+            |_| Ok(true),
+        )
+        .optional()
+        .map_err(|error| format!("failed to validate interview round before insert: {error}"))?
+        .unwrap_or(false);
+    if !round_exists {
+        return Err(format!("interview round not found: {round_id}"));
+    }
+
+    let now = now_epoch_ms()? as i64;
+    let message_id = Uuid::new_v4().to_string();
+    let metadata_json = serde_json::to_string(&metadata)
+        .map_err(|error| format!("failed to serialize interview metadata: {error}"))?;
+    let inserted = transaction
+        .execute(
+            r#"
+            INSERT INTO interview_messages (
+              id,
+              round_id,
+              role,
+              content,
+              metadata_json,
+              created_at_epoch_ms,
+              updated_at_epoch_ms
+            )
+            SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?6
+            WHERE NOT EXISTS (
+              SELECT 1
+              FROM interview_messages
+              WHERE round_id = ?2
+                AND (
+                  role = 'interviewer'
+                  OR (role = 'system' AND json_extract(metadata_json, '$.turnKind') = 'start')
+                )
+            )
+            "#,
+            params![&message_id, &round_id, role, &content, metadata_json, now],
+        )
+        .map_err(|error| format!("failed to insert interview start message: {error}"))?;
+
+    if inserted == 0 {
+        transaction
+            .commit()
+            .map_err(|error| format!("failed to close interview start-message transaction: {error}"))?;
+        return Ok(None);
+    }
+
+    touch_interview_round_and_session(&transaction, &round_id, now)?;
+    let message = load_interview_message(&transaction, &message_id)?
+        .ok_or_else(|| format!("interview message not found after insert: {message_id}"))?;
+    transaction
+        .commit()
+        .map_err(|error| format!("failed to commit interview start-message transaction: {error}"))?;
+    Ok(Some(message))
 }
 
 pub fn mark_interview_round_in_progress(

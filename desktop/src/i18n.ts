@@ -349,7 +349,7 @@ const legacyResources = {
         "让原生运行时总结一下新桌面架构和旧 web 路径的差异。",
       aiRuntimeRunPrompt: "运行原生流式请求",
       aiRuntimeClear: "清空输出",
-      aiRuntimeOpenAiFirst: "PR5 先验证 OpenAI-compatible 流式链路",
+      aiRuntimeOpenAiFirst: "当前 Provider 尚未接入原生流式链路",
       aiRuntimeEventsTitle: "事件桥",
       aiRuntimeEventsHeader: "增量事件日志",
       aiRuntimeEventsEmptyTitle: "还没有事件",

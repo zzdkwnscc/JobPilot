@@ -9,11 +9,15 @@ import type { Resume } from "../../types/resume";
 
 // A4 width in px (at 96 dpi)
 const A4_WIDTH = 794;
+const A4_HEIGHT = 1123;
+const DEFAULT_ZOOM = 90;
+const MIN_ZOOM = 30;
+const MAX_ZOOM = 150;
 
 export function EditorPreviewPanel() {
   const { t } = useTranslation();
   const { currentResume, sections } = useResumeStore();
-  const [zoom, setZoom] = useState(80);
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
 
   const liveResume = useMemo<Resume | null>(() => {
     if (!currentResume) return null;
@@ -27,30 +31,34 @@ export function EditorPreviewPanel() {
   return (
     <div
       data-tour="preview"
-      className="flex min-w-0 flex-[6] flex-col border-l bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800"
+      className="flex min-w-0 flex-[6] flex-col border-l bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950"
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b bg-white px-4 py-2 dark:bg-background dark:border-zinc-800">
-        <span className="text-xs font-medium text-zinc-500">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b bg-white px-5 dark:border-zinc-800 dark:bg-background">
+        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           {t("editor.toolbar.preview")}
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-1 py-0.5 dark:border-zinc-800 dark:bg-zinc-900">
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 cursor-pointer p-0"
-            onClick={() => setZoom((z) => Math.max(30, z - 10))}
-            disabled={zoom <= 30}
+            className="h-7 w-7 cursor-pointer rounded-full p-0 text-zinc-600 hover:bg-white hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            aria-label={t("editor.toolbar.zoomOut")}
+            onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 10))}
+            disabled={zoom <= MIN_ZOOM}
           >
             <ZoomOut className="h-3.5 w-3.5" />
           </Button>
-          <span className="w-10 text-center text-xs text-zinc-500">{zoom}%</span>
+          <span className="w-12 text-center text-xs font-medium tabular-nums text-zinc-600 dark:text-zinc-300">
+            {zoom}%
+          </span>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 cursor-pointer p-0"
-            onClick={() => setZoom((z) => Math.min(150, z + 10))}
-            disabled={zoom >= 150}
+            className="h-7 w-7 cursor-pointer rounded-full p-0 text-zinc-600 hover:bg-white hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            aria-label={t("editor.toolbar.zoomIn")}
+            onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 10))}
+            disabled={zoom >= MAX_ZOOM}
           >
             <ZoomIn className="h-3.5 w-3.5" />
           </Button>
@@ -58,12 +66,13 @@ export function EditorPreviewPanel() {
       </div>
 
       {/* Preview body */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="flex justify-center p-4">
+      <div className="min-h-0 flex-1 overflow-auto bg-zinc-100 dark:bg-zinc-950">
+        <div className="flex min-h-full justify-center px-8 py-8 lg:py-10">
           <div
-            className="bg-white shadow-md"
+            className="overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-xl shadow-zinc-900/20 ring-1 ring-zinc-900/5 dark:border-zinc-700 dark:shadow-black/50"
             style={{
               width: A4_WIDTH,
+              minHeight: A4_HEIGHT,
               zoom: scale,
             }}
           >

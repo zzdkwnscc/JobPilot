@@ -14,7 +14,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createInterviewSession, type DesktopDocumentListItem } from "../../lib/desktop-api";
+import {
+  consumeInterviewRestartDraft,
+  createInterviewSession,
+  type DesktopDocumentListItem,
+} from "../../lib/desktop-api";
 import {
   getInterviewerColorClass,
   getPresetInterviewers,
@@ -52,13 +56,19 @@ export function InterviewSetupForm({
     () => getPresetInterviewers(language),
     [language],
   );
-  const [jobTitle, setJobTitle] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
-  const [selectedResumeId, setSelectedResumeId] = useState<string>("none");
-  const [selectedInterviewers, setSelectedInterviewers] = useState<InterviewerConfig[]>([
-    presetInterviewers[0],
-    presetInterviewers[1],
-  ].filter(Boolean));
+  const [restartDraft] = useState(() => consumeInterviewRestartDraft());
+  const [jobTitle, setJobTitle] = useState(restartDraft?.jobTitle ?? "");
+  const [jobDescription, setJobDescription] = useState(
+    restartDraft?.jobDescription ?? "",
+  );
+  const [selectedResumeId, setSelectedResumeId] = useState<string>(
+    restartDraft?.resumeId ?? "none",
+  );
+  const [selectedInterviewers, setSelectedInterviewers] = useState<InterviewerConfig[]>(
+    restartDraft?.interviewers.length
+      ? restartDraft.interviewers
+      : [presetInterviewers[0], presetInterviewers[1]].filter(Boolean),
+  );
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 

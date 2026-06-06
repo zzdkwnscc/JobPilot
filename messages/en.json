@@ -29,6 +29,12 @@
     "createResume": "New Resume",
     "createResumeDescription": "Start from a blank template",
     "resumeCount": "{count} resumes",
+    "workspaceLabel": "Local Workspace",
+    "latestEdited": "Latest edit: {title} · {date}",
+    "quickTools": "Quick Tools",
+    "workspaceStatus": "Workspace Status",
+    "totalResumes": "Total resumes",
+    "currentView": "Current view",
     "lastEdited": "Last edited {date}",
     "deleteConfirm": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
     "duplicateSuccess": "Resume duplicated",
@@ -138,7 +144,12 @@
     "actions": {
       "title": "Quick Actions",
       "backToLobby": "Back to Interview Lobby",
-      "generateReport": "Generate Report"
+      "generateReport": "Generate Report",
+      "restart": "Restart",
+      "delete": "Delete Record",
+      "deleting": "Deleting...",
+      "deleteConfirm": "Delete the mock interview \"{title}\"? This also deletes its transcript and report, and cannot be undone.",
+      "deleteError": "Failed to delete the interview record. Please try again."
     },
     "lobby": {
       "title": "JD Mock Interview",
@@ -224,6 +235,8 @@
       "undo": "Undo",
       "redo": "Redo",
       "preview": "Preview",
+      "zoomOut": "Zoom out preview",
+      "zoomIn": "Zoom in preview",
       "export": "Export",
       "template": "Switch Template",
       "settings": "Settings",

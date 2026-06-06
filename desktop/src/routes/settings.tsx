@@ -151,7 +151,8 @@ function SettingsRoute() {
       (entry) => entry.key === selectedProviderEntry.secretKey,
     );
   }, [secretInventoryState.entries, selectedProviderEntry]);
-  const providerSupportsNativeStreaming = selectedProvider === "openai";
+  const providerSupportsNativeStreaming =
+    selectedProvider === "openai" || selectedProvider === "anthropic";
   const secretConfigured = Boolean(selectedSecretEntry?.isConfigured);
   const vaultStatusLabel =
     vaultState.status === "ready"

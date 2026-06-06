@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Loader2, Sparkles, Trophy } from "lucide-react";
+import { ArrowLeft, Loader2, RotateCcw, Sparkles, Trash2, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { generateInterviewReport, getInterviewReport } from "../../lib/desktop-api";
+import {
+  buildInterviewRestartDraft,
+  deleteInterviewSession,
+  generateInterviewReport,
+  getInterviewReport,
+  saveInterviewRestartDraft,
+} from "../../lib/desktop-api";
 import { resolveInterviewLocale } from "../../lib/interviewers";
 import type { InterviewReport, InterviewSessionDetail } from "../../types/interview";
 
@@ -22,12 +28,14 @@ export function InterviewReportSummary({
   initialReport,
   runtimeIsFallback,
 }: InterviewReportSummaryProps) {
+  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const locale = resolveInterviewLocale(i18n.language);
   const [session] = useState(initialSession);
   const [report, setReport] = useState(initialReport);
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (runtimeIsFallback || report || !session || session.status !== "completed") {
@@ -95,6 +103,42 @@ export function InterviewReportSummary({
     }
   };
 
+  const handleRestart = () => {
+    if (!session) {
+      return;
+    }
+
+    saveInterviewRestartDraft(buildInterviewRestartDraft(session));
+    void navigate({ to: "/interview/new" });
+  };
+
+  const handleDelete = async () => {
+    if (!session) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      t("interview.actions.deleteConfirm", { title: session.jobTitle }),
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await deleteInterviewSession(session.id);
+      void navigate({ to: "/interview" });
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : t("interview.actions.deleteError"),
+      );
+      setIsDeleting(false);
+    }
+  };
+
   if (runtimeIsFallback) {
     return (
       <Card className="rounded-3xl border-amber-200 bg-amber-50 shadow-none dark:border-amber-900 dark:bg-amber-950/40">
@@ -132,8 +176,18 @@ export function InterviewReportSummary({
             type="button"
             variant="outline"
             className="rounded-full"
+            onClick={handleRestart}
+            disabled={isGenerating || isDeleting}
+          >
+            <RotateCcw className="h-4 w-4" />
+            {t("interview.actions.restart")}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-full"
             onClick={() => void refreshReport()}
-            disabled={isGenerating}
+            disabled={isGenerating || isDeleting}
           >
             {isGenerating ? (
               <>
@@ -151,6 +205,16 @@ export function InterviewReportSummary({
             <Link to="/interview/$sessionId" params={{ sessionId }}>
               {t("interview.report.reviewTranscript")}
             </Link>
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            className="rounded-full"
+            onClick={() => void handleDelete()}
+            disabled={isGenerating || isDeleting}
+          >
+            <Trash2 className="h-4 w-4" />
+            {isDeleting ? t("interview.actions.deleting") : t("interview.actions.delete")}
           </Button>
         </div>
       </div>

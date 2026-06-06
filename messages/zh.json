@@ -29,6 +29,12 @@
     "createResume": "新建简历",
     "createResumeDescription": "从空白模板开始创建新简历",
     "resumeCount": "共 {count} 份简历",
+    "workspaceLabel": "本地工作区",
+    "latestEdited": "最近编辑：{title} · {date}",
+    "quickTools": "快捷工具",
+    "workspaceStatus": "工作区状态",
+    "totalResumes": "简历总数",
+    "currentView": "当前视图",
     "lastEdited": "最后编辑于 {date}",
     "deleteConfirm": "确定要删除「{title}」吗？此操作不可恢复。",
     "duplicateSuccess": "简历已复制",
@@ -138,7 +144,12 @@
     "actions": {
       "title": "快捷操作",
       "backToLobby": "返回面试大厅",
-      "generateReport": "生成报告"
+      "generateReport": "生成报告",
+      "restart": "重新开始",
+      "delete": "删除记录",
+      "deleting": "删除中...",
+      "deleteConfirm": "确定要删除「{title}」这场模拟面试吗？这会同时删除对话记录和报告，无法撤销。",
+      "deleteError": "删除面试记录失败，请稍后重试。"
     },
     "lobby": {
       "title": "JD 模拟面试",
@@ -224,6 +235,8 @@
       "undo": "撤销",
       "redo": "重做",
       "preview": "预览",
+      "zoomOut": "缩小预览",
+      "zoomIn": "放大预览",
       "export": "导出",
       "template": "切换模板",
       "settings": "设置",

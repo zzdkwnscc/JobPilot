@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowUpRight, Clock3, FileText, Trophy } from "lucide-react";
+import { ArrowUpRight, Clock3, FileText, RotateCcw, Trash2, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,11 +17,17 @@ function formatTimestamp(value: number, locale: string): string {
 interface InterviewSessionCardProps {
   session: InterviewSession;
   locale: string;
+  isDeleting?: boolean;
+  onDelete: (session: InterviewSession) => void;
+  onRestart: (session: InterviewSession) => void;
 }
 
 export function InterviewSessionCard({
   session,
   locale,
+  isDeleting = false,
+  onDelete,
+  onRestart,
 }: InterviewSessionCardProps) {
   const { t } = useTranslation();
   const isCompleted = session.status === "completed";
@@ -93,19 +99,42 @@ export function InterviewSessionCard({
         ) : null}
       </CardContent>
 
-      <CardFooter className="justify-between border-t border-zinc-100 pt-4 dark:border-zinc-800">
+      <CardFooter className="flex-wrap justify-between gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
         <span className="text-sm text-zinc-500 dark:text-zinc-400">
           {t("interview.lobby.roleCount", { count: totalRounds })}
         </span>
-        <Button asChild size="sm" className="rounded-full">
-          <Link
-            to={isCompleted ? "/interview/$sessionId/report" : "/interview/$sessionId"}
-            params={{ sessionId: session.id }}
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            onClick={() => onRestart(session)}
           >
-            {isCompleted ? t("interview.lobby.viewReport") : t("interview.lobby.resume")}
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
-        </Button>
+            <RotateCcw className="h-4 w-4" />
+            {t("interview.actions.restart")}
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            className="rounded-full"
+            onClick={() => onDelete(session)}
+            disabled={isDeleting}
+          >
+            <Trash2 className="h-4 w-4" />
+            {isDeleting ? t("interview.actions.deleting") : t("interview.actions.delete")}
+          </Button>
+          <Button asChild size="sm" className="rounded-full">
+            <Link
+              to={isCompleted ? "/interview/$sessionId/report" : "/interview/$sessionId"}
+              params={{ sessionId: session.id }}
+            >
+              {isCompleted ? t("interview.lobby.viewReport") : t("interview.lobby.resume")}
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

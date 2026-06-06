@@ -15,6 +15,8 @@ import type {
   UpdateInterviewMessageMetadataInput,
 } from "../types/interview";
 
+const INTERVIEW_RESTART_DRAFT_STORAGE_KEY = "jobpilot.interview.restartDraft";
+
 export type DesktopRuntimeMode = "tauri" | "browser_fallback";
 
 export interface BootstrapContext {
@@ -749,6 +751,13 @@ export interface AppUpdateCheckResult {
   downloadUrl?: string | null;
   notes?: string | null;
   pubDate?: string | null;
+}
+
+export interface InterviewRestartDraft {
+  jobTitle: string;
+  jobDescription: string;
+  resumeId?: string | null;
+  interviewers: InterviewerConfig[];
 }
 
 interface RawInterviewSessionListItem {
@@ -1492,11 +1501,20 @@ function normalizeInterviewMessageMetadata(value: unknown): InterviewMessageMeta
     typeof value === "object" && value !== null && !Array.isArray(value)
       ? (value as Record<string, unknown>)
       : {};
+  const turnKind = record.turnKind;
 
   return {
     marked: record.marked === true,
     hinted: record.hinted === true,
     skipped: record.skipped === true,
+    turnKind:
+      turnKind === "start"
+      || turnKind === "answer"
+      || turnKind === "hint"
+      || turnKind === "skip"
+      || turnKind === "end_round"
+        ? turnKind
+        : undefined,
   };
 }
 
@@ -1890,6 +1908,10 @@ export async function getInterviewSession(
   return session ? normalizeInterviewSessionDetail(session) : null;
 }
 
+export async function deleteInterviewSession(sessionId: string): Promise<boolean> {
+  return invoke<boolean>("delete_interview_session", { sessionId });
+}
+
 export async function createInterviewSession(
   input: CreateInterviewSessionInput,
 ): Promise<InterviewSessionDetail> {
@@ -1909,6 +1931,73 @@ export async function createInterviewSession(
   const detail = await invoke<RawInterviewSessionDetail>("create_interview_session", payload);
 
   return normalizeInterviewSessionDetail(detail);
+}
+
+export function buildInterviewRestartDraft(
+  session: InterviewSession | InterviewSessionDetail,
+): InterviewRestartDraft {
+  return {
+    jobTitle: session.jobTitle,
+    jobDescription: session.jobDescription,
+    resumeId: session.resumeId ?? null,
+    interviewers: session.selectedInterviewers,
+  };
+}
+
+function isInterviewRestartDraft(value: unknown): value is InterviewRestartDraft {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.jobTitle === "string" &&
+    typeof record.jobDescription === "string" &&
+    Array.isArray(record.interviewers)
+  );
+}
+
+export function saveInterviewRestartDraft(draft: InterviewRestartDraft): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.setItem(
+    INTERVIEW_RESTART_DRAFT_STORAGE_KEY,
+    JSON.stringify(draft),
+  );
+}
+
+export function consumeInterviewRestartDraft(): InterviewRestartDraft | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const rawDraft = window.sessionStorage.getItem(INTERVIEW_RESTART_DRAFT_STORAGE_KEY);
+  window.sessionStorage.removeItem(INTERVIEW_RESTART_DRAFT_STORAGE_KEY);
+
+  if (!rawDraft) {
+    return null;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(rawDraft);
+    if (!isInterviewRestartDraft(parsed)) {
+      return null;
+    }
+
+    return {
+      jobTitle: parsed.jobTitle,
+      jobDescription: parsed.jobDescription,
+      resumeId:
+        typeof parsed.resumeId === "string" && parsed.resumeId.trim().length > 0
+          ? parsed.resumeId
+          : null,
+      interviewers: normalizeInterviewerConfigList(parsed.interviewers),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function updateInterviewMessageMetadata(

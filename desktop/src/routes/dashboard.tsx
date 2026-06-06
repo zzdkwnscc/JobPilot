@@ -10,6 +10,8 @@ import {
   Upload,
   Camera,
   MessageSquareQuote,
+  FileText,
+  Clock3,
 } from "lucide-react";
 import { rootRoute } from "./root";
 import { ResumeGrid } from "../components/resume-grid";
@@ -65,6 +67,11 @@ function sortResumes(resumes: Resume[], sort: SortOption): Resume[] {
     default:
       return sorted;
   }
+}
+
+function formatResumeDate(value?: string): string {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString();
 }
 
 function DashboardRoute() {
@@ -125,6 +132,10 @@ function DashboardRoute() {
 
   const hasResumes = resumes.length > 0;
   const hasResults = filteredResumes.length > 0;
+  const latestResume = useMemo(
+    () => (resumes.length > 0 ? sortResumes(resumes, "lastEdited")[0] : null),
+    [resumes]
+  );
 
   // CRUD operations
   const handleDelete = async (id: string) => {
@@ -182,48 +193,39 @@ function DashboardRoute() {
   };
 
   return (
-    <div className="page">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-foreground">
+      <div className="flex flex-col gap-4 border-b border-zinc-200 pb-5 dark:border-zinc-800 xl:flex-row xl:items-end xl:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            {t("dashboard.workspaceLabel")}
+          </p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-foreground">
             {t("dashboardTitle")}
           </h1>
-          {hasResumes && (
-            <p className="mt-1 text-sm text-zinc-500">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 dark:border-zinc-800 dark:bg-zinc-900">
+              <FileText className="h-3.5 w-3.5" />
               {t("dashboardResumeCount", { count: resumes.length })}
-            </p>
-          )}
+            </span>
+            {latestResume && (
+              <span className="inline-flex min-w-0 items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 dark:border-zinc-800 dark:bg-zinc-900">
+                <Clock3 className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">
+                  {t("dashboard.latestEdited", {
+                    title: latestResume.title,
+                    date: formatResumeDate(latestResume.updatedAt),
+                  })}
+                </span>
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="button button--secondary cursor-not-allowed gap-2 opacity-50"
-            disabled
-            title={t("dashboardLinkedinPhotoComingSoon")}
-          >
-            <Camera className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("dashboardLinkedinPhoto")}</span>
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             className="button button--secondary cursor-pointer gap-2"
-            onClick={() => navigate({ to: "/interview" })}
-          >
-            <MessageSquareQuote className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("interview.dashboardCta")}</span>
-          </button>
-          <button
-            type="button"
-            className="button button--secondary cursor-pointer gap-2"
-            onClick={() => setGenerateDialogOpen(true)}
-          >
-            <Sparkles className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("dashboardAiGenerate")}</span>
-          </button>
-          <button
-            type="button"
-            className="button button--secondary cursor-pointer gap-2"
+            aria-label={t("dashboardImportJson")}
             onClick={() => setImportDialogOpen(true)}
           >
             <Upload className="h-4 w-4" />
@@ -232,6 +234,7 @@ function DashboardRoute() {
           <button
             type="button"
             className="button button--primary cursor-pointer gap-2"
+            aria-label={t("dashboardCreateResume")}
             onClick={() => setCreateDialogOpen(true)}
           >
             <Plus className="h-4 w-4" />
@@ -242,14 +245,15 @@ function DashboardRoute() {
 
       {/* Toolbar: Search + Sort + View toggle */}
       {hasResumes && (
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between">
           {/* Search */}
-          <div className="relative flex-1 sm:max-w-xs">
+          <div className="relative flex-1 sm:max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label={t("dashboardSearchPlaceholder")}
               placeholder={t("dashboardSearchPlaceholder")}
               className="search-input pl-9"
             />
@@ -274,6 +278,7 @@ function DashboardRoute() {
               <button
                 type="button"
                 onClick={() => handleViewChange("grid")}
+                aria-label={t("dashboardViewGrid")}
                 className={`cursor-pointer rounded-l-md p-1.5 transition-colors ${
                   viewMode === "grid"
                     ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
@@ -286,6 +291,7 @@ function DashboardRoute() {
               <button
                 type="button"
                 onClick={() => handleViewChange("list")}
+                aria-label={t("dashboardViewList")}
                 className={`cursor-pointer rounded-r-md p-1.5 transition-colors ${
                   viewMode === "list"
                     ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
@@ -300,41 +306,116 @@ function DashboardRoute() {
         </div>
       )}
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-48 rounded-xl" />
-          ))}
-        </div>
-      ) : !hasResumes ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 py-16">
-          <p className="text-zinc-500 dark:text-zinc-400">{t("dashboardNoResumes")}</p>
-        </div>
-      ) : !hasResults ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 py-16">
-          <p className="text-zinc-500 dark:text-zinc-400">{t("dashboardNoSearchResults")}</p>
-        </div>
-      ) : viewMode === "grid" ? (
-        <ResumeGrid
-          resumes={filteredResumes}
-          onDelete={handleDelete}
-          onDuplicate={handleDuplicate}
-          onRename={handleRename}
-        />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {filteredResumes.map((resume) => (
-            <ResumeListItem
-              key={resume.id}
-              resume={resume}
-              onDelete={() => handleDelete(resume.id)}
-              onDuplicate={() => handleDuplicate(resume.id)}
-              onRename={(title) => handleRename(resume.id, title)}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_18rem]">
+        {/* Content */}
+        <section className="min-w-0">
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-48 rounded-xl" />
+              ))}
+            </div>
+          ) : !hasResumes ? (
+            <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-zinc-200 bg-white/70 py-16 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
+              <p className="text-zinc-500 dark:text-zinc-400">{t("dashboardNoResumes")}</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  className="button button--primary cursor-pointer gap-2"
+                  onClick={() => setCreateDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("dashboardCreateResume")}
+                </button>
+                <button
+                  type="button"
+                  className="button button--secondary cursor-pointer gap-2"
+                  onClick={() => setImportDialogOpen(true)}
+                >
+                  <Upload className="h-4 w-4" />
+                  {t("dashboardImportJson")}
+                </button>
+              </div>
+            </div>
+          ) : !hasResults ? (
+            <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-200 bg-white/70 py-16 dark:border-zinc-700 dark:bg-zinc-900/50">
+              <p className="text-zinc-500 dark:text-zinc-400">{t("dashboardNoSearchResults")}</p>
+            </div>
+          ) : viewMode === "grid" ? (
+            <ResumeGrid
+              resumes={filteredResumes}
+              onDelete={handleDelete}
+              onDuplicate={handleDuplicate}
+              onRename={handleRename}
             />
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="flex flex-col gap-2">
+              {filteredResumes.map((resume) => (
+                <ResumeListItem
+                  key={resume.id}
+                  resume={resume}
+                  onDelete={() => handleDelete(resume.id)}
+                  onDuplicate={() => handleDuplicate(resume.id)}
+                  onRename={(title) => handleRename(resume.id, title)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <aside className="space-y-3">
+          <div className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+              {t("dashboard.quickTools")}
+            </h2>
+            <div className="mt-3 space-y-1">
+              <button
+                type="button"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                onClick={() => setGenerateDialogOpen(true)}
+              >
+                <Sparkles className="h-4 w-4 text-zinc-500" />
+                {t("dashboardAiGenerate")}
+              </button>
+              <button
+                type="button"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                onClick={() => navigate({ to: "/interview" })}
+              >
+                <MessageSquareQuote className="h-4 w-4 text-zinc-500" />
+                {t("interview.dashboardCta")}
+              </button>
+              <button
+                type="button"
+                className="flex w-full cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-400 opacity-70 dark:text-zinc-500"
+                disabled
+                title={t("dashboardLinkedinPhotoComingSoon")}
+              >
+                <Camera className="h-4 w-4" />
+                {t("dashboardLinkedinPhoto")}
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+              {t("dashboard.workspaceStatus")}
+            </h2>
+            <dl className="mt-3 space-y-2">
+              <div className="flex items-center justify-between gap-3 rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-950/60">
+                <dt className="text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.totalResumes")}</dt>
+                <dd className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{resumes.length}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-950/60">
+                <dt className="text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.currentView")}</dt>
+                <dd className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  {viewMode === "grid" ? t("dashboardViewGrid") : t("dashboardViewList")}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </aside>
+      </div>
 
       {/* Create Resume Dialog */}
       <CreateResumeDialog

@@ -8,8 +8,10 @@ import {
   ChevronRight,
   Loader2,
   MessageSquareText,
+  RotateCcw,
   Sparkles,
   Target,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,9 +19,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  buildInterviewRestartDraft,
+  deleteInterviewSession,
   generateInterviewReport,
   getInterviewSession,
   listenToAiStreamEvents,
+  saveInterviewRestartDraft,
   startInterviewTurnStream,
   updateInterviewMessageMetadata,
 } from "../../lib/desktop-api";
@@ -75,6 +80,7 @@ export function InterviewRoom({
   const [isStreaming, setIsStreaming] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(!initialSession);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [autoStartedRoundId, setAutoStartedRoundId] = useState<string | null>(null);
 
   const refreshSession = useCallback(async () => {
@@ -291,10 +297,12 @@ export function InterviewRoom({
       return;
     }
 
-    const hasInterviewerMessage = currentRound.messages.some(
-      (message) => message.role === "interviewer",
+    const hasStartedTurn = currentRound.messages.some(
+      (message) =>
+        message.role === "interviewer"
+        || (message.role === "system" && message.metadata.turnKind === "start"),
     );
-    if (hasInterviewerMessage || autoStartedRoundId === currentRound.id) {
+    if (hasStartedTurn || autoStartedRoundId === currentRound.id) {
       return;
     }
 
@@ -336,6 +344,42 @@ export function InterviewRoom({
           ? caughtError.message
           : t("interview.room.markError"),
       );
+    }
+  };
+
+  const handleRestart = () => {
+    if (!session) {
+      return;
+    }
+
+    saveInterviewRestartDraft(buildInterviewRestartDraft(session));
+    void navigate({ to: "/interview/new" });
+  };
+
+  const handleDelete = async () => {
+    if (!session) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      t("interview.actions.deleteConfirm", { title: session.jobTitle }),
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await deleteInterviewSession(session.id);
+      void navigate({ to: "/interview" });
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : t("interview.actions.deleteError"),
+      );
+      setIsDeleting(false);
     }
   };
 
@@ -658,13 +702,33 @@ export function InterviewRoom({
               type="button"
               variant="outline"
               className="w-full justify-start rounded-2xl"
+              onClick={handleRestart}
+              disabled={isStreaming || isGeneratingReport || isDeleting}
+            >
+              <RotateCcw className="h-4 w-4" />
+              {t("interview.actions.restart")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-start rounded-2xl"
               onClick={() => void ensureReportAndNavigate()}
               disabled={
-                isGeneratingReport || isStreaming || session.status !== "completed"
+                isGeneratingReport || isStreaming || isDeleting || session.status !== "completed"
               }
             >
               <Sparkles className="h-4 w-4" />
               {t("interview.actions.generateReport")}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full justify-start rounded-2xl"
+              onClick={() => void handleDelete()}
+              disabled={isStreaming || isGeneratingReport || isDeleting}
+            >
+              <Trash2 className="h-4 w-4" />
+              {isDeleting ? t("interview.actions.deleting") : t("interview.actions.delete")}
             </Button>
           </CardContent>
         </Card>

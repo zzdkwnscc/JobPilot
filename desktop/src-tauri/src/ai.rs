@@ -413,26 +413,26 @@ pub fn start_interview_turn_stream(
     let locale = normalize_interview_locale(input.locale.as_deref());
 
     tauri::async_runtime::spawn(async move {
-        let run_result = if resolved.provider == "openai" {
-            run_interview_turn_stream(
-                &app_handle,
-                &workspace_root,
-                resolved.clone(),
-                request_id.clone(),
-                started_at_epoch_ms,
-                session_id,
-                input.round_id,
-                input.kind,
-                input.message,
-                input.metadata,
-                locale,
-            )
-            .await
-        } else {
-            Err(format!(
-                "provider '{}' is not wired for native interview streaming yet; MVP supports the OpenAI-compatible path first.",
-                resolved.provider
-            ))
+        let run_result = match resolved.provider.as_str() {
+            "openai" | "anthropic" => {
+                run_interview_turn_stream(
+                    &app_handle,
+                    &workspace_root,
+                    resolved.clone(),
+                    request_id.clone(),
+                    started_at_epoch_ms,
+                    session_id,
+                    input.round_id,
+                    input.kind,
+                    input.message,
+                    input.metadata,
+                    locale,
+                )
+                .await
+            }
+            unsupported => Err(format!(
+                "provider '{unsupported}' is not wired for native interview streaming yet."
+            )),
         };
 
         if let Err(error) = run_result {
@@ -580,17 +580,35 @@ async fn run_interview_turn_stream(
             round.id, round.status
         ));
     }
-
     let pending_message = build_interview_input_message(&kind, message, metadata, &locale)?;
-    storage::add_interview_message(
-        app,
-        storage::AddInterviewMessageInput {
-            round_id: round.id.clone(),
-            role: pending_message.0,
-            content: pending_message.1,
-            metadata: Some(pending_message.2),
-        },
-    )?;
+    let start_message_inserted = if matches!(kind, InterviewTurnKind::Start) {
+        storage::add_interview_start_message_once(
+            app,
+            storage::AddInterviewMessageInput {
+                round_id: round.id.clone(),
+                role: pending_message.0,
+                content: pending_message.1,
+                metadata: Some(pending_message.2),
+            },
+        )?
+        .is_some()
+    } else {
+        storage::add_interview_message(
+            app,
+            storage::AddInterviewMessageInput {
+                round_id: round.id.clone(),
+                role: pending_message.0,
+                content: pending_message.1,
+                metadata: Some(pending_message.2),
+            },
+        )?;
+        true
+    };
+
+    if !start_message_inserted {
+        emit_empty_stream_completion(app, &request_id, &config, started_at_epoch_ms)?;
+        return Ok(());
+    }
     storage::mark_interview_round_in_progress(app, &session.id, &round.id)?;
 
     let refreshed_session = storage::get_interview_session(app, &session_id)?
@@ -619,25 +637,54 @@ async fn run_interview_turn_stream(
     )?;
 
     let client = reqwest::Client::new();
-    let endpoint = format!("{}/chat/completions", config.base_url.trim_end_matches('/'));
     let mut accumulated_text = String::new();
     let mut accumulated_thinking = String::new();
     let mut chunk_index = 0u32;
-    let outcome = stream_openai_round(
-        app,
-        &client,
-        &endpoint,
-        &request_id,
-        &config,
-        started_at_epoch_ms,
-        &messages,
-        None,
-        &mut accumulated_text,
-        &mut accumulated_thinking,
-        &mut chunk_index,
-        false,
-    )
-    .await?;
+    let outcome = match config.provider.as_str() {
+        "openai" => {
+            let endpoint = format!("{}/chat/completions", config.base_url.trim_end_matches('/'));
+            stream_openai_round(
+                app,
+                &client,
+                &endpoint,
+                &request_id,
+                &config,
+                started_at_epoch_ms,
+                &messages,
+                None,
+                &mut accumulated_text,
+                &mut accumulated_thinking,
+                &mut chunk_index,
+                false,
+            )
+            .await?
+        }
+        "anthropic" => {
+            let endpoint = format!("{}/v1/messages", config.base_url.trim_end_matches('/'));
+            let (system_prompt, anthropic_messages) =
+                split_anthropic_system_prompt(&messages);
+            stream_anthropic_round(
+                app,
+                &client,
+                &endpoint,
+                &request_id,
+                &config,
+                started_at_epoch_ms,
+                &anthropic_messages,
+                system_prompt.as_deref(),
+                &mut accumulated_text,
+                &mut accumulated_thinking,
+                &mut chunk_index,
+                false,
+            )
+            .await?
+        }
+        unsupported => {
+            return Err(format!(
+                "provider '{unsupported}' is not wired for native interview streaming yet."
+            ));
+        }
+    };
 
     let raw_text = outcome.assistant_text.trim().to_string();
     let is_round_complete = raw_text.contains("[ROUND_COMPLETE]")
@@ -2427,6 +2474,55 @@ fn build_interview_messages(
     messages
 }
 
+fn split_anthropic_system_prompt(messages: &[Value]) -> (Option<String>, Vec<Value>) {
+    let mut system_parts = Vec::new();
+    let mut anthropic_messages = Vec::new();
+
+    for message in messages {
+        let role = message
+            .get("role")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default();
+        let content = message
+            .get("content")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .trim();
+        if content.is_empty() {
+            continue;
+        }
+
+        match role {
+            "system" => {
+                if system_parts.is_empty() {
+                    system_parts.push(content.to_string());
+                } else {
+                    anthropic_messages.push(json!({
+                        "role": "user",
+                        "content": content,
+                    }));
+                }
+            }
+            "assistant" => anthropic_messages.push(json!({
+                "role": "assistant",
+                "content": content,
+            })),
+            _ => anthropic_messages.push(json!({
+                "role": "user",
+                "content": content,
+            })),
+        }
+    }
+
+    let system_prompt = if system_parts.is_empty() {
+        None
+    } else {
+        Some(system_parts.join("\n\n"))
+    };
+
+    (system_prompt, anthropic_messages)
+}
+
 fn build_interview_system_prompt(
     interviewer_config: &Value,
     job_description: &str,
@@ -2777,6 +2873,50 @@ fn parse_json_value_from_text(content: &str) -> Result<Value, String> {
 fn emit_stream_event(app: &AppHandle, payload: DesktopAiStreamEvent) -> Result<(), String> {
     app.emit(AI_STREAM_EVENT_NAME, payload)
         .map_err(|error| format!("failed to emit AI stream event: {error}"))
+}
+
+fn emit_empty_stream_completion(
+    app: &AppHandle,
+    request_id: &str,
+    config: &ResolvedProviderConfig,
+    started_at_epoch_ms: u64,
+) -> Result<(), String> {
+    emit_stream_event(
+        app,
+        DesktopAiStreamEvent {
+            request_id: request_id.to_string(),
+            provider: config.provider.clone(),
+            model: config.model.clone(),
+            kind: DesktopAiStreamEventKind::Started,
+            started_at_epoch_ms,
+            emitted_at_epoch_ms: now_epoch_ms()?,
+            finished_at_epoch_ms: None,
+            chunk_index: Some(0),
+            delta_text: None,
+            accumulated_text: Some(String::new()),
+            accumulated_thinking: None,
+            error_message: None,
+            tool_call: None,
+        },
+    )?;
+    emit_stream_event(
+        app,
+        DesktopAiStreamEvent {
+            request_id: request_id.to_string(),
+            provider: config.provider.clone(),
+            model: config.model.clone(),
+            kind: DesktopAiStreamEventKind::Completed,
+            started_at_epoch_ms,
+            emitted_at_epoch_ms: now_epoch_ms()?,
+            finished_at_epoch_ms: Some(now_epoch_ms()?),
+            chunk_index: Some(0),
+            delta_text: None,
+            accumulated_text: Some(String::new()),
+            accumulated_thinking: Some(String::new()),
+            error_message: None,
+            tool_call: None,
+        },
+    )
 }
 
 fn emit_tool_call_event(

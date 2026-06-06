@@ -36,6 +36,7 @@ export interface InterviewMessageMetadata {
   marked?: boolean;
   hinted?: boolean;
   skipped?: boolean;
+  turnKind?: InterviewTurnKind;
 }
 
 export interface InterviewMessage {

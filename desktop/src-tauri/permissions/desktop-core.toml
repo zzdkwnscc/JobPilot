@@ -41,6 +41,7 @@ commands.allow = [
   "parse_pdf_resume",
   "list_interview_sessions",
   "get_interview_session",
+  "delete_interview_session",
   "create_interview_session",
   "update_interview_message_metadata",
   "get_interview_report",
