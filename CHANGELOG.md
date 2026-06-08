@@ -5,7 +5,7 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [1.3.1] - 2026-06-08
+## [1.4.0] - 2026-06-09
 
 ### 新增
 
@@ -13,6 +13,19 @@
   - 邮箱、手机号、姓名、公司名、学校名、私人链接等敏感信息替换为星号
   - 项目经历正文保留，便于他人评审简历内容质量
   - 公开代码仓库地址保留，支持 GitHub、Gitee、GitLab、Bitbucket 和 SourceForge 仓库链接
+- **Anthropic 工具调用支持** — AI 助手在 Anthropic 原生协议下支持真正的 `tool_use` / `tool_result` 调用链，简历编辑请求会把可用工具随请求发送给模型
+  - 支持解析 Anthropic 流式响应中的 `tool_use` 和 `input_json_delta`
+  - 后端执行工具后回传 `tool_result`，再继续生成最终回复
+  - 避免模型把 `<tool_call>` 等标签当作普通文本输出
+- **简历局部文本替换工具** — 新增 `replaceResumeText` 编辑工具，AI 助手可按条替换简历片段，而不是覆盖整份简历或整段模块
+  - 每条修改指定 `sectionId`、原文、替换文本和修改原因
+  - 后端只替换目标模块 JSON 内容中的第一处精确匹配文本，降低误改其它内容的风险
+  - 保留旧编辑执行逻辑兼容历史调用，但不再作为模型主要编辑工具暴露
+
+### 优化
+
+- **AI 建议逐条应用** — JD 匹配、语法检查和 AI 润色等专用入口改为生成可逐条应用的建议，用户可按建议卡片逐项确认修改
+- **AI 流式渲染稳定性** — 优化流式文本增量读取逻辑，减少中间输出阶段出现重复片段或临时占位内容的问题
 
 ## [1.3.0] - 2026-06-06
 
@@ -200,8 +213,8 @@
 - 中英双语 — 完整的国际化支持
 - 本地优先 — 数据存储在本地，隐私安全有保障
 
-[Unreleased]: https://github.com/jlifeng/JobPilot/compare/v1.3.1...HEAD
-[1.3.1]: https://github.com/jlifeng/JobPilot/compare/v1.3.0...v1.3.1
+[Unreleased]: https://github.com/jlifeng/JobPilot/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/jlifeng/JobPilot/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/jlifeng/JobPilot/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/jlifeng/JobPilot/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/jlifeng/JobPilot/compare/v1.1.9...v1.2.1

@@ -7,7 +7,7 @@
   [![Tauri](https://img.shields.io/badge/Tauri-2-24c8db)](https://tauri.app/)
   [![React](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)](https://www.typescriptlang.org/)
-  [![Platform](https://img.shields.io/badge/Platform-Windows-0078d4)](./desktop)
+  [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-0078d4)](./desktop)
   [![Linux.do](https://img.shields.io/badge/Linux.do-Community-blue)](https://linux.do/)
 
   [中文文档](./README_CN.md) | English
@@ -18,40 +18,26 @@
 
 ---
 
-JobPilot is a **local-first AI-powered desktop application** for job seekers, helping you create, optimize resumes, simulate interviews, and review performance. From resume writing to interview preparation, JobPilot covers the entire job hunting workflow. Simply download and start using—no server setup required.
+JobPilot is a **local-first AI job-search desktop app** focused on resume writing, AI-assisted review, JD matching, mock interviews, and private document management. It packages the job-search workflow into a native desktop workspace, so you can import, edit, export, sync, and iterate on your materials without running a server.
 
 ## ✨ Key Features
 
-<details>
-<summary><b>Core Features (from JadeAI)</b></summary>
+- **Native Desktop Workspace** — Built with Tauri 2, React, TypeScript, and Rust for a lightweight local app experience on Windows and macOS Apple Silicon.
+- **AI Resume Review & Editing** — Resume generation, rewriting, grammar checks, JD matching, and AI polishing with per-suggestion application for targeted edits.
+- **Anthropic Tool Use Support** — Native Anthropic `tool_use` / `tool_result` flow for resume editing, including precise `replaceResumeText` patches instead of whole-resume rewrites.
+- **Multi-Format Import** — Import resumes from JSON, Markdown, PDF, and images. Regular PDFs and scanned documents can be parsed with multimodal AI.
+- **Privacy-Aware Export** — Export to PDF, smart one-page PDF, HTML, plain text, Markdown, and JSON, with an optional masking switch for names, phone numbers, emails, companies, schools, and private links.
+- **Editor Experience** — Drag-and-drop sections, inline editing, auto-save, Markdown toolbar shortcuts, textarea lists for long content, and 50+ resume templates.
+- **Mock Interview & Review** — Create interview sessions from a JD and target role, simulate conversations, delete/restart interview records, and review reports.
+- **Encrypted WebDAV Sync** — Back up resumes, settings, and API keys to 123Cloud, Nutstore, Nextcloud, and other WebDAV services with one-click restore.
+- **Release & Update Flow** — In-app update checks, version synchronization, Windows/macOS packaging, and release notes generated from the changelog.
 
-- **Drag-and-Drop Resume Editor** — Inline editing, auto-save, module reordering
-- **50+ Resume Templates** — Classic, modern, minimal, ATS-friendly styles with theme customization
-- **AI Assistant** — Resume generation, content optimization, JD matching analysis, cover letter writing, translation & polishing
-- **Resume Parsing** — Extract resume content from PDF and images
-- **Multi-Format Export** — PDF, PNG, Word, and more
-- **Resume Sharing** — Generate shareable links for easy distribution
-- **LinkedIn Headshot** — AI-generated professional portrait photos
-- **Bilingual Support** — Full internationalization (English/Chinese)
-- **Local-First** — Data stored locally, privacy guaranteed
+## 🚀 Recent Highlights
 
-</details>
-
-<details open>
-<summary><b>JobPilot Exclusive Features</b></summary>
-
-- **Tauri Desktop App** — Built with Tauri 2 for a native, lightweight, and fast experience. Supports Mac (Apple Silicon)
-- **Multi-Format Import** — Import from JSON, Markdown, PDF, and images (PNG/JPG/WebP) with AI-powered smart parsing
-- **Enhanced PDF Import** — Supports both regular PDFs and scanned documents using multimodal AI models
-- **Markdown Editor** — New editor component with toolbar shortcuts (bold, italic, code, lists, links)
-- **Textarea List Component** — Multi-line text input for editing long-form content like experience descriptions
-- **In-App Updates** — Automatic update detection and installation
-- **Model List Refresh** — Manually refresh available AI models for quick selection
-- **Layout Optimization** — Continuous improvements to styling
-- **More Templates** — Regularly updated template library
-- **WebDAV Cloud Sync** — Encrypted backup to 123Cloud, Nutstore, Nextcloud, and other WebDAV servers with one-click restore
-
-</details>
+- **v1.4.0** — Export data masking, Anthropic resume editing tools, precise text replacement, and more stable AI streaming output.
+- **v1.3.0** — Redesigned workspace layout, improved editor preview/sidebar, interview deletion/restart, and Anthropic interview streaming.
+- **v1.2.2** — Encrypted WebDAV cloud sync with snapshot backup and restore.
+- **v1.1.x** — Desktop packaging, multi-format import, enhanced PDF parsing, app updates, template improvements, and macOS support.
 
 ## 📋 Changelog
 
@@ -61,7 +47,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
 
 Planned features for upcoming releases:
 
-- **LinkedIn Headshot** — AI-generated professional portrait photos
+- **Professional Headshot Optimization** — Lightweight LinkedIn/resume avatar cleanup, cropping, and background replacement
 - **Resume Version Management** — Compare and restore historical resume versions
 
 > 💡 **Contributions Welcome!** If you have feature suggestions or find bugs, please open an issue on [GitHub Issues](https://github.com/jlifeng/JobPilot/issues) or submit a Pull Request directly.
@@ -95,10 +81,8 @@ Planned features for upcoming releases:
 ## 📥 Installation
 
 1. Go to [GitHub Releases](https://github.com/jlifeng/JobPilot/releases) to download the latest version
-2. Download the Windows installer (`.exe` or `.msi`)
+2. Download the installer for your platform
 3. Double-click to install and launch the app
-
-> Currently supports Windows. macOS version is planned.
 
 ## 🔧 Build from Source
 
@@ -139,12 +123,14 @@ pnpm run build:tauri
 | Category | Technology |
 |----------|------------|
 | Framework | Next.js 16, React 19 |
-| Desktop App | Tauri 2 |
+| Desktop App | Tauri 2, Rust |
 | Language | TypeScript 5 |
 | Styling | Tailwind CSS 4 |
 | UI Components | shadcn/ui |
 | State Management | Zustand |
 | AI SDK | Vercel AI SDK |
+| Local Data | SQLite, OS Keyring |
+| Sync | WebDAV |
 
 ## 📄 License
 
@@ -152,8 +138,6 @@ This project is open-sourced under the [Apache License Version 2.0](LICENSE).
 
 ## 🙏 Acknowledgments
 
-This project is built upon the following open-source projects:
-- [JadeAI](https://github.com/LingyiChen-AI/JadeAI) — Thanks to the original author for the open-source contribution
-- [RoleRover](https://github.com/lingshichat/RoleRover) — Thanks to the original author for continuous maintenance
+JobPilot includes work derived from [JadeAI](https://github.com/LingyiChen-AI/JadeAI). Thanks to the original author and the open-source community.
 
 ---
