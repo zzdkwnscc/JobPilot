@@ -691,8 +691,13 @@ const legacyResources = {
       commonDuplicate: "复制",
       commonDelete: "删除",
       commonCancel: "取消",
+      commonReject: "拒绝",
+      commonApplied: "已应用",
+      commonRejected: "已拒绝",
       commonCreate: "创建",
       commonLoading: "加载中...",
+      aiPatchApplyAll: "全部应用",
+      aiPatchApplyFailed: "原文已变化，无法应用该建议。",
       // Editor
       editorUntitle: "未命名",
       editorUnknownSectionType: "未知区块类型",
@@ -741,6 +746,7 @@ const legacyResources = {
       jdAnalysisCurrent: "当前写法",
       jdAnalysisSuggested: "建议写法",
       jdAnalysisResumeSection: "整份简历",
+      jdAnalysisApplySuggestion: "应用建议",
       // Translate
       translateTitle: "翻译简历",
       translateDescription: "将简历翻译为其他语言。",
@@ -1044,8 +1050,13 @@ const legacyResources = {
       commonDuplicate: "Duplicate",
       commonDelete: "Delete",
       commonCancel: "Cancel",
+      commonReject: "Reject",
+      commonApplied: "Applied",
+      commonRejected: "Rejected",
       commonCreate: "Create",
       commonLoading: "Loading...",
+      aiPatchApplyAll: "Apply All",
+      aiPatchApplyFailed: "The original text changed, so this suggestion cannot be applied.",
       // Editor
       editorUntitle: "Untitled",
       editorUnknownSectionType: "Unknown section type",
@@ -1267,6 +1278,7 @@ const legacyResources = {
       jdAnalysisCurrent: "Current",
       jdAnalysisSuggested: "Suggested",
       jdAnalysisResumeSection: "Resume",
+      jdAnalysisApplySuggestion: "Apply Suggestion",
       // Translate
       translateTitle: "Translate Resume",
       translateDescription: "Translate your resume to another language.",

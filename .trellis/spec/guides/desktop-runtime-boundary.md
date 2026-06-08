@@ -405,18 +405,23 @@ Tool event payload:
   "errorMessage": null,
   "toolCall": {
     "toolCallId": "call_123",
-    "toolName": "updateSection",
+    "toolName": "replaceResumeText",
     "state": "output-available",
     "input": {
-      "sectionId": "summary-1",
-      "content": {
-        "text": "Led a 12-person team and shipped three releases."
-      }
+      "patches": [
+        {
+          "sectionId": "summary-1",
+          "originalText": "Led a team and shipped releases.",
+          "replacementText": "Led a 12-person team and shipped three releases.",
+          "reason": "Adds concrete scope and delivery impact."
+        }
+      ]
     },
     "output": {
       "success": true,
       "documentId": "resume-1",
-      "sectionId": "summary-1"
+      "appliedCount": 1,
+      "skippedCount": 0
     },
     "errorText": null
   }
@@ -430,10 +435,10 @@ Rules:
 3. `write_secret_value` must prefer the Windows OS keyring backend for new writes, update the manifest descriptor list, and only retain fallback storage when migration debt still exists; clearing or missing values must not silently claim success.
 4. `start_ai_prompt_stream` resolves provider config and secret from the desktop workspace contract, not from browser local storage or web request headers.
 5. Renderer must pass the current `documentId` plus a bounded `conversation` array when chat continuity or resume-edit tool execution depends on prior turns; desktop runtime must not infer either value from browser-only state.
-6. Resume-edit tool execution is part of the same `start_ai_prompt_stream` contract. When the model emits OpenAI-compatible tool calls, the runtime must execute supported tools (`updateSection`, `updateResumeMetadata`) against desktop storage and mirror the result back through `desktop://ai-stream` with `kind="tool"`.
+6. Resume-edit tool execution is part of the same `start_ai_prompt_stream` contract. When the model emits OpenAI-compatible `tool_calls` or Anthropic `tool_use` blocks, the runtime must execute supported tools (`replaceResumeText`, `updateResumeMetadata`) against desktop storage and mirror the result back through `desktop://ai-stream` with `kind="tool"`.
 7. Resume-edit tools are only valid when `documentId` is present. Missing `documentId` must fail explicitly instead of pretending the resume was updated.
 8. Renderer consumers must filter `desktop://ai-stream` events by `requestId`, merge `kind="delta"` into the transcript, and preserve `kind="tool"` as a visible tool execution trail instead of silently collapsing writes into plain assistant text.
-9. PR5 validates the OpenAI-compatible streaming path first. Unsupported providers must fail explicitly instead of pretending native parity.
+9. Resume content edits must use `replaceResumeText` exact-text patches instead of full section overwrite. The legacy `updateSection` executor may exist for compatibility, but it must not be the model-facing chat edit tool.
 10. Future providers extend by adding dispatcher branches behind the same command + event contract; the renderer event model must stay stable.
 
 ## AI Provider Discovery And Resume Import Settings Contract
@@ -815,7 +820,7 @@ Rules:
 5. `templates.tsx` must disable native export actions in browser fallback mode and surface saved, cancelled, and write-error outcomes explicitly instead of silently succeeding.
 6. `settings.tsx` must not present fallback vault/settings snapshots as proof of native desktop readiness.
 7. `settings.tsx` AI controls must disable native config writes and prompt streaming in browser fallback mode.
-8. `settings.tsx` must show whether the selected provider secret is configured and must state that PR5 validates the OpenAI-compatible streaming path first.
+8. `settings.tsx` must show whether the selected provider secret is configured and must keep native streaming limitations explicit for each provider.
 
 ## Validation And Error Matrix
 
@@ -856,7 +861,7 @@ Rules:
 - `build:desktop:release-updater-manifest` emits a GitHub Release-ready `latest.json` whose `version` matches the tagged desktop build and whose URL points at the signed release artifact.
 - `build:desktop:updater-feed` emits a signed local `latest.json`, and `dev:tauri:local-updater` lets settings perform a native updater check against the local smoke feed without mutating committed production config.
 - `settings.tsx` saves an OpenAI-compatible provider config + API key into the desktop workspace and streams an assistant response through `desktop://ai-stream`
-- Desktop AI chat keeps a bounded recent conversation history, shows tool execution blocks for resume writes, and reloads the affected desktop resume after successful `updateSection` / `updateResumeMetadata` events.
+- Desktop AI chat keeps a bounded recent conversation history, shows tool execution blocks for resume writes, and reloads the affected desktop resume after successful `replaceResumeText` / `updateResumeMetadata` events.
 - `settings-dialog.tsx` loads provider-specific models, lets the user choose a dedicated resume-import vision model from the same returned list, and reports AI / Exa connectivity with explicit latency and error text.
 - Resume import shows stage-by-stage progress, parses text PDFs on the standard text model, switches scanned PDFs or direct images onto the configured vision model, and accepts drag-and-drop file input on Windows.
 

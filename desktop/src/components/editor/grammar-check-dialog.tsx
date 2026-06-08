@@ -13,7 +13,7 @@ import {
 import { useResumeStore } from "../../stores/resume-store";
 import { useEditorStore } from "../../stores/editor-store";
 import { listenToAiStreamEvents, startAiPromptStream } from "../../lib/desktop-api";
-import { getDesktopAiRuntimeConfig } from "./ai-dialog-helpers";
+import { getDesktopAiRuntimeConfig, getNextStreamText } from "./ai-dialog-helpers";
 import type { DesktopAiStreamEvent } from "../../lib/desktop-api";
 
 interface GrammarCheckDialogProps {
@@ -32,6 +32,11 @@ interface GrammarIssue {
   suggestion: string;
 }
 
+interface TextPatchResult {
+  value: unknown;
+  replaced: boolean;
+}
+
 const JSON_START = "<<<GRAMMAR_JSON_START>>>";
 const JSON_END = "<<<GRAMMAR_JSON_END>>>";
 
@@ -39,25 +44,62 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function replaceTextDeep(value: unknown, original: string, suggestion: string): unknown {
+function replaceFirstTextDeep(
+  value: unknown,
+  original: string,
+  suggestion: string,
+): TextPatchResult {
   if (typeof value === "string") {
-    return value.includes(original) ? value.replaceAll(original, suggestion) : value;
+    const index = value.indexOf(original);
+
+    if (index === -1) {
+      return { value, replaced: false };
+    }
+
+    return {
+      value: `${value.slice(0, index)}${suggestion}${value.slice(
+        index + original.length,
+      )}`,
+      replaced: true,
+    };
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => replaceTextDeep(item, original, suggestion));
+    let replaced = false;
+
+    return {
+      value: value.map((item) => {
+        if (replaced) {
+          return item;
+        }
+
+        const result = replaceFirstTextDeep(item, original, suggestion);
+        replaced = result.replaced;
+        return result.value;
+      }),
+      replaced,
+    };
   }
 
   if (isRecord(value)) {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, nested]) => [
-        key,
-        replaceTextDeep(nested, original, suggestion),
-      ]),
-    );
+    let replaced = false;
+    const nextEntries = Object.entries(value).map(([key, nested]) => {
+      if (replaced) {
+        return [key, nested] as const;
+      }
+
+      const result = replaceFirstTextDeep(nested, original, suggestion);
+      replaced = result.replaced;
+      return [key, result.value] as const;
+    });
+
+    return {
+      value: Object.fromEntries(nextEntries),
+      replaced,
+    };
   }
 
-  return value;
+  return { value, replaced: false };
 }
 
 function parseIssues(text: string): GrammarIssue[] {
@@ -149,17 +191,31 @@ export function GrammarCheckDialog({
   const [rawAnalysis, setRawAnalysis] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [appliedIssues, setAppliedIssues] = useState<Set<number>>(new Set());
+  const [rejectedIssues, setRejectedIssues] = useState<Set<number>>(new Set());
+  const [failedIssues, setFailedIssues] = useState<Set<number>>(new Set());
   const requestIdRef = useRef<string | null>(null);
+  const rawAnalysisRef = useRef("");
 
   useEffect(() => {
-    if (!open) {
-      requestIdRef.current = null;
+    if (open) {
+      return;
+    }
+
+    requestIdRef.current = null;
+    rawAnalysisRef.current = "";
+    const resetTimer = setTimeout(() => {
       setState("idle");
       setIssues([]);
       setRawAnalysis("");
       setErrorMessage("");
       setAppliedIssues(new Set());
-    }
+      setRejectedIssues(new Set());
+      setFailedIssues(new Set());
+    }, 0);
+
+    return () => {
+      clearTimeout(resetTimer);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -171,13 +227,9 @@ export function GrammarCheckDialog({
           return;
         }
 
-        if (event.kind === "delta" && event.deltaText) {
-          setRawAnalysis((prev) => prev + event.deltaText);
-          return;
-        }
-
         if (event.kind === "completed") {
-          const finalText = event.accumulatedText ?? rawAnalysis;
+          const finalText = event.accumulatedText ?? rawAnalysisRef.current;
+          rawAnalysisRef.current = finalText;
           setRawAnalysis(finalText);
           setIssues(parseIssues(finalText));
           setState("completed");
@@ -188,6 +240,13 @@ export function GrammarCheckDialog({
           setState("error");
           setErrorMessage(event.errorMessage || t("aiErrorMessage"));
         }
+
+        const nextText = getNextStreamText(event, rawAnalysisRef.current);
+
+        if (nextText !== null) {
+          rawAnalysisRef.current = nextText;
+          setRawAnalysis(nextText);
+        }
       });
     };
 
@@ -196,7 +255,7 @@ export function GrammarCheckDialog({
     return () => {
       unlisten?.();
     };
-  }, [rawAnalysis, t]);
+  }, [t]);
 
   const scopedSections = useMemo(() => {
     if (checkScope === "current" && selectedSectionId) {
@@ -209,11 +268,14 @@ export function GrammarCheckDialog({
   const handleCheck = async () => {
     const requestId = `grammar-check-${resumeId}-${Date.now()}`;
     requestIdRef.current = requestId;
+    rawAnalysisRef.current = "";
     setState("checking");
     setIssues([]);
     setRawAnalysis("");
     setErrorMessage("");
     setAppliedIssues(new Set());
+    setRejectedIssues(new Set());
+    setFailedIssues(new Set());
 
     try {
       const aiConfig = await getDesktopAiRuntimeConfig();
@@ -268,24 +330,42 @@ ${JSON.stringify(
     const issue = issues[index];
     const targetSection = sections.find((section) => section.id === issue.sectionId);
     if (!targetSection) {
+      setFailedIssues((prev) => new Set(prev).add(index));
       return;
     }
 
-    const nextContent = replaceTextDeep(
+    const result = replaceFirstTextDeep(
       targetSection.content,
       issue.original,
       issue.suggestion,
     );
 
-    if (isRecord(nextContent)) {
-      updateSection(issue.sectionId, nextContent);
+    if (result.replaced && isRecord(result.value)) {
+      updateSection(issue.sectionId, result.value);
       setAppliedIssues((prev) => new Set(prev).add(index));
+      setFailedIssues((prev) => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+      return;
     }
+
+    setFailedIssues((prev) => new Set(prev).add(index));
+  };
+
+  const handleRejectIssue = (index: number) => {
+    setRejectedIssues((prev) => new Set(prev).add(index));
+    setFailedIssues((prev) => {
+      const next = new Set(prev);
+      next.delete(index);
+      return next;
+    });
   };
 
   const handleApplyAll = () => {
     issues.forEach((_, index) => {
-      if (!appliedIssues.has(index)) {
+      if (!appliedIssues.has(index) && !rejectedIssues.has(index)) {
         handleApplyIssue(index);
       }
     });
@@ -425,10 +505,13 @@ ${JSON.stringify(
                       variant="secondary"
                       size="sm"
                       onClick={handleApplyAll}
-                      disabled={issues.every((_, index) => appliedIssues.has(index))}
+                      disabled={issues.every(
+                        (_, index) =>
+                          appliedIssues.has(index) || rejectedIssues.has(index),
+                      )}
                     >
                       <Wand2 className="mr-2 h-4 w-4" />
-                      Fix All
+                      {t("aiPatchApplyAll")}
                     </Button>
                   </div>
 
@@ -439,6 +522,8 @@ ${JSON.stringify(
                         className={`rounded-lg border p-3 ${
                           appliedIssues.has(index)
                             ? "border-green-200 bg-green-50"
+                            : rejectedIssues.has(index)
+                              ? "border-zinc-200 bg-zinc-50 opacity-75"
                             : "border-zinc-200 bg-zinc-50"
                         }`}
                       >
@@ -471,17 +556,41 @@ ${JSON.stringify(
                                 </span>
                               </div>
                             </div>
+                            {failedIssues.has(index) ? (
+                              <div className="mt-2 rounded-md bg-red-50 px-2 py-1 text-xs text-red-600">
+                                {t("aiPatchApplyFailed")}
+                              </div>
+                            ) : null}
                           </div>
 
-                          {!appliedIssues.has(index) ? (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleApplyIssue(index)}
-                            >
-                              {t("grammarCheckApply")}
-                            </Button>
-                          ) : null}
+                          <div className="flex shrink-0 flex-col gap-2">
+                            {appliedIssues.has(index) ? (
+                              <span className="rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                                {t("commonApplied")}
+                              </span>
+                            ) : rejectedIssues.has(index) ? (
+                              <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-600">
+                                {t("commonRejected")}
+                              </span>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleApplyIssue(index)}
+                                >
+                                  {t("grammarCheckApply")}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRejectIssue(index)}
+                                >
+                                  {t("commonReject")}
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
