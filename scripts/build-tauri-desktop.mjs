@@ -87,7 +87,10 @@ const configuredKeyPath = firstDefined(
   defaultKeyPath,
 );
 const shouldLoadKeyFromFile = !env.TAURI_SIGNING_PRIVATE_KEY;
-const tauriBuildArgs = process.argv.slice(2);
+const rawTauriBuildArgs = process.argv.slice(2);
+const tauriBuildArgs = rawTauriBuildArgs[0] === "--"
+  ? rawTauriBuildArgs.slice(1)
+  : rawTauriBuildArgs;
 
 if (!existsSync(configuredKeyPath) && shouldLoadKeyFromFile) {
   console.error(
