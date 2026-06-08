@@ -123,6 +123,108 @@ Reference: `desktop/src/routes/root.tsx` — the `AppUpdateBadge`, `LanguagePick
 
 ---
 
+## AI Stream Rendering
+
+Desktop AI surfaces consume Tauri stream events from `listenToAiStreamEvents()`.
+Each `DesktopAiStreamEvent` can include both:
+
+- `deltaText`: the text chunk for the current event
+- `accumulatedText`: the full assistant text accumulated by the backend so far
+
+### Convention: Prefer Backend Accumulated Text
+
+When rendering live AI output, always derive the next visible text with
+`getNextStreamText()` from `desktop/src/components/editor/ai-dialog-helpers.ts`.
+It prefers `event.accumulatedText` and falls back to appending `event.deltaText`
+only when accumulated text is unavailable.
+
+```tsx
+const streamTextRef = useRef("");
+
+unlisten = await listenToAiStreamEvents((event) => {
+  if (event.requestId !== requestIdRef.current) {
+    return;
+  }
+
+  if (event.kind === "completed") {
+    const finalText = event.accumulatedText ?? streamTextRef.current;
+    streamTextRef.current = finalText;
+    setStreamText(finalText);
+    return;
+  }
+
+  const nextText = getNextStreamText(event, streamTextRef.current);
+
+  if (nextText !== null) {
+    streamTextRef.current = nextText;
+    setStreamText(nextText);
+  }
+});
+```
+
+**Why**: provider adapters may emit `deltaText` and `accumulatedText` together.
+Appending blindly in component state can make the in-progress UI repeat content
+or expose a huge raw stream, while the final rendered result still looks correct
+because completion uses `accumulatedText`.
+
+### Wrong vs Correct
+
+Wrong:
+
+```tsx
+if (event.kind === "delta" && event.deltaText) {
+  setStreamText((previous) => previous + event.deltaText);
+}
+```
+
+Correct:
+
+```tsx
+const nextText = getNextStreamText(event, streamTextRef.current);
+
+if (nextText !== null) {
+  streamTextRef.current = nextText;
+  setStreamText(nextText);
+}
+```
+
+### Common Mistake: Re-registering Stream Listeners
+
+Do not include live stream text state in the listener effect dependency array.
+Use a ref for the mutable current text instead. Re-registering the listener on
+every token can create unstable streaming behavior and makes event ordering
+harder to reason about.
+
+Wrong:
+
+```tsx
+useEffect(() => {
+  // registers listenToAiStreamEvents(...)
+}, [streamText, t]);
+```
+
+Correct:
+
+```tsx
+const streamTextRef = useRef("");
+
+useEffect(() => {
+  // registers listenToAiStreamEvents(...)
+}, [t]);
+```
+
+### Verification
+
+When changing an AI stream consumer, verify:
+
+- in-progress rendering does not repeat earlier chunks
+- completion still uses the final accumulated text
+- structured payload markers are stripped or hidden from intermediate display
+- `pnpm exec eslint <changed files>` passes
+- `pnpm build:desktop-shell` passes
+
+---
+
 ## Common Mistakes
 
 1. **Calling `invoke()` directly** — Always use `desktop-api.ts` wrappers. They provide typed interfaces and handle the `isTauri()` check.
@@ -134,3 +236,5 @@ Reference: `desktop/src/routes/root.tsx` — the `AppUpdateBadge`, `LanguagePick
 4. **Using `next/link` or `next/navigation`** — Desktop uses `@tanstack/react-router` (`Link`, `useNavigate`, `useRouterState`).
 
 5. **Missing dark mode variants** — Always include `dark:` variants for color-related Tailwind classes.
+
+6. **Appending AI stream chunks blindly** — Use `getNextStreamText()` and a ref-backed current text value. Do not append `deltaText` directly in state when `accumulatedText` may also be present.

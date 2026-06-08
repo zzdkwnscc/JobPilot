@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { parseReasoningContent } from "../../lib/ai/reasoning-parser";
+import { getNextStreamText } from "../editor/ai-dialog-helpers";
 import { MarkdownWithCopy } from "./markdown-with-copy";
 import { Button } from "@/components/ui/button";
 import {
@@ -302,7 +303,7 @@ function buildResumeEditSystemPrompt(
     "When the user asks to update, rewrite, optimize, add, or directly modify the resume, you MUST use the available resume-editing tools instead of outputting raw resume JSON.",
     "Never dump the full resume JSON unless the user explicitly asks for raw JSON.",
     "For section edits, use the exact sectionId values provided below.",
-    "When calling updateSection, send the FULL updated content object for that section and preserve untouched fields plus existing item IDs.",
+    "When calling replaceResumeText, send patches with exact originalText values copied verbatim from the resume context and replacementText values. Do not send full section JSON.",
     "After a resume-edit tool succeeds, briefly confirm what changed.",
     "Available resume sections:",
     sectionList,
@@ -551,12 +552,6 @@ export function AIChatContent({
           return;
         }
 
-        if (event.kind === "delta" && event.deltaText) {
-          streamingTextRef.current += event.deltaText;
-          setStreamingText(streamingTextRef.current);
-          return;
-        }
-
         if (event.kind === "delta_thinking" && event.deltaText) {
           streamingThinkingTextRef.current += event.deltaText;
           setStreamingThinkingText(streamingThinkingTextRef.current);
@@ -577,6 +572,7 @@ export function AIChatContent({
             (toolCall) =>
               toolCall.state === "output-available" &&
               (toolCall.toolName === "updateSection" ||
+                toolCall.toolName === "replaceResumeText" ||
                 toolCall.toolName === "updateResumeMetadata"),
           );
           if (sessionId) {
@@ -641,6 +637,14 @@ export function AIChatContent({
           streamingThinkingTextRef.current = "";
           setErrorMessage(friendly);
           requestIdRef.current = null;
+          return;
+        }
+
+        const nextText = getNextStreamText(event, streamingTextRef.current);
+
+        if (nextText !== null) {
+          streamingTextRef.current = nextText;
+          setStreamingText(nextText);
         }
       });
     };

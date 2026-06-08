@@ -11,10 +11,12 @@ import {
   ShieldCheck,
   AlertTriangle,
   Lightbulb,
+  Wand2,
+  XCircle,
 } from "lucide-react";
 import { useResumeStore } from "../../stores/resume-store";
 import { listenToAiStreamEvents, startAiPromptStream } from "../../lib/desktop-api";
-import { getDesktopAiRuntimeConfig } from "./ai-dialog-helpers";
+import { getDesktopAiRuntimeConfig, getNextStreamText } from "./ai-dialog-helpers";
 import type { DesktopAiStreamEvent } from "../../lib/desktop-api";
 
 interface JdAnalysisDialogProps {
@@ -27,6 +29,7 @@ type AnalysisState = "idle" | "analyzing" | "completed" | "error";
 type AnalysisOutputLanguage = "en" | "zh-Hans";
 
 interface JdSuggestion {
+  sectionId?: string;
   section: string;
   current: string;
   suggested: string;
@@ -39,6 +42,11 @@ interface JdAnalysisResult {
   keywordMatches: string[];
   missingKeywords: string[];
   suggestions: JdSuggestion[];
+}
+
+interface TextPatchResult {
+  value: unknown;
+  replaced: boolean;
 }
 
 const JSON_START = "<<<JD_ANALYSIS_JSON_START>>>";
@@ -62,6 +70,64 @@ function clampScore(value: unknown): number {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function replaceFirstTextDeep(
+  value: unknown,
+  original: string,
+  suggestion: string,
+): TextPatchResult {
+  if (typeof value === "string") {
+    const index = value.indexOf(original);
+
+    if (index === -1) {
+      return { value, replaced: false };
+    }
+
+    return {
+      value: `${value.slice(0, index)}${suggestion}${value.slice(
+        index + original.length,
+      )}`,
+      replaced: true,
+    };
+  }
+
+  if (Array.isArray(value)) {
+    let replaced = false;
+
+    return {
+      value: value.map((item) => {
+        if (replaced) {
+          return item;
+        }
+
+        const result = replaceFirstTextDeep(item, original, suggestion);
+        replaced = result.replaced;
+        return result.value;
+      }),
+      replaced,
+    };
+  }
+
+  if (isRecord(value)) {
+    let replaced = false;
+    const nextEntries = Object.entries(value).map(([key, nested]) => {
+      if (replaced) {
+        return [key, nested] as const;
+      }
+
+      const result = replaceFirstTextDeep(nested, original, suggestion);
+      replaced = result.replaced;
+      return [key, result.value] as const;
+    });
+
+    return {
+      value: Object.fromEntries(nextEntries),
+      replaced,
+    };
+  }
+
+  return { value, replaced: false };
 }
 
 function toStringArray(value: unknown): string[] {
@@ -146,6 +212,7 @@ The JSON shape must be:
   "missingKeywords": string[],
   "suggestions": [
     {
+      "sectionId": string,
       "section": string,
       "current": string,
       "suggested": string
@@ -156,6 +223,7 @@ The JSON shape must be:
 Requirements:
 - scores are 0-100 integers
 - suggestions should be specific and actionable
+- suggestions[].sectionId must match one of the provided section ids when the suggestion targets a specific section
 - only include suggestions when you have a clear before/after recommendation
 - when filling suggestions[].section, prefer the exact section title from the provided resume data
 
@@ -194,7 +262,13 @@ function parseStructuredResult(text: string): JdAnalysisResult | null {
               return null;
             }
 
+            const sectionId =
+              typeof item.sectionId === "string"
+                ? item.sectionId.trim()
+                : "";
+
             return {
+              ...(sectionId ? { sectionId } : {}),
               section:
                 typeof item.section === "string" ? item.section.trim() : "",
               current:
@@ -262,7 +336,7 @@ export function JdAnalysisDialog({
   resumeId,
 }: JdAnalysisDialogProps) {
   const { t, i18n } = useTranslation();
-  const { currentResume, sections } = useResumeStore();
+  const { currentResume, sections, updateSection } = useResumeStore();
 
   const [jdText, setJdText] = useState("");
   const [state, setState] = useState<AnalysisState>("idle");
@@ -270,17 +344,39 @@ export function JdAnalysisDialog({
   const [structuredResult, setStructuredResult] =
     useState<JdAnalysisResult | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [appliedSuggestions, setAppliedSuggestions] = useState<Set<number>>(
+    new Set(),
+  );
+  const [rejectedSuggestions, setRejectedSuggestions] = useState<Set<number>>(
+    new Set(),
+  );
+  const [failedSuggestions, setFailedSuggestions] = useState<Set<number>>(
+    new Set(),
+  );
   const requestIdRef = useRef<string | null>(null);
+  const streamTextRef = useRef("");
 
   useEffect(() => {
-    if (!open) {
-      requestIdRef.current = null;
+    if (open) {
+      return;
+    }
+
+    requestIdRef.current = null;
+    streamTextRef.current = "";
+    const resetTimer = setTimeout(() => {
       setJdText("");
       setStreamText("");
       setStructuredResult(null);
       setState("idle");
       setErrorMessage("");
-    }
+      setAppliedSuggestions(new Set());
+      setRejectedSuggestions(new Set());
+      setFailedSuggestions(new Set());
+    }, 0);
+
+    return () => {
+      clearTimeout(resetTimer);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -292,13 +388,9 @@ export function JdAnalysisDialog({
           return;
         }
 
-        if (event.kind === "delta" && event.deltaText) {
-          setStreamText((prev) => prev + event.deltaText);
-          return;
-        }
-
         if (event.kind === "completed") {
-          const finalText = event.accumulatedText ?? streamText;
+          const finalText = event.accumulatedText ?? streamTextRef.current;
+          streamTextRef.current = finalText;
           setStreamText(finalText);
           setStructuredResult(parseStructuredResult(finalText));
           setState("completed");
@@ -309,6 +401,13 @@ export function JdAnalysisDialog({
           setState("error");
           setErrorMessage(event.errorMessage || t("aiErrorMessage"));
         }
+
+        const nextText = getNextStreamText(event, streamTextRef.current);
+
+        if (nextText !== null) {
+          streamTextRef.current = nextText;
+          setStreamText(nextText);
+        }
       });
     };
 
@@ -317,7 +416,7 @@ export function JdAnalysisDialog({
     return () => {
       unlisten?.();
     };
-  }, [streamText, t]);
+  }, [t]);
 
   const handleAnalyze = async () => {
     if (!jdText.trim()) {
@@ -326,10 +425,14 @@ export function JdAnalysisDialog({
 
     const requestId = `jd-analysis-${resumeId}-${Date.now()}`;
     requestIdRef.current = requestId;
+    streamTextRef.current = "";
     setState("analyzing");
     setStreamText("");
     setStructuredResult(null);
     setErrorMessage("");
+    setAppliedSuggestions(new Set());
+    setRejectedSuggestions(new Set());
+    setFailedSuggestions(new Set());
 
     try {
       const resumeContext = {
@@ -409,6 +512,86 @@ export function JdAnalysisDialog({
     }
 
     return suggestionSectionLabels.get(normalized) ?? sectionName;
+  };
+
+  const resolveSuggestionTargetSection = (suggestion: JdSuggestion) => {
+    if (suggestion.sectionId) {
+      const section = sections.find((item) => item.id === suggestion.sectionId);
+
+      if (section) {
+        return section;
+      }
+    }
+
+    const normalized = normalizeSectionKey(suggestion.section);
+    const matchedBySectionName = sections.find((section) =>
+      [
+        section.id,
+        section.title,
+        section.type,
+        section.type.replaceAll("_", " "),
+        section.type.replaceAll("_", "-"),
+      ].some((alias) => normalizeSectionKey(alias) === normalized),
+    );
+
+    if (matchedBySectionName) {
+      return matchedBySectionName;
+    }
+
+    return sections.find((section) =>
+      JSON.stringify(section.content).includes(suggestion.current),
+    );
+  };
+
+  const handleApplySuggestion = (index: number) => {
+    const suggestion = structuredResult?.suggestions[index];
+
+    if (!suggestion) {
+      return;
+    }
+
+    const targetSection = resolveSuggestionTargetSection(suggestion);
+
+    if (!targetSection) {
+      setFailedSuggestions((prev) => new Set(prev).add(index));
+      return;
+    }
+
+    const result = replaceFirstTextDeep(
+      targetSection.content,
+      suggestion.current,
+      suggestion.suggested,
+    );
+
+    if (result.replaced && isRecord(result.value)) {
+      updateSection(targetSection.id, result.value);
+      setAppliedSuggestions((prev) => new Set(prev).add(index));
+      setFailedSuggestions((prev) => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+      return;
+    }
+
+    setFailedSuggestions((prev) => new Set(prev).add(index));
+  };
+
+  const handleRejectSuggestion = (index: number) => {
+    setRejectedSuggestions((prev) => new Set(prev).add(index));
+    setFailedSuggestions((prev) => {
+      const next = new Set(prev);
+      next.delete(index);
+      return next;
+    });
+  };
+
+  const handleApplyAllSuggestions = () => {
+    structuredResult?.suggestions.forEach((_, index) => {
+      if (!appliedSuggestions.has(index) && !rejectedSuggestions.has(index)) {
+        handleApplySuggestion(index);
+      }
+    });
   };
 
   if (!open) {
@@ -540,18 +723,50 @@ export function JdAnalysisDialog({
 
                   {structuredResult.suggestions.length > 0 ? (
                     <section className="space-y-3">
-                      <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-800">
-                        <Lightbulb className="h-4 w-4 text-yellow-500" />
-                        {t("jdAnalysisSuggestions")}
-                      </h3>
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-800">
+                          <Lightbulb className="h-4 w-4 text-yellow-500" />
+                          {t("jdAnalysisSuggestions")}
+                        </h3>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleApplyAllSuggestions}
+                          disabled={structuredResult.suggestions.every(
+                            (_, index) =>
+                              appliedSuggestions.has(index) ||
+                              rejectedSuggestions.has(index),
+                          )}
+                        >
+                          <Wand2 className="mr-2 h-4 w-4" />
+                          {t("aiPatchApplyAll")}
+                        </Button>
+                      </div>
                       <div className="space-y-2">
                         {structuredResult.suggestions.map((suggestion, index) => (
                           <div
                             key={`${suggestion.section}-${index}`}
-                            className="rounded-lg border border-zinc-200 bg-white p-3"
+                            className={`rounded-lg border p-3 ${
+                              appliedSuggestions.has(index)
+                                ? "border-green-200 bg-green-50"
+                                : rejectedSuggestions.has(index)
+                                  ? "border-zinc-200 bg-zinc-50 opacity-75"
+                                  : "border-zinc-200 bg-white"
+                            }`}
                           >
-                            <div className="mb-2 inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-                              {getSuggestionSectionLabel(suggestion.section)}
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                              <div className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                                {getSuggestionSectionLabel(suggestion.section)}
+                              </div>
+                              {appliedSuggestions.has(index) ? (
+                                <span className="rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                                  {t("commonApplied")}
+                                </span>
+                              ) : rejectedSuggestions.has(index) ? (
+                                <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-600">
+                                  {t("commonRejected")}
+                                </span>
+                              ) : null}
                             </div>
                             <div className="space-y-2 text-sm">
                               <div>
@@ -571,6 +786,32 @@ export function JdAnalysisDialog({
                                 </div>
                               </div>
                             </div>
+                            {failedSuggestions.has(index) ? (
+                              <div className="mt-3 rounded-md bg-red-50 px-2 py-1 text-xs text-red-600">
+                                {t("aiPatchApplyFailed")}
+                              </div>
+                            ) : null}
+                            {!appliedSuggestions.has(index) &&
+                            !rejectedSuggestions.has(index) ? (
+                              <div className="mt-3 flex justify-end gap-2">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleApplySuggestion(index)}
+                                >
+                                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                                  {t("jdAnalysisApplySuggestion")}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRejectSuggestion(index)}
+                                >
+                                  <XCircle className="mr-2 h-4 w-4" />
+                                  {t("commonReject")}
+                                </Button>
+                              </div>
+                            ) : null}
                           </div>
                         ))}
                       </div>

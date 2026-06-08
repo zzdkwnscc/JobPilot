@@ -187,6 +187,21 @@ struct UpdateSectionToolInput {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct ReplaceResumeTextToolInput {
+    patches: Vec<ResumeTextReplacementInput>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ResumeTextReplacementInput {
+    section_id: String,
+    original_text: String,
+    replacement_text: String,
+    reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct UpdateResumeMetadataToolInput {
     title: Option<String>,
     template: Option<String>,
@@ -485,7 +500,9 @@ pub async fn generate_interview_report(
         })
     });
     if !transcript_exists {
-        return Err("cannot generate an interview report before the session has transcript content".into());
+        return Err(
+            "cannot generate an interview report before the session has transcript content".into(),
+        );
     }
 
     let resolved = resolve_provider_config_from_parts(
@@ -512,10 +529,7 @@ pub async fn generate_interview_report(
             .await?
         }
         "anthropic" => {
-            let endpoint = format!(
-                "{}/v1/messages",
-                resolved.base_url.trim_end_matches('/')
-            );
+            let endpoint = format!("{}/v1/messages", resolved.base_url.trim_end_matches('/'));
             request_anthropic_json_completion(
                 &client,
                 &endpoint,
@@ -613,9 +627,15 @@ async fn run_interview_turn_stream(
 
     let refreshed_session = storage::get_interview_session(app, &session_id)?
         .ok_or_else(|| format!("interview session not found after turn setup: {session_id}"))?;
-    let refreshed_round = resolve_interview_round_for_turn(&refreshed_session, Some(round.id.as_str()))?;
+    let refreshed_round =
+        resolve_interview_round_for_turn(&refreshed_session, Some(round.id.as_str()))?;
     let resume_context = build_resume_context(app, refreshed_session.resume_id.as_deref())?;
-    let messages = build_interview_messages(&refreshed_session, &refreshed_round, resume_context, &locale);
+    let messages = build_interview_messages(
+        &refreshed_session,
+        &refreshed_round,
+        resume_context,
+        &locale,
+    );
 
     emit_stream_event(
         app,
@@ -661,8 +681,7 @@ async fn run_interview_turn_stream(
         }
         "anthropic" => {
             let endpoint = format!("{}/v1/messages", config.base_url.trim_end_matches('/'));
-            let (system_prompt, anthropic_messages) =
-                split_anthropic_system_prompt(&messages);
+            let (system_prompt, anthropic_messages) = split_anthropic_system_prompt(&messages);
             stream_anthropic_round(
                 app,
                 &client,
@@ -672,6 +691,7 @@ async fn run_interview_turn_stream(
                 started_at_epoch_ms,
                 &anthropic_messages,
                 system_prompt.as_deref(),
+                None,
                 &mut accumulated_text,
                 &mut accumulated_thinking,
                 &mut chunk_index,
@@ -687,8 +707,8 @@ async fn run_interview_turn_stream(
     };
 
     let raw_text = outcome.assistant_text.trim().to_string();
-    let is_round_complete = raw_text.contains("[ROUND_COMPLETE]")
-        || matches!(kind, InterviewTurnKind::EndRound);
+    let is_round_complete =
+        raw_text.contains("[ROUND_COMPLETE]") || matches!(kind, InterviewTurnKind::EndRound);
     let cleaned_text = sanitize_interview_response(&raw_text);
     let persisted_text = if cleaned_text.is_empty() {
         raw_text.clone()
@@ -1066,6 +1086,14 @@ async fn stream_openai_round(
 
     if let Some(tools) = tools {
         payload["tools"] = tools.clone();
+        if should_force_resume_text_tool(messages) {
+            payload["tool_choice"] = json!({
+                "type": "function",
+                "function": {
+                    "name": "replaceResumeText"
+                }
+            });
+        }
     }
 
     if thinking_enabled {
@@ -1179,7 +1207,7 @@ async fn run_anthropic_stream(
     request_id: &str,
     prompt: &str,
     system_prompt: Option<&str>,
-    _document_id: Option<&str>,
+    document_id: Option<&str>,
     conversation: &[DesktopAiConversationMessage],
     images: &[String],
     config: &ResolvedProviderConfig,
@@ -1206,10 +1234,8 @@ async fn run_anthropic_stream(
     )?;
 
     let client = reqwest::Client::new();
-    let endpoint = format!(
-        "{}/v1/messages",
-        config.base_url.trim_end_matches('/')
-    );
+    let endpoint = format!("{}/v1/messages", config.base_url.trim_end_matches('/'));
+    let tools = build_anthropic_resume_tools(document_id);
     let mut messages = Vec::new();
     for msg in conversation {
         let content = msg.content.trim();
@@ -1276,28 +1302,120 @@ async fn run_anthropic_stream(
     let mut accumulated_text = String::new();
     let mut accumulated_thinking = String::new();
     let mut chunk_index = 0u32;
+    let mut tool_rounds = 0usize;
 
-    let round_outcome = stream_anthropic_round(
-        app,
-        &client,
-        &endpoint,
-        request_id,
-        config,
-        started_at_epoch_ms,
-        &messages,
-        system_prompt,
-        &mut accumulated_text,
-        &mut accumulated_thinking,
-        &mut chunk_index,
-        thinking_enabled,
-    )
-    .await?;
+    loop {
+        let round_outcome = stream_anthropic_round(
+            app,
+            &client,
+            &endpoint,
+            request_id,
+            config,
+            started_at_epoch_ms,
+            &messages,
+            system_prompt,
+            tools.as_ref(),
+            &mut accumulated_text,
+            &mut accumulated_thinking,
+            &mut chunk_index,
+            thinking_enabled,
+        )
+        .await?;
 
-    if !round_outcome.tool_calls.is_empty() {
-        eprintln!(
-            "Anthropic path received tool calls but tool execution is not yet supported; ignoring {} tool call(s)",
-            round_outcome.tool_calls.len()
-        );
+        if round_outcome.tool_calls.is_empty() {
+            break;
+        }
+
+        tool_rounds += 1;
+        if tool_rounds > MAX_TOOL_ROUNDS {
+            return Err(format!(
+                "resume tool execution exceeded the desktop safety limit of {MAX_TOOL_ROUNDS} rounds"
+            ));
+        }
+
+        let assistant_content = build_anthropic_assistant_tool_message_content(&round_outcome);
+        messages.push(json!({
+            "role": "assistant",
+            "content": assistant_content,
+        }));
+
+        let Some(active_document_id) = document_id else {
+            return Err("resume-editing tools require a documentId in the desktop runtime".into());
+        };
+
+        let mut tool_results = Vec::new();
+        for tool_call in round_outcome.tool_calls {
+            emit_tool_call_event(
+                app,
+                request_id,
+                config,
+                started_at_epoch_ms,
+                DesktopAiToolCallPayload {
+                    tool_call_id: tool_call.id.clone(),
+                    tool_name: tool_call.name.clone(),
+                    state: DesktopAiToolCallState::InputStreaming,
+                    input: Some(tool_call.arguments.clone()),
+                    output: None,
+                    error_text: None,
+                },
+            );
+
+            match execute_resume_tool(app, active_document_id, &tool_call) {
+                Ok(result) => {
+                    emit_tool_call_event(
+                        app,
+                        request_id,
+                        config,
+                        started_at_epoch_ms,
+                        DesktopAiToolCallPayload {
+                            tool_call_id: tool_call.id.clone(),
+                            tool_name: tool_call.name.clone(),
+                            state: DesktopAiToolCallState::OutputAvailable,
+                            input: Some(tool_call.arguments.clone()),
+                            output: Some(result.clone()),
+                            error_text: None,
+                        },
+                    );
+
+                    tool_results.push(json!({
+                        "type": "tool_result",
+                        "tool_use_id": tool_call.id,
+                        "content": result.to_string(),
+                    }));
+                }
+                Err(error) => {
+                    emit_tool_call_event(
+                        app,
+                        request_id,
+                        config,
+                        started_at_epoch_ms,
+                        DesktopAiToolCallPayload {
+                            tool_call_id: tool_call.id.clone(),
+                            tool_name: tool_call.name.clone(),
+                            state: DesktopAiToolCallState::OutputError,
+                            input: Some(tool_call.arguments.clone()),
+                            output: None,
+                            error_text: Some(error.clone()),
+                        },
+                    );
+
+                    tool_results.push(json!({
+                        "type": "tool_result",
+                        "tool_use_id": tool_call.id,
+                        "is_error": true,
+                        "content": json!({
+                            "success": false,
+                            "error": error,
+                        }).to_string(),
+                    }));
+                }
+            }
+        }
+
+        messages.push(json!({
+            "role": "user",
+            "content": tool_results,
+        }));
     }
 
     emit_stream_event(
@@ -1331,6 +1449,7 @@ async fn stream_anthropic_round(
     started_at_epoch_ms: u64,
     messages: &[serde_json::Value],
     system_prompt: Option<&str>,
+    tools: Option<&serde_json::Value>,
     accumulated_text: &mut String,
     accumulated_thinking: &mut String,
     chunk_index: &mut u32,
@@ -1347,7 +1466,17 @@ async fn stream_anthropic_round(
         payload["system"] = json!(system);
     }
 
-    if thinking_enabled {
+    if let Some(tools) = tools {
+        payload["tools"] = tools.clone();
+        if should_force_resume_text_tool(messages) {
+            payload["tool_choice"] = json!({
+                "type": "tool",
+                "name": "replaceResumeText"
+            });
+        }
+    }
+
+    if thinking_enabled && !should_force_resume_text_tool(messages) {
         payload["thinking"] = json!({
             "type": "enabled",
             "budget_tokens": 10000,
@@ -1382,8 +1511,7 @@ async fn stream_anthropic_round(
         let chunk =
             chunk_result.map_err(|error| format!("failed to read stream chunk: {error}"))?;
         for event_payload in event_buffer.push(chunk.as_ref()) {
-            let Some((event_type, data_payload)) =
-                extract_anthropic_sse_event(&event_payload)
+            let Some((event_type, data_payload)) = extract_anthropic_sse_event(&event_payload)
             else {
                 continue;
             };
@@ -1445,7 +1573,7 @@ async fn stream_anthropic_round(
             if event_type == "message_stop" {
                 return Ok(OpenAiRoundOutcome {
                     assistant_text: round_text,
-                    tool_calls: vec![],
+                    tool_calls: anthropic_state.finalize_tool_calls()?,
                 });
             }
         }
@@ -1453,8 +1581,93 @@ async fn stream_anthropic_round(
 
     Ok(OpenAiRoundOutcome {
         assistant_text: round_text,
-        tool_calls: vec![],
+        tool_calls: anthropic_state.finalize_tool_calls()?,
     })
+}
+
+fn build_anthropic_assistant_tool_message_content(
+    round_outcome: &OpenAiRoundOutcome,
+) -> serde_json::Value {
+    let mut content = Vec::new();
+
+    let assistant_text = round_outcome.assistant_text.trim();
+    if !assistant_text.is_empty() {
+        content.push(json!({
+            "type": "text",
+            "text": assistant_text,
+        }));
+    }
+
+    content.extend(round_outcome.tool_calls.iter().map(|tool_call| {
+        json!({
+            "type": "tool_use",
+            "id": tool_call.id.clone(),
+            "name": tool_call.name.clone(),
+            "input": tool_call.arguments.clone(),
+        })
+    }));
+
+    json!(content)
+}
+
+fn should_force_resume_text_tool(messages: &[serde_json::Value]) -> bool {
+    if messages.iter().any(|message| {
+        message.get("role").and_then(|value| value.as_str()) == Some("tool")
+            || message_contains_anthropic_tool_result(message)
+    }) {
+        return false;
+    }
+
+    let Some(user_text) = messages
+        .iter()
+        .rev()
+        .find(|message| message.get("role").and_then(|value| value.as_str()) == Some("user"))
+        .and_then(|message| message.get("content"))
+        .map(extract_message_text)
+    else {
+        return false;
+    };
+
+    let intent_text = user_text
+        .split("\n\nResume context:")
+        .next()
+        .unwrap_or(&user_text)
+        .to_lowercase();
+
+    [
+        "润色", "优化", "改写", "重写", "修改", "调整", "完善", "提升", "增强", "精简", "扩写",
+        "应用", "polish", "rewrite", "optimize", "improve", "modify", "revise", "refine",
+        "enhance", "shorten", "expand", "apply",
+    ]
+    .iter()
+    .any(|keyword| intent_text.contains(keyword))
+}
+
+fn message_contains_anthropic_tool_result(message: &serde_json::Value) -> bool {
+    message
+        .get("content")
+        .and_then(|content| content.as_array())
+        .is_some_and(|items| {
+            items.iter().any(|item| {
+                item.get("type").and_then(|value| value.as_str()) == Some("tool_result")
+            })
+        })
+}
+
+fn extract_message_text(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::String(text) => text.clone(),
+        serde_json::Value::Array(parts) => parts
+            .iter()
+            .filter_map(|part| {
+                part.get("text")
+                    .and_then(|text| text.as_str())
+                    .or_else(|| part.get("content").and_then(|content| content.as_str()))
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
+        _ => String::new(),
+    }
 }
 
 fn build_resume_tools(document_id: Option<&str>) -> Option<serde_json::Value> {
@@ -1467,25 +1680,40 @@ fn build_resume_tools(document_id: Option<&str>) -> Option<serde_json::Value> {
         {
             "type": "function",
             "function": {
-                "name": "updateSection",
-                "description": "Update one existing resume section. Use the exact sectionId from the resume context. Always send the full updated content object for that section and preserve untouched fields and existing item IDs.",
+                "name": "replaceResumeText",
+                "description": "Replace exact text inside existing resume sections without overwriting the whole section. Use this for resume rewrite, polish, optimization, or direct content edits. Each patch replaces the first exact originalText occurrence found in the target section content.",
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "sectionId": {
-                            "type": "string",
-                            "description": "The exact sectionId to update."
-                        },
-                        "title": {
-                            "type": "string",
-                            "description": "Optional new section title."
-                        },
-                        "content": {
-                            "type": "object",
-                            "description": "The full updated section content object."
+                        "patches": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "sectionId": {
+                                        "type": "string",
+                                        "description": "The exact sectionId from the resume context."
+                                    },
+                                    "originalText": {
+                                        "type": "string",
+                                        "description": "The exact original text to replace. It must exist verbatim in the target section content."
+                                    },
+                                    "replacementText": {
+                                        "type": "string",
+                                        "description": "The replacement text."
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "description": "Optional short explanation for the edit."
+                                    }
+                                },
+                                "required": ["sectionId", "originalText", "replacementText"],
+                                "additionalProperties": false
+                            },
+                            "minItems": 1
                         }
                     },
-                    "required": ["sectionId", "content"],
+                    "required": ["patches"],
                     "additionalProperties": false
                 }
             }
@@ -1506,6 +1734,69 @@ fn build_resume_tools(document_id: Option<&str>) -> Option<serde_json::Value> {
                     },
                     "additionalProperties": false
                 }
+            }
+        }
+    ]))
+}
+
+fn build_anthropic_resume_tools(document_id: Option<&str>) -> Option<serde_json::Value> {
+    let document_id = document_id?.trim();
+    if document_id.is_empty() {
+        return None;
+    }
+
+    Some(json!([
+        {
+            "name": "replaceResumeText",
+            "description": "Replace exact text inside existing resume sections without overwriting the whole section. Use this for resume rewrite, polish, optimization, or direct content edits. Each patch replaces the first exact originalText occurrence found in the target section content.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "patches": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "sectionId": {
+                                    "type": "string",
+                                    "description": "The exact sectionId from the resume context."
+                                },
+                                "originalText": {
+                                    "type": "string",
+                                    "description": "The exact original text to replace. It must exist verbatim in the target section content."
+                                },
+                                "replacementText": {
+                                    "type": "string",
+                                    "description": "The replacement text."
+                                },
+                                "reason": {
+                                    "type": "string",
+                                    "description": "Optional short explanation for the edit."
+                                }
+                            },
+                            "required": ["sectionId", "originalText", "replacementText"],
+                            "additionalProperties": false
+                        },
+                        "minItems": 1
+                    }
+                },
+                "required": ["patches"],
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": "updateResumeMetadata",
+            "description": "Update top-level resume metadata such as title, language, template, target job title, or target company.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "title": { "type": "string" },
+                    "template": { "type": "string" },
+                    "language": { "type": "string" },
+                    "targetJobTitle": { "type": "string" },
+                    "targetCompany": { "type": "string" }
+                },
+                "additionalProperties": false
             }
         }
     ]))
@@ -1588,8 +1879,9 @@ fn finalize_tool_calls(
             let arguments = if tool_call.arguments.trim().is_empty() {
                 json!({})
             } else {
-                serde_json::from_str::<serde_json::Value>(&tool_call.arguments)
-                    .map_err(|error| format!("failed to parse tool arguments for {name}: {error}"))?
+                serde_json::from_str::<serde_json::Value>(&tool_call.arguments).map_err(
+                    |error| format!("failed to parse tool arguments for {name}: {error}"),
+                )?
             };
 
             Ok(CompletedToolCall {
@@ -1607,6 +1899,12 @@ fn execute_resume_tool(
     tool_call: &CompletedToolCall,
 ) -> Result<serde_json::Value, String> {
     match tool_call.name.as_str() {
+        "replaceResumeText" => {
+            let input: ReplaceResumeTextToolInput =
+                serde_json::from_value(tool_call.arguments.clone())
+                    .map_err(|error| format!("invalid arguments for replaceResumeText: {error}"))?;
+            execute_replace_resume_text_tool(app, document_id, input)
+        }
         "updateSection" => {
             let input: UpdateSectionToolInput = serde_json::from_value(tool_call.arguments.clone())
                 .map_err(|error| format!("invalid arguments for updateSection: {error}"))?;
@@ -1620,6 +1918,94 @@ fn execute_resume_tool(
             execute_update_resume_metadata_tool(app, document_id, input)
         }
         other => Err(format!("unsupported desktop resume tool: {other}")),
+    }
+}
+
+fn execute_replace_resume_text_tool(
+    app: &AppHandle,
+    document_id: &str,
+    input: ReplaceResumeTextToolInput,
+) -> Result<serde_json::Value, String> {
+    if input.patches.is_empty() {
+        return Err("replaceResumeText requires at least one patch".into());
+    }
+
+    let document = storage::get_document(app, document_id)?
+        .ok_or_else(|| format!("document not found for text replacement: {document_id}"))?;
+    let mut save_input = to_save_document_input(&document);
+    let mut applied = Vec::new();
+    let mut skipped_count = 0usize;
+
+    for patch in input.patches {
+        let section_id = patch.section_id.trim();
+        let original_text = patch.original_text.trim();
+        let replacement_text = patch.replacement_text.as_str();
+
+        if section_id.is_empty() || original_text.is_empty() || replacement_text.trim().is_empty() {
+            skipped_count += 1;
+            continue;
+        }
+
+        let Some(target_section) = save_input
+            .sections
+            .iter_mut()
+            .find(|section| section.id == section_id)
+        else {
+            skipped_count += 1;
+            continue;
+        };
+
+        if replace_first_text_in_json(&mut target_section.content, original_text, replacement_text)
+        {
+            target_section.updated_at_epoch_ms = None;
+            applied.push(json!({
+                "sectionId": target_section.id,
+                "sectionType": target_section.section_type,
+                "title": target_section.title,
+                "originalText": original_text,
+                "replacementText": replacement_text,
+                "reason": patch.reason,
+            }));
+        } else {
+            skipped_count += 1;
+        }
+    }
+
+    if applied.is_empty() {
+        return Err("replaceResumeText did not find any originalText to replace".into());
+    }
+
+    let updated = storage::save_document(app, save_input)?;
+
+    Ok(json!({
+        "success": true,
+        "documentId": updated.id,
+        "appliedCount": applied.len(),
+        "skippedCount": skipped_count,
+        "patches": applied,
+    }))
+}
+
+fn replace_first_text_in_json(
+    value: &mut serde_json::Value,
+    original_text: &str,
+    replacement_text: &str,
+) -> bool {
+    match value {
+        serde_json::Value::String(content) => {
+            let Some(index) = content.find(original_text) else {
+                return false;
+            };
+            content.replace_range(index..index + original_text.len(), replacement_text);
+            true
+        }
+        serde_json::Value::Array(items) => items
+            .iter_mut()
+            .any(|item| replace_first_text_in_json(item, original_text, replacement_text)),
+        serde_json::Value::Object(record) => record
+            .values_mut()
+            .any(|nested| replace_first_text_in_json(nested, original_text, replacement_text)),
+        _ => false,
     }
 }
 
@@ -1984,7 +2370,7 @@ fn extract_url_candidate(text: &str) -> String {
     let mut end = 0usize;
 
     for (index, character) in text.char_indices() {
-      if index > 0 && is_url_terminator(character) {
+        if index > 0 && is_url_terminator(character) {
             break;
         }
         end = index + character.len_utf8();
@@ -2028,7 +2414,11 @@ fn is_url_terminator(character: char) -> bool {
                 | '》'
                 | '、'
         )
-        || (!character.is_ascii() && !matches!(character, '%' | '#' | '&' | '=' | '-' | '_' | '/' | ':' | '.' | '?' | '~' | '+'))
+        || (!character.is_ascii()
+            && !matches!(
+                character,
+                '%' | '#' | '&' | '=' | '-' | '_' | '/' | ':' | '.' | '?' | '~' | '+'
+            ))
 }
 
 fn trim_url_token(token: &str) -> String {
@@ -2037,8 +2427,27 @@ fn trim_url_token(token: &str) -> String {
         .trim_matches(|character: char| {
             matches!(
                 character,
-                '"' | '\'' | ',' | '.' | ';' | ':' | '!' | '?' | ')' | ']' | '}' | '>' | '，'
-                    | '。' | '；' | '：' | '！' | '？' | '）' | '】' | '》' | '、'
+                '"' | '\''
+                    | ','
+                    | '.'
+                    | ';'
+                    | ':'
+                    | '!'
+                    | '?'
+                    | ')'
+                    | ']'
+                    | '}'
+                    | '>'
+                    | '，'
+                    | '。'
+                    | '；'
+                    | '：'
+                    | '！'
+                    | '？'
+                    | '）'
+                    | '】'
+                    | '》'
+                    | '、'
             )
         })
         .to_string()
@@ -2337,7 +2746,10 @@ fn resolve_interview_round_for_turn(
     session: &storage::InterviewSessionDetail,
     requested_round_id: Option<&str>,
 ) -> Result<storage::InterviewRoundDetail, String> {
-    if let Some(round_id) = requested_round_id.map(str::trim).filter(|value| !value.is_empty()) {
+    if let Some(round_id) = requested_round_id
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
         return session
             .rounds
             .iter()
@@ -2388,8 +2800,12 @@ fn build_interview_input_message(
             }
             Ok(("candidate".into(), content, merged_metadata))
         }
-        InterviewTurnKind::Hint => Ok(("system".into(), build_hint_prompt(locale), merged_metadata)),
-        InterviewTurnKind::Skip => Ok(("system".into(), build_skip_prompt(locale), merged_metadata)),
+        InterviewTurnKind::Hint => {
+            Ok(("system".into(), build_hint_prompt(locale), merged_metadata))
+        }
+        InterviewTurnKind::Skip => {
+            Ok(("system".into(), build_skip_prompt(locale), merged_metadata))
+        }
         InterviewTurnKind::EndRound => Ok((
             "system".into(),
             build_end_round_prompt(locale),
@@ -2534,7 +2950,11 @@ fn build_interview_system_prompt(
     let interviewer_title = interviewer_config
         .get("title")
         .and_then(|value| value.as_str())
-        .unwrap_or(if locale == "zh" { "面试官" } else { "Interviewer" });
+        .unwrap_or(if locale == "zh" {
+            "面试官"
+        } else {
+            "Interviewer"
+        });
     let bio = interviewer_config
         .get("bio")
         .and_then(|value| value.as_str())
@@ -2834,7 +3254,10 @@ async fn request_anthropic_json_completion(
     let text = body
         .get("content")
         .and_then(|c| c.as_array())
-        .and_then(|arr| arr.iter().find(|block| block.get("type").and_then(|t| t.as_str()) == Some("text")))
+        .and_then(|arr| {
+            arr.iter()
+                .find(|block| block.get("type").and_then(|t| t.as_str()) == Some("text"))
+        })
         .and_then(|block| block.get("text"))
         .and_then(|t| t.as_str())
         .ok_or_else(|| "Anthropic response missing text content".to_string())?;
@@ -3011,15 +3434,51 @@ fn extract_anthropic_sse_event(event_payload: &str) -> Option<(String, String)> 
 }
 
 #[derive(Debug, Clone)]
-enum AnthropicBlockType {
-    Thinking,
-    Text,
-    ToolUse,
+enum AnthropicContentBlock {
+    Thinking(String),
+    Text(String),
+    ToolUse {
+        id: String,
+        name: String,
+        input_json: String,
+    },
 }
 
 #[derive(Debug, Clone, Default)]
 struct AnthropicStreamingState {
-    blocks: BTreeMap<usize, (AnthropicBlockType, String)>,
+    blocks: BTreeMap<usize, AnthropicContentBlock>,
+}
+
+impl AnthropicStreamingState {
+    fn finalize_tool_calls(&self) -> Result<Vec<CompletedToolCall>, String> {
+        self.blocks
+            .values()
+            .filter_map(|block| {
+                let AnthropicContentBlock::ToolUse {
+                    id,
+                    name,
+                    input_json,
+                } = block
+                else {
+                    return None;
+                };
+
+                let arguments = if input_json.trim().is_empty() {
+                    Ok(json!({}))
+                } else {
+                    serde_json::from_str::<serde_json::Value>(input_json).map_err(|error| {
+                        format!("failed to parse Anthropic tool input for {name}: {error}")
+                    })
+                };
+
+                Some(arguments.map(|arguments| CompletedToolCall {
+                    id: id.clone(),
+                    name: name.clone(),
+                    arguments,
+                }))
+            })
+            .collect()
+    }
 }
 
 /// Returns (delta_text, delta_thinking)
@@ -3039,12 +3498,36 @@ fn handle_anthropic_sse_event(
                 .and_then(|b| b.get("type"))
                 .and_then(|t| t.as_str())
                 .unwrap_or("text");
-            let bt = match block_type {
-                "thinking" => AnthropicBlockType::Thinking,
-                "tool_use" => AnthropicBlockType::ToolUse,
-                _ => AnthropicBlockType::Text,
+            let block = match block_type {
+                "thinking" => AnthropicContentBlock::Thinking(String::new()),
+                "tool_use" => {
+                    let content_block = value.get("content_block");
+                    let id = content_block
+                        .and_then(|block| block.get("id"))
+                        .and_then(|tool_id| tool_id.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let name = content_block
+                        .and_then(|block| block.get("name"))
+                        .and_then(|tool_name| tool_name.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let input_json = content_block
+                        .and_then(|block| block.get("input"))
+                        .filter(|input| !input.is_null())
+                        .map(|input| input.to_string())
+                        .filter(|input| input != "{}")
+                        .unwrap_or_default();
+
+                    AnthropicContentBlock::ToolUse {
+                        id,
+                        name,
+                        input_json,
+                    }
+                }
+                _ => AnthropicContentBlock::Text(String::new()),
             };
-            state.blocks.insert(index, (bt, String::new()));
+            state.blocks.insert(index, block);
             Ok((None, None))
         }
         "content_block_delta" => {
@@ -3061,7 +3544,9 @@ fn handle_anthropic_sse_event(
                         .and_then(|d| d.get("thinking"))
                         .and_then(|t| t.as_str())
                         .unwrap_or("");
-                    if let Some((_, ref mut acc)) = state.blocks.get_mut(&index) {
+                    if let Some(AnthropicContentBlock::Thinking(ref mut acc)) =
+                        state.blocks.get_mut(&index)
+                    {
                         acc.push_str(thinking);
                     }
                     Ok((None, Some(thinking.to_string())))
@@ -3071,10 +3556,25 @@ fn handle_anthropic_sse_event(
                         .and_then(|d| d.get("text"))
                         .and_then(|t| t.as_str())
                         .unwrap_or("");
-                    if let Some((_, ref mut acc)) = state.blocks.get_mut(&index) {
+                    if let Some(AnthropicContentBlock::Text(ref mut acc)) =
+                        state.blocks.get_mut(&index)
+                    {
                         acc.push_str(text);
                     }
                     Ok((Some(text.to_string()), None))
+                }
+                "input_json_delta" => {
+                    let partial_json = delta
+                        .and_then(|d| d.get("partial_json"))
+                        .and_then(|partial| partial.as_str())
+                        .unwrap_or("");
+                    if let Some(AnthropicContentBlock::ToolUse {
+                        ref mut input_json, ..
+                    }) = state.blocks.get_mut(&index)
+                    {
+                        input_json.push_str(partial_json);
+                    }
+                    Ok((None, None))
                 }
                 _ => Ok((None, None)),
             }
@@ -3313,11 +3813,7 @@ async fn fetch_gemini_models(
     base_url: &str,
     api_key: &str,
 ) -> Result<Vec<String>, String> {
-    let endpoint = format!(
-        "{}/models?key={}",
-        base_url.trim_end_matches('/'),
-        api_key
-    );
+    let endpoint = format!("{}/models?key={}", base_url.trim_end_matches('/'), api_key);
     let response = client
         .get(&endpoint)
         .send()
@@ -3392,9 +3888,7 @@ pub async fn test_ai_connectivity(
         return Ok(ConnectivityTestResult {
             success: false,
             latency_ms: 0,
-            error_message: Some(format!(
-                "No API key configured for provider '{provider}'."
-            )),
+            error_message: Some(format!("No API key configured for provider '{provider}'.")),
         });
     }
 
@@ -3405,15 +3899,9 @@ pub async fn test_ai_connectivity(
     let start = Instant::now();
 
     let result = match provider.as_str() {
-        "anthropic" => {
-            test_anthropic_connectivity(&client, &base_url, &api_key, &model).await
-        }
-        "gemini" => {
-            test_gemini_connectivity(&client, &base_url, &api_key, &model).await
-        }
-        _ => {
-            test_openai_connectivity(&client, &base_url, &api_key, &model).await
-        }
+        "anthropic" => test_anthropic_connectivity(&client, &base_url, &api_key, &model).await,
+        "gemini" => test_gemini_connectivity(&client, &base_url, &api_key, &model).await,
+        _ => test_openai_connectivity(&client, &base_url, &api_key, &model).await,
     };
 
     let latency_ms = start.elapsed().as_millis() as u64;
@@ -3655,7 +4143,10 @@ pub async fn parse_markdown_resume(
     let language = locale.clone();
 
     let client = reqwest::Client::new();
-    let endpoint = format!("{}/chat/completions", resolved.base_url.trim_end_matches('/'));
+    let endpoint = format!(
+        "{}/chat/completions",
+        resolved.base_url.trim_end_matches('/')
+    );
 
     let messages = vec![
         json!({
@@ -3685,7 +4176,10 @@ pub async fn parse_markdown_resume(
 
     if !response.status().is_success() {
         let status = response.status();
-        let body = response.text().await.unwrap_or_else(|_| "failed to read error body".into());
+        let body = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "failed to read error body".into());
         return Err(format!("AI returned {status}: {body}"));
     }
 
@@ -3768,13 +4262,15 @@ pub async fn parse_pdf_resume(
         return Err(format!("PDF file not found: {}", input.file_path));
     }
 
-    let pdf_bytes = std::fs::read(pdf_path)
-        .map_err(|e| format!("Failed to read PDF file: {e}"))?;
+    let pdf_bytes = std::fs::read(pdf_path).map_err(|e| format!("Failed to read PDF file: {e}"))?;
 
     let pdf_text = extract_text_from_pdf(&pdf_bytes)?;
 
     if pdf_text.trim().len() < 50 {
-        return Err("PDF contains too little text to be a valid resume. It may be a scanned document.".into());
+        return Err(
+            "PDF contains too little text to be a valid resume. It may be a scanned document."
+                .into(),
+        );
     }
 
     // Reuse the Markdown parser with the extracted text
@@ -3806,7 +4302,12 @@ fn map_parsed_to_sections(parsed: &Value, locale: &str) -> Vec<ParsedResumeSecti
     if let Some(personal_info) = parsed.get("personalInfo") {
         sections.push(ParsedResumeSection {
             section_type: "personalInfo".to_string(),
-            title: if is_zh { "个人信息" } else { "Personal Info" }.to_string(),
+            title: if is_zh {
+                "个人信息"
+            } else {
+                "Personal Info"
+            }
+            .to_string(),
             content: personal_info.clone(),
         });
     }
@@ -3827,7 +4328,12 @@ fn map_parsed_to_sections(parsed: &Value, locale: &str) -> Vec<ParsedResumeSecti
         if !work.is_empty() {
             sections.push(ParsedResumeSection {
                 section_type: "workExperience".to_string(),
-                title: if is_zh { "工作经历" } else { "Work Experience" }.to_string(),
+                title: if is_zh {
+                    "工作经历"
+                } else {
+                    "Work Experience"
+                }
+                .to_string(),
                 content: json!({ "items": work }),
             });
         }
@@ -3871,7 +4377,12 @@ fn map_parsed_to_sections(parsed: &Value, locale: &str) -> Vec<ParsedResumeSecti
         if !certs.is_empty() {
             sections.push(ParsedResumeSection {
                 section_type: "certifications".to_string(),
-                title: if is_zh { "资格证书" } else { "Certifications" }.to_string(),
+                title: if is_zh {
+                    "资格证书"
+                } else {
+                    "Certifications"
+                }
+                .to_string(),
                 content: json!({ "items": certs }),
             });
         }
@@ -3895,13 +4406,13 @@ fn map_parsed_to_sections(parsed: &Value, locale: &str) -> Vec<ParsedResumeSecti
 mod tests {
     use super::{
         extract_openai_delta_text, extract_openai_tool_call_deltas, extract_sse_data_payload,
-        extract_url_candidate, extract_urls, finalize_tool_calls, merge_tool_call_delta,
-        push_conversation_messages, should_search_web, trim_url_token,
-        DesktopAiConversationMessage, DesktopAiConversationRole, StreamingToolCall,
-        SseEventBuffer,
+        extract_url_candidate, extract_urls, finalize_tool_calls, handle_anthropic_sse_event,
+        merge_tool_call_delta, push_conversation_messages, replace_first_text_in_json,
+        should_search_web, trim_url_token, AnthropicStreamingState, DesktopAiConversationMessage,
+        DesktopAiConversationRole, SseEventBuffer, StreamingToolCall,
     };
-    use std::collections::BTreeMap;
     use serde_json::json;
+    use std::collections::BTreeMap;
 
     #[test]
     fn sse_buffer_handles_split_boundaries() {
@@ -4070,6 +4581,78 @@ mod tests {
             json!({
                 "sectionId": "sec_1",
                 "content": { "text": "updated" },
+            })
+        );
+    }
+
+    #[test]
+    fn replaces_first_matching_text_in_nested_json() {
+        let mut content = json!({
+            "items": [
+                {
+                    "description": "old text",
+                    "highlights": ["old text", "keep"]
+                }
+            ]
+        });
+
+        assert!(replace_first_text_in_json(
+            &mut content,
+            "old text",
+            "new text"
+        ));
+        assert_eq!(
+            content,
+            json!({
+                "items": [
+                    {
+                        "description": "new text",
+                        "highlights": ["old text", "keep"]
+                    }
+                ]
+            })
+        );
+    }
+
+    #[test]
+    fn collects_anthropic_tool_use_from_stream_events() {
+        let mut state = AnthropicStreamingState::default();
+
+        handle_anthropic_sse_event(
+            "content_block_start",
+            r#"{"index":1,"content_block":{"type":"tool_use","id":"toolu_1","name":"replaceResumeText","input":{}}}"#,
+            &mut state,
+        )
+        .expect("tool block should start");
+        handle_anthropic_sse_event(
+            "content_block_delta",
+            r#"{"index":1,"delta":{"type":"input_json_delta","partial_json":"{\"patches\":[{\"sectionId\":\"summary-1\","}}"#,
+            &mut state,
+        )
+        .expect("first input chunk should parse");
+        handle_anthropic_sse_event(
+            "content_block_delta",
+            r#"{"index":1,"delta":{"type":"input_json_delta","partial_json":"\"originalText\":\"old\",\"replacementText\":\"new\"}]}"}}"#,
+            &mut state,
+        )
+        .expect("second input chunk should parse");
+
+        let tool_calls = state
+            .finalize_tool_calls()
+            .expect("tool call input should parse");
+        assert_eq!(tool_calls.len(), 1);
+        assert_eq!(tool_calls[0].id, "toolu_1");
+        assert_eq!(tool_calls[0].name, "replaceResumeText");
+        assert_eq!(
+            tool_calls[0].arguments,
+            json!({
+                "patches": [
+                    {
+                        "sectionId": "summary-1",
+                        "originalText": "old",
+                        "replacementText": "new",
+                    }
+                ]
             })
         );
     }

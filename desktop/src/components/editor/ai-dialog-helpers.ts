@@ -35,6 +35,21 @@ export interface RunPromptStreamOptions {
   onEvent?: (event: DesktopAiStreamEvent) => void;
 }
 
+export function getNextStreamText(
+  event: DesktopAiStreamEvent,
+  currentText: string,
+): string | null {
+  if (typeof event.accumulatedText === "string") {
+    return event.accumulatedText;
+  }
+
+  if (event.kind === "delta" && event.deltaText) {
+    return `${currentText}${event.deltaText}`;
+  }
+
+  return null;
+}
+
 export function generateRequestId(prefix: string): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -103,10 +118,10 @@ export async function runPromptStream(
             return;
           }
 
-          if (typeof event.accumulatedText === "string") {
-            accumulatedText = event.accumulatedText;
-          } else if (event.kind === "delta" && event.deltaText) {
-            accumulatedText += event.deltaText;
+          const nextText = getNextStreamText(event, accumulatedText);
+
+          if (nextText !== null) {
+            accumulatedText = nextText;
           }
 
           options.onEvent?.(event);
