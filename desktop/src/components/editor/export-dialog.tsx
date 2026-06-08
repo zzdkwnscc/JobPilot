@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertCircle,
@@ -10,10 +10,12 @@ import {
   Globe,
   Info,
   Loader2,
+  ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   generateHtml,
   generateMarkdown,
@@ -25,7 +27,11 @@ import {
   writeExportFile,
   writePdfExport,
 } from "../../lib/desktop-api";
-import { prepareDesktopPdfHtml, toSharedResume } from "../../lib/resume-export";
+import {
+  anonymizeResumeForExport,
+  prepareDesktopPdfHtml,
+  toSharedResume,
+} from "../../lib/resume-export";
 
 interface ExportDialogProps {
   open: boolean;
@@ -180,15 +186,20 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
   const [state, setState] = useState<ExportState>("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const [savedPath, setSavedPath] = useState("");
+  const [anonymizeSensitiveData, setAnonymizeSensitiveData] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      setSelectedFormat("pdf");
-      setState("idle");
-      setStatusMessage("");
-      setSavedPath("");
-    }
-  }, [open]);
+  const resetDialogState = useCallback(() => {
+    setSelectedFormat("pdf");
+    setState("idle");
+    setStatusMessage("");
+    setSavedPath("");
+    setAnonymizeSensitiveData(false);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    resetDialogState();
+    onClose();
+  }, [onClose, resetDialogState]);
 
   const selectedOption = useMemo(
     () =>
@@ -247,8 +258,15 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
         },
         sections,
       );
+      const exportResume = anonymizeSensitiveData
+        ? anonymizeResumeForExport(resume)
+        : resume;
 
-      const fileBase = `${sanitizeFileName(currentResume.title || "resume")}-${formatTimestamp(
+      const fileBase = `${sanitizeFileName(
+        anonymizeSensitiveData
+          ? translateExport("anonymizedFileName", "anonymous-resume")
+          : currentResume.title || "resume",
+      )}-${formatTimestamp(
         new Date(),
       )}`;
 
@@ -283,7 +301,7 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
           ? await writePdfExport({
               outputPath: resolvedOutputPath,
               html: prepareDesktopPdfHtml(
-                await generateHtml(resume, true),
+                await generateHtml(exportResume, true),
                 { fitOnePage: selectedFormat === "pdf-one-page" },
               ),
             })
@@ -292,12 +310,12 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
               expectedExtension: selectedOption.extension,
               bytes:
                 selectedFormat === "html"
-                  ? encodeText(await generateHtml(resume))
+                  ? encodeText(await generateHtml(exportResume))
                   : selectedFormat === "markdown"
-                    ? encodeText(generateMarkdown(resume))
+                    ? encodeText(generateMarkdown(exportResume))
                   : selectedFormat === "json"
-                    ? encodeText(JSON.stringify(resume, null, 2))
-                    : encodeText(generatePlainText(resume)),
+                    ? encodeText(JSON.stringify(exportResume, null, 2))
+                    : encodeText(generatePlainText(exportResume)),
             });
 
       setState("success");
@@ -317,6 +335,7 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
     }
   }, [
     capabilityMessage,
+    anonymizeSensitiveData,
     currentResume,
     isDirty,
     isZh,
@@ -336,7 +355,7 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
   }
 
   return (
-    <div className="dialog-backdrop" onClick={state !== "exporting" ? onClose : undefined}>
+    <div className="dialog-backdrop" onClick={state !== "exporting" ? handleClose : undefined}>
       <div
         className="dialog-content dialog-content--lg overflow-hidden"
         onClick={(event) => event.stopPropagation()}
@@ -359,7 +378,7 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
           <button
             type="button"
             className="dialog-close"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={state === "exporting"}
           >
             <X className="h-4 w-4" />
@@ -411,6 +430,40 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
                     </button>
                   );
                 })}
+              </div>
+
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50/70 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/60">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-zinc-600 dark:text-zinc-300" />
+                    <div className="space-y-1">
+                      <label
+                        htmlFor="export-anonymize-sensitive-data"
+                        className="text-sm font-medium text-zinc-800 dark:text-zinc-100"
+                      >
+                        {translateExport(
+                          "anonymizeSensitiveData",
+                          "Anonymize sensitive data",
+                        )}
+                      </label>
+                      <p className="text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+                        {translateExport(
+                          "anonymizeSensitiveDataDescription",
+                          "Replaces sensitive fields and inline emails, phone numbers, private links, names, and company names with asterisks while keeping public repository URLs and resume content reviewable.",
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="export-anonymize-sensitive-data"
+                    checked={anonymizeSensitiveData}
+                    onCheckedChange={setAnonymizeSensitiveData}
+                    aria-label={translateExport(
+                      "anonymizeSensitiveData",
+                      "Anonymize sensitive data",
+                    )}
+                  />
+                </div>
               </div>
 
               {!selectedOption.supported ? (
@@ -472,7 +525,7 @@ export function ExportDialog({ open, onClose, resumeId }: ExportDialogProps) {
         <div className="dialog-footer border-t border-zinc-100">
           <Button
             variant="secondary"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={state === "exporting"}
           >
             {closeLabel}

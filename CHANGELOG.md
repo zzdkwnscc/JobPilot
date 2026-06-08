@@ -5,6 +5,15 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.1] - 2026-06-08
+
+### 新增
+
+- **导出数据脱敏** — 简历导出弹窗新增数据脱敏开关，开启后对 PDF、智能一页 PDF、HTML、纯文本、Markdown 和 JSON 导出统一生效
+  - 邮箱、手机号、姓名、公司名、学校名、私人链接等敏感信息替换为星号
+  - 项目经历正文保留，便于他人评审简历内容质量
+  - 公开代码仓库地址保留，支持 GitHub、Gitee、GitLab、Bitbucket 和 SourceForge 仓库链接
+
 ## [1.3.0] - 2026-06-06
 
 ### 新增
@@ -191,7 +200,8 @@
 - 中英双语 — 完整的国际化支持
 - 本地优先 — 数据存储在本地，隐私安全有保障
 
-[Unreleased]: https://github.com/jlifeng/JobPilot/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/jlifeng/JobPilot/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/jlifeng/JobPilot/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/jlifeng/JobPilot/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/jlifeng/JobPilot/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/jlifeng/JobPilot/compare/v1.1.9...v1.2.1
