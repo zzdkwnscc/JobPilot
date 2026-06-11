@@ -373,7 +373,7 @@ function buildTimelineSectionHtml(section: CanonicalResume['sections'][number], 
   if (section.type === 'github') {
     const items = (content as unknown as GitHubContent).items || [];
     return buildTimelineListHtml(items, (item) => `
-      <div class="flex items-baseline justify-between"><span class="text-sm font-bold" style="color:${BLUE_GRAY}">${esc(item.name)}${item.repoUrl ? ` <a href="${esc(item.repoUrl)}" target="_blank" rel="noopener noreferrer" class="ml-1 text-xs font-normal text-blue-500">${esc(item.repoUrl)}</a>` : ''}</span><span class="shrink-0 text-xs text-zinc-400">★ ${item.stars?.toLocaleString() ?? 0}</span></div>
+      <div class="flex items-baseline justify-between"><span class="text-sm font-bold" style="color:${BLUE_GRAY}">${esc(item.name)}${item.repoUrl ? ` <a href="${esc(item.repoUrl)}" target="_blank" rel="noopener noreferrer" class="ml-1 text-xs font-normal" style="color:#3b82f6">${esc(item.repoUrl)}</a>` : ''}</span><span class="shrink-0 text-xs text-zinc-400">★ ${item.stars?.toLocaleString() ?? 0}</span></div>
       ${item.language ? `<span class="text-xs" style="color:${ACCENT}">${esc(item.language)}</span>` : ''}
       ${item.description ? `<p class="mt-1 text-sm text-zinc-600">${md(item.description)}</p>` : ''}
     `, 'pb-5');

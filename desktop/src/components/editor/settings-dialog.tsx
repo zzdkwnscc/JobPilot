@@ -47,6 +47,7 @@ import {
   getWebdavSyncStatus,
   updateWebdavSyncSettings,
   testWebdavConnection,
+  uploadWebdavSnapshot,
   type ProviderConfigUpdateInput,
   type AiProvider,
   type ConnectivityTestResult,
@@ -129,6 +130,7 @@ export function SettingsContent({
   const [webdavTesting, setWebdavTesting] = useState(false);
   const [webdavTestResult, setWebdavTestResult] = useState<WebdavConnectivityResult | null>(null);
   const [webdavMessage, setWebdavMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [webdavUploading, setWebdavUploading] = useState(false);
 
   // Model combobox state
   const [modelOpen, setModelOpen] = useState(false);
@@ -521,6 +523,22 @@ export function SettingsContent({
       setWebdavMessage({ type: "error", text: errResult.errorMessage });
     } finally {
       setWebdavTesting(false);
+    }
+  }, [t]);
+
+  const handleSyncNow = useCallback(async () => {
+    setWebdavUploading(true);
+    setWebdavMessage(null);
+    try {
+      await uploadWebdavSnapshot();
+      setWebdavMessage({ type: "success", text: t("webdavSyncSuccess") });
+    } catch (error) {
+      setWebdavMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      setWebdavUploading(false);
     }
   }, [t]);
 
@@ -1265,7 +1283,7 @@ export function SettingsContent({
                   )}
                 </div>
 
-                {/* Save & Test */}
+                {/* Save & Test & Sync */}
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
@@ -1290,6 +1308,21 @@ export function SettingsContent({
                       <Plug className="h-3.5 w-3.5" />
                     )}
                     {webdavTesting ? t("aiTesting") : t("aiTestConnection")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer gap-1.5"
+                    disabled={webdavUploading || !webdavStatus?.configured}
+                    onClick={() => void handleSyncNow()}
+                  >
+                    {webdavUploading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Cloud className="h-3.5 w-3.5" />
+                    )}
+                    {webdavUploading ? t("webdavSyncing") : t("webdavSyncNow")}
                   </Button>
                   {webdavTestResult?.success && (
                     <span className="text-xs font-medium text-green-600">

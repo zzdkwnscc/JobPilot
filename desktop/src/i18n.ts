@@ -417,6 +417,9 @@ const legacyResources = {
       webdavTestingConnection: "正在测试连接...",
       webdavConnectionSuccess: "WebDAV 连接成功，用时 {latency}ms。",
       webdavConnectionFailed: "WebDAV 连接失败。",
+      webdavSyncNow: "立即同步",
+      webdavSyncing: "同步中...",
+      webdavSyncSuccess: "同步成功",
       webdavSnapshotTitle: "快照",
       webdavSnapshotHeader: "上传与恢复",
       webdavSnapshotBody:
@@ -1507,6 +1510,9 @@ const legacyResources = {
       webdavTestingConnection: "Testing connection...",
       webdavConnectionSuccess: "WebDAV connection succeeded in {latency}ms.",
       webdavConnectionFailed: "WebDAV connection failed.",
+      webdavSyncNow: "Sync Now",
+      webdavSyncing: "Syncing...",
+      webdavSyncSuccess: "Sync succeeded",
       webdavSnapshotTitle: "Snapshot",
       webdavSnapshotHeader: "Upload and restore",
       webdavSnapshotBody:
