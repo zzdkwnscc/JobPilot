@@ -822,7 +822,8 @@ fn normalize_remote_path(value: &str) -> String {
 }
 
 fn to_status(webdav: &WorkspaceWebdavSettings, password_configured: bool) -> WebdavSyncStatus {
-    let configured = !webdav.server_url.trim().is_empty() && password_configured;
+    let configured =
+        !webdav.server_url.trim().is_empty() && !webdav.username.trim().is_empty() && password_configured;
     WebdavSyncStatus {
         configured,
         server_url: webdav.server_url.clone(),
