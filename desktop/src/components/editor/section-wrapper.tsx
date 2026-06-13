@@ -129,12 +129,12 @@ export function SectionWrapper({ section, onUpdate, onRemove }: SectionWrapperPr
             variant="ghost"
             size="sm"
             className="h-7 w-7 cursor-pointer p-0 text-zinc-700 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-200"
-            title={t("editor.aiPolish")}
+            title={t("editorAiPolish")}
             onClick={(e) => {
               e.stopPropagation();
-              if (!showAiChat) {
-                toggleAiChat();
-              }
+              toggleAiChat(t("editorAiPolishPrompt", {
+                sectionTitle: section.title,
+              }));
             }}
           >
             <Sparkles className="h-3.5 w-3.5" />

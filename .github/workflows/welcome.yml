@@ -1,0 +1,45 @@
+name: Welcome
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            👋 Thanks for opening your first issue! We appreciate your contribution to JobPilot.
+
+            感谢你提交第一个 Issue！我们非常感谢你对 JobPilot 的贡献。
+
+            A maintainer will review it soon. In the meantime, please make sure you've provided:
+            - Clear description of the issue or feature request
+            - Steps to reproduce (for bugs)
+            - Your platform and version
+
+            维护者会尽快审查。同时，请确保你已提供：
+            - 清晰的问题或功能描述
+            - 复现步骤（如果是 Bug）
+            - 你的平台和版本信息
+          pr-message: |
+            🎉 Thanks for opening your first pull request! We're excited to review your contribution.
+
+            感谢你提交第一个 Pull Request！我们很高兴审查你的贡献。
+
+            Please make sure:
+            - [ ] All tests pass
+            - [ ] Code follows project style
+            - [ ] PR description clearly explains changes
+            - [ ] Related issues are linked
+
+            请确保：
+            - [ ] 所有测试通过
+            - [ ] 代码遵循项目风格
+            - [ ] PR 描述清晰解释了变更
+            - [ ] 关联了相关 Issue

@@ -4,20 +4,39 @@
   **Local-First AI Resume Workbench**
 
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+  [![GitHub Release](https://img.shields.io/github/v/release/jlifeng/JobPilot?color=brightgreen)](https://github.com/jlifeng/JobPilot/releases)
+  [![GitHub Stars](https://img.shields.io/github/stars/jlifeng/JobPilot?style=social)](https://github.com/jlifeng/JobPilot/stargazers)
   [![Tauri](https://img.shields.io/badge/Tauri-2-24c8db)](https://tauri.app/)
   [![React](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)](https://www.typescriptlang.org/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-0078d4)](./desktop)
   [![Linux.do](https://img.shields.io/badge/Linux.do-Community-blue)](https://linux.do/)
 
-  [中文文档](./README_CN.md) | English
+  [中文文档](./README_CN.md) | English | [Contributing](./CONTRIBUTING.md)
+
+  **🎯 Your data stays local. Your privacy stays yours. Your resumes get better with AI.**
 
 </div>
 
 
 ---
 
+## 🎥 Demo
+
+> **👉 [Watch 60s Demo Video](https://github.com/jlifeng/JobPilot/assets/demo.mp4)** or see screenshots below
+
 JobPilot is a **local-first AI job-search desktop app** focused on resume writing, AI-assisted review, JD matching, mock interviews, and private document management. It packages the job-search workflow into a native desktop workspace, so you can import, edit, export, sync, and iterate on your materials without running a server.
+
+### 💡 Why JobPilot?
+
+| Feature | JobPilot | Online Resume Builders |
+|---------|----------|------------------------|
+| **Privacy** | ✅ 100% local, no data upload | ❌ Your resume on their servers |
+| **AI Integration** | ✅ Native tool calling, precise edits | ⚠️ Full text replacement only |
+| **Offline Access** | ✅ Works without internet | ❌ Requires constant connection |
+| **Data Ownership** | ✅ SQLite + WebDAV sync | ❌ Vendor lock-in |
+| **Cost** | ✅ Free & open source | 💰 Monthly subscription |
+| **Customization** | ✅ 50+ templates, full control | ⚠️ Limited templates |
 
 ## ✨ Key Features
 
@@ -89,11 +108,51 @@ Planned features for upcoming releases:
 |:---------------:|:----------------------:|:----------------:|
 | ![Interview Setup](images/模拟面试.png) | ![Interview Conversation](images/模拟面试对话.png) | ![Interview Report](images/面试报告.png) |
 
-## 📥 Installation
+## 🚀 Quick Start
 
-1. Go to [GitHub Releases](https://github.com/jlifeng/JobPilot/releases) to download the latest version
-2. Download the installer for your platform
-3. Double-click to install and launch the app
+### Download & Install
+
+1. Visit [GitHub Releases](https://github.com/jlifeng/JobPilot/releases)
+2. Download the latest installer:
+   - **Windows**: `.msi` installer
+   - **macOS (Apple Silicon)**: `.dmg` for M1/M2/M3 Macs
+   - **macOS (Intel)**: `.dmg` for Intel Macs
+3. Install and launch
+
+**📖 [Full Installation Guide →](docs/GETTING_STARTED.md)**
+
+### First Steps
+
+1. **Configure AI Provider** (Settings → AI Assistant)
+   - Add your OpenAI, Anthropic, or Google API key
+   - [Get free API keys guide →](https://github.com/jlifeng/JobPilot/wiki)
+
+2. **Create Your First Resume**
+   - Use AI generation from scratch
+   - Import from PDF/Markdown/JSON
+   - Or start with a template
+
+3. **Polish with AI**
+   - Click the ✨ polish button on any section
+   - Get JD-matching suggestions
+   - Apply changes selectively
+
+### 💾 Backup Your Data (Optional)
+
+Enable WebDAV sync in Settings to backup to:
+- 123Cloud (123云盘)
+- Nutstore (坚果云)
+- Nextcloud
+- Any WebDAV-compatible service
+
+---
+
+## 📚 Documentation
+
+- **[Getting Started Guide](docs/GETTING_STARTED.md)** - Detailed setup and usage instructions
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to JobPilot
+- **[Security Policy](SECURITY.md)** - Report vulnerabilities responsibly
+- **[Changelog](CHANGELOG.md)** - Version history and updates
 
 ## 🔧 Build from Source
 

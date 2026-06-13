@@ -1817,9 +1817,7 @@ fn should_force_resume_text_tool(messages: &[serde_json::Value]) -> bool {
         .to_lowercase();
 
     [
-        "润色", "优化", "改写", "重写", "修改", "调整", "完善", "提升", "增强", "精简", "扩写",
-        "应用", "polish", "rewrite", "optimize", "improve", "modify", "revise", "refine",
-        "enhance", "shorten", "expand", "apply",
+        "润色", "polish", "应用", "apply",
     ]
     .iter()
     .any(|keyword| intent_text.contains(keyword))

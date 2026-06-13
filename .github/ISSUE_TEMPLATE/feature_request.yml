@@ -1,0 +1,55 @@
+name: ✨ Feature Request / 功能请求
+description: Suggest a new feature or enhancement / 建议新功能或改进
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你提出功能建议！
+        Thanks for suggesting a new feature!
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / 问题
+      description: Is your feature request related to a problem? / 你的功能请求是否与某个问题相关？
+      placeholder: I'm always frustrated when... / 我在使用时总是遇到...
+    validations:
+      required: false
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution / 建议的解决方案
+      description: Describe the solution you'd like / 描述你想要的解决方案
+      placeholder: I would like to... / 我希望能够...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives / 替代方案
+      description: Have you considered any alternatives? / 你考虑过其他替代方案吗？
+      placeholder: Another way to solve this could be... / 另一种解决方法可能是...
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority / 优先级
+      description: How important is this feature to you? / 这个功能对你有多重要？
+      options:
+        - Low / 低 - Nice to have
+        - Medium / 中 - Would improve my workflow
+        - High / 高 - Blocking my usage
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I have searched existing issues to avoid duplicates / 我已搜索现有 Issue 以避免重复
+          required: true

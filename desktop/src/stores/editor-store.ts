@@ -12,6 +12,7 @@ interface EditorStore {
   selectedSectionId: string | null;
   showThemeEditor: boolean;
   showAiChat: boolean;
+  aiChatInitialPrompt: string | null;
   isSectionSidebarCollapsed: boolean;
   isDragging: boolean;
   undoStack: ResumeSnapshot[];
@@ -26,13 +27,14 @@ interface EditorStore {
   undo: () => ResumeSnapshot | null;
   redo: () => ResumeSnapshot | null;
   reset: () => void;
-  toggleAiChat: () => void;
+  toggleAiChat: (initialPrompt?: string) => void;
 }
 
 export const useEditorStore = create<EditorStore>((set, get) => ({
   selectedSectionId: null,
   showThemeEditor: false,
   showAiChat: false,
+  aiChatInitialPrompt: null,
   isSectionSidebarCollapsed: true,
   isDragging: false,
   undoStack: [],
@@ -50,8 +52,11 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   setSectionSidebarCollapsed: (collapsed) =>
     set({ isSectionSidebarCollapsed: collapsed }),
 
-  toggleAiChat: () =>
-    set((state) => ({ showAiChat: !state.showAiChat })),
+  toggleAiChat: (initialPrompt) =>
+    set((state) => ({
+      showAiChat: !state.showAiChat,
+      aiChatInitialPrompt: !state.showAiChat ? initialPrompt || null : null,
+    })),
 
   setDragging: (dragging) => set({ isDragging: dragging }),
 

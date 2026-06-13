@@ -333,6 +333,7 @@ export function AIChatContent({
 }: AIChatContentProps) {
   const { t } = useTranslation();
   const { currentResume, sections, isDirty, save, setResume } = useResumeStore();
+  const { aiChatInitialPrompt } = useEditorStore();
 
   const translate = useCallback(
     (key: string, fallback: string) => {
@@ -682,6 +683,12 @@ export function AIChatContent({
       element.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    if (aiChatInitialPrompt) {
+      setInput(aiChatInitialPrompt);
+    }
+  }, [aiChatInitialPrompt]);
 
   const createNewSession = useCallback(() => {
     const session = createSession(newChatLabel);

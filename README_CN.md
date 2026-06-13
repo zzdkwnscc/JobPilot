@@ -4,20 +4,39 @@
   **本地优先的 AI 简历工作台**
 
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+  [![GitHub Release](https://img.shields.io/github/v/release/jlifeng/JobPilot?color=brightgreen)](https://github.com/jlifeng/JobPilot/releases)
+  [![GitHub Stars](https://img.shields.io/github/stars/jlifeng/JobPilot?style=social)](https://github.com/jlifeng/JobPilot/stargazers)
   [![Tauri](https://img.shields.io/badge/Tauri-2-24c8db)](https://tauri.app/)
   [![React](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)](https://www.typescriptlang.org/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-0078d4)](./desktop)
   [![Linux.do](https://img.shields.io/badge/Linux.do-社区-blue)](https://linux.do/)
 
-  [English](./README.md) | 中文文档
+  [English](./README.md) | 中文文档 | [贡献指南](./CONTRIBUTING.md)
+
+  **🎯 数据留在本地。隐私由你掌控。简历在 AI 协助下变得更好。**
 
 </div>
 
 
 ---
 
+## 🎥 演示视频
+
+> **👉 [观看 60 秒演示视频](https://github.com/jlifeng/JobPilot/assets/demo.mp4)** 或查看下方截图
+
 JobPilot 是一款本地优先的 AI 求职桌面应用，聚焦简历编写、AI 辅助评审、JD 匹配、模拟面试和本地求职资料管理。它把导入、编辑、导出、同步和持续优化整合进桌面端工作台，下载安装后即可使用，无需搭建服务端。
+
+### 💡 为什么选择 JobPilot？
+
+| 功能特性 | JobPilot | 在线简历工具 |
+|---------|----------|-------------|
+| **隐私保护** | ✅ 100% 本地存储，不上传数据 | ❌ 简历存储在第三方服务器 |
+| **AI 集成** | ✅ 原生工具调用，精确编辑 | ⚠️ 仅支持全文替换 |
+| **离线使用** | ✅ 无需联网即可工作 | ❌ 必须持续联网 |
+| **数据所有权** | ✅ SQLite + WebDAV 自主同步 | ❌ 供应商锁定 |
+| **使用成本** | ✅ 免费开源 | 💰 按月订阅 |
+| **自定义程度** | ✅ 50+ 模板，完全掌控 | ⚠️ 模板数量有限 |
 
 ## 功能特色
 
@@ -89,11 +108,51 @@ JobPilot 是一款本地优先的 AI 求职桌面应用，聚焦简历编写、A
 |:--------:|:------------:|:--------:|
 | ![模拟面试](images/模拟面试.png) | ![模拟面试对话](images/模拟面试对话.png) | ![面试报告](images/面试报告.png) |
 
-## 下载安装
+## 🚀 快速开始
+
+### 下载安装
 
 1. 前往 [GitHub Releases](https://github.com/jlifeng/JobPilot/releases) 下载最新版本
-2. 下载对应平台的安装包
+2. 下载对应平台的安装包：
+   - **Windows**: `.msi` 安装包
+   - **macOS (Apple Silicon)**: `.dmg` 适用于 M1/M2/M3 芯片
+   - **macOS (Intel)**: `.dmg` 适用于 Intel 芯片
 3. 双击安装，启动应用
+
+**📖 [完整安装指南 →](docs/GETTING_STARTED.md)**
+
+### 首次使用
+
+1. **配置 AI 服务商**（设置 → AI 助手）
+   - 添加 OpenAI、Anthropic 或 Google API 密钥
+   - [免费 API 密钥获取指南 →](https://github.com/jlifeng/JobPilot/wiki)
+
+2. **创建第一份简历**
+   - AI 从头生成
+   - 从 PDF/Markdown/JSON 导入
+   - 或从模板开始
+
+3. **使用 AI 润色**
+   - 点击任意模块的 ✨ 润色按钮
+   - 获取 JD 匹配建议
+   - 选择性应用修改
+
+### 💾 数据备份（可选）
+
+在设置中启用 WebDAV 同步，备份到：
+- 123云盘
+- 坚果云
+- Nextcloud
+- 任何 WebDAV 兼容服务
+
+---
+
+## 📚 文档
+
+- **[快速入门指南](docs/GETTING_STARTED.md)** - 详细的安装和使用说明
+- **[贡献指南](CONTRIBUTING.md)** - 如何为 JobPilot 贡献
+- **[安全策略](SECURITY.md)** - 负责任地报告漏洞
+- **[更新日志](CHANGELOG.md)** - 版本历史和更新
 
 ## 从源码构建
 

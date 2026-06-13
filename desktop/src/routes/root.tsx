@@ -12,6 +12,7 @@ import {
   Moon,
   Settings,
   Sun,
+  Upload,
 } from "lucide-react";
 import { i18n } from "../i18n";
 import { UpdateDialog } from "../components/app-update/update-dialog";
@@ -23,6 +24,8 @@ import {
   getWorkspaceSettingsSnapshot,
   isBrowserFallbackRuntime,
   updateWorkspaceAppearanceSettings,
+  uploadWebdavSnapshot,
+  restoreWebdavSnapshot,
   type WorkspaceSettingsDocument,
   type WebdavSyncStatus,
 } from "../lib/desktop-api";
@@ -155,6 +158,8 @@ function WorkspaceSidebar({
 }) {
   const { t } = useTranslation();
   const webdavConfigured = webdavStatus?.configured ?? false;
+  const [webdavUploading, setWebdavUploading] = useState(false);
+  const [webdavDownloading, setWebdavDownloading] = useState(false);
   const resolvedTheme =
     typeof window === "undefined"
       ? theme
@@ -223,6 +228,64 @@ function WorkspaceSidebar({
             }`}
           />
         </Link>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={`h-10 w-10 rounded-2xl ${
+            webdavConfigured
+              ? "text-slate-500 hover:bg-slate-100 hover:text-blue-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-blue-200"
+              : "text-slate-300 dark:text-zinc-700"
+          }`}
+          disabled={!webdavConfigured || webdavUploading}
+          aria-label={t("webdavSyncNow")}
+          title={t("webdavSyncNow")}
+          onClick={async () => {
+            setWebdavUploading(true);
+            try {
+              await uploadWebdavSnapshot();
+            } catch (error) {
+              console.error("WebDAV upload failed:", error);
+            } finally {
+              setWebdavUploading(false);
+            }
+          }}
+        >
+          {webdavUploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={`h-10 w-10 rounded-2xl ${
+            webdavConfigured
+              ? "text-slate-500 hover:bg-slate-100 hover:text-blue-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-blue-200"
+              : "text-slate-300 dark:text-zinc-700"
+          }`}
+          disabled={!webdavConfigured || webdavDownloading}
+          aria-label={t("webdavRestoreNow")}
+          title={t("webdavRestoreNow")}
+          onClick={async () => {
+            setWebdavDownloading(true);
+            try {
+              await restoreWebdavSnapshot();
+            } catch (error) {
+              console.error("WebDAV restore failed:", error);
+            } finally {
+              setWebdavDownloading(false);
+            }
+          }}
+        >
+          {webdavDownloading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+        </Button>
 
         <Button
           type="button"
