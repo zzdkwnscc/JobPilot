@@ -259,11 +259,6 @@ JobPilot 通过 OpenAI 兼容 API 支持国内大模型：
 4. 输入 **模型名称**（例如：`deepseek-chat`、`moonshot-v1-8k`）
 5. 点击 **"测试连接"** 验证配置
 
-**价格对比（2025 年参考）：**
-- DeepSeek：~¥0.001/1K tokens（性价比极高）
-- Moonshot：~¥0.012/1K tokens
-- 智谱 GLM-4：~¥0.05/1K tokens
-- SiliconFlow：有免费额度可供测试
 
 **注意：** 国内大模型对中文简历效果最佳。如需处理英文简历，建议使用国际服务商（OpenAI、Anthropic）以获得更好效果。
 
