@@ -211,3 +211,4 @@ This project is open-sourced under the [Apache License Version 2.0](LICENSE).
 JobPilot includes work derived from [JadeAI](https://github.com/LingyiChen-AI/JadeAI). Thanks to the original author and the open-source community.
 
 ---
+zzdkw
